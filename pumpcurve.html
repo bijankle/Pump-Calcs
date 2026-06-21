@@ -441,7 +441,9 @@
   function curveLabelText(c,fam){return c.value!=null?(c.value+FAMCOL[fam].sfx):'DOL';}
   function labelPoint(c,fam){if(!c.fit){if(!c.trace.length)return null;const p=c.trace[c.trace.length-1];return dataToImg(p.x,p.y);}const f=c.fit;let X,Y;if(fam==='rpm'){X=f.imax;Y=f.pr(f.imax);}else{Y=f.imax;X=f.pr(f.imax);}return dataToImg(X,Y);}
 
-  function startNewCurve(fam){if(!isCalibrated()){toast('Calibrate the axes first.',true);return;}pushHistory();state.family=fam;const id=uid();state.curves[fam].push({id,value:null,trace:[]});state.tracingId=id;state.selectedCurveId=id;state.selectedId=null;state.selectedNode=null;state.mode='trace';recomputeModels();renderAll();setTimeout(()=>{const el=document.querySelector('#'+fam+'List .crow[data-id="'+id+'"] input');if(el)el.focus();},20);toast(state.traceMode==='poly'?'Click nodes along the curve. Enter its value in the table on the left.':'Drag along the curve. Enter its value in the table on the left.');}
+  function startNewCurve(fam){if(!isCalibrated()){toast('Calibrate the axes first.',true);return;}
+    FAMS.forEach(f=>{state.curves[f]=state.curves[f].filter(c=>c.trace.length>0);});
+    pushHistory();state.family=fam;const id=uid();state.curves[fam].push({id,value:null,trace:[]});state.tracingId=id;state.selectedCurveId=id;state.selectedId=null;state.selectedNode=null;state.mode='trace';recomputeModels();renderAll();setTimeout(()=>{const el=document.querySelector('#'+fam+'List .crow[data-id="'+id+'"] input');if(el)el.focus();},20);toast(state.traceMode==='poly'?'Click nodes along the curve. Enter its value in the table on the left.':'Drag along the curve. Enter its value in the table on the left.');}
   function activeCurve(){return state.curves[state.family].find(c=>c.id===state.tracingId)||null;}
   let traceStroke=null;
   function onTracePointerDown(e){const c=activeCurve();if(!c)return;e.preventDefault();
@@ -617,11 +619,9 @@
       inp.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();pushHistory();startNewCurve(fam);}});
       row.querySelector('.delbtn').addEventListener('click',()=>deleteCurve(id));});
     if(keepId){const el=host.querySelector('.crow[data-id="'+keepId+'"] input');if(el&&document.activeElement!==el){const v=el.value;el.focus();try{el.setSelectionRange(v.length,v.length);}catch(_){}}}}
-  function fillOut(fam,model){const out=$('#'+fam+'Out');if(!out)return;const fEl=$('#'+fam+'Formula'),mEl=$('#'+fam+'Meta');
-    if(!model||model.method==='none'){out.style.display='none';return;}
-    out.style.display='block';
-    if(model.method==='need'){if(fEl)fEl.textContent='';if(mEl)mEl.textContent='Trace at least two labelled curves to build the surface.';return;}
-    if(mEl)mEl.textContent='';if(fEl)fEl.textContent=model.formula||'';}
+  function fillOut(fam,model){const out=$('#'+fam+'Out');if(!out)return;const fEl=$('#'+fam+'Formula');
+    if(!model||model.method==='none'||model.method==='need'){out.style.display='none';return;}
+    out.style.display='block';if(fEl)fEl.textContent=model.formula||'';}
   const FAMLABEL={rpm:'RPM',eff:'efficiency',npshr:'NPSHr'};
   function updateCurvePanels(){FAMS.forEach(f=>renderCurveList(f));FAMS.forEach(f=>fillOut(f,famModel(f)));renderProbeTable();
     FAMS.forEach(fam=>{const b=$('#'+fam+'Trace');if(!b)return;const has=state.curves[fam].length;b.textContent=(has?'Add another ':'Trace new ')+FAMLABEL[fam]+' curve';b.classList.toggle('active',state.mode==='trace'&&state.family===fam);});

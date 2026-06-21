@@ -43,6 +43,14 @@ if pc.exists():
     html = html.replace('<script>\n' + read('app.js'),
                         '<script>\n' + js + '\n</script>\n<script>\n' + read('app.js'))
 
+# Inline the (restyled) pipe-route planner for the Map sub-tab.
+pr = root / 'piperouter.html'
+if pr.exists():
+    pr_html = pr.read_text(encoding='utf-8')
+    js = 'window.PIPE_ROUTER_SRCDOC = ' + _js_string(pr_html) + ';'
+    html = html.replace('<script>\n' + read('app.js'),
+                        '<script>\n' + js + '\n</script>\n<script>\n' + read('app.js'))
+
 out = root / 'Slurry-Pump-Calc.html'
 out.write_text(html, encoding='utf-8')
 kb = out.stat().st_size / 1024

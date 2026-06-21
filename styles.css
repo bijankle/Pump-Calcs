@@ -58,19 +58,19 @@ button{font-family:inherit}
 
 /* Input rows — aligned grid mirroring the outputs:
    parameter (name + toggle/badge) | value | unit | info */
-.row{display:grid;grid-template-columns:224px 150px 48px 22px;align-items:center;column-gap:10px;
+.row{display:grid;grid-template-columns:224px 1fr 50px 24px;align-items:center;column-gap:10px;
   padding:4px 0;border-bottom:1px dashed #eee}
 .row .pcell{display:flex;align-items:center;gap:8px;min-width:0}
 .row .pname{color:var(--grey);font-size:13px}
 .row .vcell{min-width:0;display:flex;align-items:center}
-.row .ucell{color:#999;font-size:12px;white-space:nowrap}
-.row .icell{display:flex;justify-content:center}
+.row .ucell{color:#999;font-size:12px;white-space:nowrap;text-align:right}
+.row .icell{display:flex;justify-content:flex-end}
 .row input,.row select{padding:6px 9px;border:1px solid #d4d4d4;border-radius:6px;
-  background:var(--yellow);font-family:inherit;font-size:13px;text-align:left;max-width:100%}
+  background:var(--yellow);font-family:inherit;font-size:13px;text-align:left}
 .row input[type=number]{text-align:left;-moz-appearance:textfield;appearance:textfield}
 .row input[type=number]::-webkit-outer-spin-button,
 .row input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.row select{background:var(--yellow);width:100%;max-width:100%}
+.row select{background:var(--yellow);min-width:90px;max-width:100%}
 .row input:focus,.row select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
 
 /* Process-variable (solver) fields */
@@ -192,9 +192,16 @@ h1.page{font-size:20px;margin:18px 0 4px}
 .callout .refs{margin-top:8px}
 .callout .ref{font-size:11px;color:var(--grey);padding:5px 0;border-top:1px solid var(--line)}
 
-/* Pump curve block */
-.curvebody{padding:0}
-.curveframe{width:100%;height:760px;border:0;display:block;background:#fff}
+/* Sub-tabs under Pumps (Map / Calculation / Curve) */
+.subtabs{display:flex;gap:6px;margin:4px 0 10px}
+.subtab{padding:7px 18px;border:1px solid var(--line);background:#fff;border-radius:7px;
+  font-weight:600;font-size:13px;color:var(--grey);cursor:pointer}
+.subtab:hover{border-color:var(--red);color:var(--black)}
+.subtab.active{background:var(--red);color:#fff;border-color:var(--red)}
+
+/* Pump curve + map blocks */
+.curvebody,.mapbody{padding:0}
+.curveframe,.mapframe{width:100%;height:780px;border:0;display:block;background:#fff}
 
 /* Brand logo (SVG) */
 .brand .nexlogo{height:26px;display:block}

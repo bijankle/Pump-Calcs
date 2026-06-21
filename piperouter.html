@@ -1,0 +1,3442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pipeline Routing Planner</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    /* Blueprint theme: light, Discord influenced, print friendly */
+    --bg:#F8F9FB;            /* app surface */
+    --surface:#F8F9FB;
+    --panel:#ffffff;         /* sidebars, toolbar, cards */
+    --panel-2:#F2F3F5;       /* nested surfaces */
+    --line:#E3E5E8;
+    --line-soft:#F2F3F5;
+    --line-strong:#C7CAD1;
+    --ink:#1E1F22;           /* near-black text */
+    --ink-dim:#4E5058;
+    --ink-faint:#80848E;
+    --faint:#9A9DA5;
+    --accent:#C8102E;
+    --accent-deep:#9C0C24;
+    --accent-tint:#FBE3E6;
+    --accent-ring:#F3C7CD;
+    --accent-2:#36b0ff;      /* PE100 data colour */
+    --steel:#ff7a3d;         /* carbon steel data colour */
+    --green:#3BA55C;
+    --green-tint:#E7F4EC;
+    --yellow:#E0A416;
+    --yellow-tint:#FBF1D8;
+    --danger:#D83C3E;
+    --red-tint:#FCEDED;
+    --grid:#E3E5E8;
+    --mono:'Aptos Mono','Cascadia Code', ui-monospace, monospace;
+    --ui:'Aptos','Segoe UI Variable Text','Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    font-family:var(--ui);
+    background:var(--bg);
+    color:var(--ink);
+    overflow:hidden;
+  }
+
+  /* ---------- App shell ---------- */
+  .app{
+    display:grid;
+    grid-template-rows:auto 1fr;
+    height:100vh;
+  }
+
+  header.topbar{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:10px 18px;
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+    z-index:1200;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; min-width:230px; }
+  .brand .logo{
+    width:34px; height:34px; border-radius:7px;
+    background:
+      repeating-linear-gradient(45deg,var(--accent) 0 6px, var(--accent-deep) 6px 12px);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.08), 0 0 0 1px var(--line);
+  }
+  .brand h1{
+    font-size:15px; letter-spacing:2.5px; margin:0; font-weight:800;
+    text-transform:uppercase;
+  }
+  .brand small{
+    display:block; font-family:var(--mono); font-size:10px;
+    letter-spacing:1.5px; color:var(--ink-faint); margin-top:2px;
+  }
+
+  .toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; flex:1; }
+  .tool-group{ display:flex; gap:6px; padding-right:10px; border-right:1px solid var(--line-soft); }
+  .tool-group:last-child{ border-right:0; }
+
+  button.btn{
+    font-family:var(--ui);
+    font-size:12px; font-weight:600; letter-spacing:.4px;
+    color:var(--ink-dim);
+    background:#ffffff;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:8px 12px;
+    cursor:pointer;
+    display:inline-flex; align-items:center; gap:7px;
+    transition:.15s ease;
+    white-space:nowrap;
+  }
+  button.btn:hover{ color:var(--accent); border-color:var(--accent); background:var(--accent-tint); }
+  button.btn .ic{ font-family:var(--mono); font-size:13px; line-height:1; }
+  button.btn.active{
+    color:#ffffff; background:var(--accent); border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent), 0 2px 8px -2px var(--accent-ring);
+  }
+  button.btn.danger:hover{ color:var(--danger); border-color:var(--danger); background:var(--red-tint); }
+  button.btn:disabled{ opacity:.4; cursor:not-allowed; }
+
+  /* ---------- Body layout ---------- */
+  .body{
+    display:grid;
+    grid-template-columns:300px 1fr;
+    min-height:0;
+  }
+
+  aside.sidebar{
+    background:var(--panel);
+    border-right:1px solid var(--line);
+    overflow-y:auto;
+    padding:0 0 0;
+    display:flex; flex-direction:column;
+  }
+  .howto-section{ margin-top:auto; border-bottom:0; border-top:1px solid var(--line); }
+  .section{ padding:16px 18px; border-bottom:1px solid var(--line-soft); }
+  .section h2{
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    color:#5C5E66; margin:0 0 12px; font-weight:700;
+    display:flex; align-items:center; gap:8px;
+  }
+  .section h2::before{
+    content:""; width:14px; height:2px; background:var(--accent); display:inline-block;
+  }
+
+  .field{ margin-bottom:12px; }
+  .field:last-child{ margin-bottom:0; }
+  .field label{
+    display:block; font-size:11px; letter-spacing:.5px; color:var(--ink-dim);
+    margin-bottom:5px; text-transform:uppercase; font-weight:600;
+  }
+  select, input[type=text], input[type=number]{
+    width:100%; font-family:var(--mono); font-size:13px;
+    color:var(--ink); background:var(--panel-2);
+    border:1px solid var(--line); border-radius:6px;
+    padding:8px 10px; outline:none;
+  }
+  select:focus, input:focus{ border-color:var(--accent); }
+  select{ cursor:pointer; }
+
+  /* decimal typing inputs, no spinner arrows */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  input[type=number]{ -moz-appearance:textfield; appearance:textfield; }
+
+  .swatch-row{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-dim); margin-top:4px; }
+  .swatch{ width:22px; height:8px; border-radius:2px; }
+
+  .hint{
+    font-size:11.5px; line-height:1.6; color:var(--ink-dim);
+    background:#ffffff; border:1px solid var(--line-soft);
+    border-radius:6px; padding:10px 12px;
+  }
+  .hint b{ color:var(--accent); font-weight:600; }
+  .kbd{
+    font-family:var(--mono); font-size:10.5px; color:var(--ink);
+    background:var(--panel-2); border:1px solid var(--line); border-bottom-width:2px;
+    border-radius:4px; padding:1px 5px;
+  }
+
+  .legend-item{ display:flex; align-items:center; gap:10px; font-size:12px; color:var(--ink-dim); margin:8px 0; font-family:var(--mono); }
+  .dot{ width:13px; height:13px; border-radius:50%; flex:0 0 auto; }
+  .dot.end{ background:#f4f7fa; border:3px solid #80848E; box-sizing:border-box; }
+  .dot.inline{ background:#dfe7ef; box-shadow:0 0 0 1px #1E1F22; }
+  .dot.tee{ background:#f4f7fa; border:3px solid #80848E; box-sizing:border-box; }
+  .dot.poi{ background:#f4f7fa; border:3px solid #D83C3E; box-sizing:border-box; }
+
+  .stat{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; padding:5px 0; }
+  .stat span:first-child{ color:var(--ink-dim); }
+  .stat span:last-child{ color:var(--ink); }
+
+  /* ---------- Map + table ---------- */
+  .main{ display:grid; grid-template-rows:1fr auto; min-width:0; min-height:0; }
+  #map{ width:100%; height:100%; background:var(--surface); }
+
+  .statusbar{
+    position:absolute; top:12px; left:50%; transform:translateX(-50%);
+    z-index:1000; pointer-events:none;
+    background:rgba(255,255,255,.86); backdrop-filter:blur(4px);
+    border:1px solid var(--line); border-radius:20px;
+    padding:7px 16px; font-family:var(--mono); font-size:12px; letter-spacing:.4px;
+    color:var(--accent); display:none; align-items:center; gap:8px;
+  }
+  .statusbar.show{ display:flex; }
+  .statusbar .pulse{ width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 1.1s infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1 } 50%{ opacity:.25 } }
+
+  .mapwrap{ position:relative; min-height:0; }
+
+  .tablepanel{
+    height:230px; min-height:90px; background:var(--panel); border-top:1px solid var(--line);
+    display:flex; flex-direction:column; position:relative;
+  }
+  .table-resizer{
+    position:absolute; top:-4px; left:0; right:0; height:8px;
+    cursor:row-resize; z-index:5;
+  }
+  .table-resizer::after{
+    content:""; position:absolute; top:3px; left:50%; transform:translateX(-50%);
+    width:46px; height:3px; border-radius:3px; background:var(--line);
+  }
+  .table-resizer:hover::after{ background:var(--accent); }
+  .tablehead{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 16px; border-bottom:1px solid var(--line-soft);
+  }
+  .tablehead h2{ font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--ink-faint); margin:0; font-weight:700; }
+  .tablehead .summary{ font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); }
+  .tablehead .summary b{ color:var(--accent); }
+  .table-scroll{ overflow:auto; flex:1; }
+
+  table{ width:auto; border-collapse:collapse; font-family:var(--mono); font-size:12px; table-layout:auto; }
+  thead th{
+    position:sticky; top:0; z-index:2;
+    background:#ffffff; color:#2E3035;
+    text-align:left; font-weight:700; letter-spacing:.6px;
+    padding:8px 10px; border-bottom:1px solid var(--line); border-right:1px solid var(--line-soft);
+    font-size:10.5px; text-transform:uppercase; white-space:nowrap;
+  }
+  thead th:last-child{ border-right:0; }
+  tbody td{
+    padding:6px 10px; border-bottom:1px solid var(--line-soft); border-right:1px solid var(--line-soft);
+    color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  tbody td:last-child{ border-right:0; }
+  tbody tr:hover{ background:var(--accent-tint); }
+  tbody tr.highlight{ background:var(--accent-tint); }
+  td .len-input{
+    width:74px; background:transparent; border:1px solid transparent;
+    color:var(--ink); font-family:var(--mono); font-size:12px; padding:3px 4px; border-radius:4px;
+  }
+  td .len-input:hover{ border-color:var(--line); }
+  td .len-input:focus{ border-color:var(--accent); background:var(--panel-2); }
+  td .len-input.manual{ font-style:italic; color:var(--accent); }
+  td .cell-select{
+    background:transparent; border:1px solid transparent; color:var(--ink);
+    font-family:var(--mono); font-size:12px; padding:3px 2px; border-radius:4px;
+    cursor:pointer; width:auto;
+  }
+  td .cell-select:hover{ border-color:var(--line); }
+  td .cell-select:focus{ border-color:var(--accent); background:var(--panel-2); }
+  td .cell-select option{ background:var(--panel-2); color:var(--ink); }
+  td .elev-input{
+    width:70px; background:transparent; border:1px solid transparent;
+    color:var(--green); font-family:var(--mono); font-size:12px; padding:3px 4px; border-radius:4px;
+  }
+  td .elev-input:hover{ border-color:var(--line); }
+  td .elev-input:focus{ border-color:var(--accent); background:var(--panel-2); }
+  td .revert{
+    background:none; border:none; color:var(--ink-faint);
+    cursor:pointer; font-family:var(--mono); font-size:13px;
+  }
+  td .revert:hover{ color:var(--accent); }
+  td .len-cell{ display:flex; align-items:center; gap:2px; }
+  .empty-row td{ text-align:center; color:var(--ink-faint); padding:26px; font-style:italic; }
+  .elev-cell{ color:var(--green); }
+  .elev-cell.none{ color:var(--ink-faint); }
+
+  /* per flow path tables, stacked vertically */
+  .flow-table{ margin:0 0 16px; }
+  .flow-table:last-child{ margin-bottom:6px; }
+  .co-matrix{ width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11px; }
+  .co-matrix th, .co-matrix td{ border:1px solid var(--line); padding:3px 7px; text-align:center; }
+  .co-matrix th{ background:var(--panel-2); color:var(--ink-dim); font-weight:600; }
+  .co-matrix th.co-rowhdr, .co-matrix td.co-rowlabel{ text-align:left; white-space:nowrap; }
+  .co-matrix td.co-rowlabel{ cursor:pointer; color:var(--ink-dim); }
+  .co-matrix td.co-rowlabel:hover{ color:var(--accent); }
+  .co-colh{ display:inline-flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; font-size:10px; letter-spacing:.5px; }
+  .co-matrix input{ accent-color:var(--accent); cursor:pointer; margin:0; }
+  .co-cellwrap.dim{ opacity:.35; }
+  .co-na{ background:var(--panel-2); }
+  .flow-table-head{
+    position:sticky; top:0; z-index:4;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:8px 14px; background:var(--panel-2); border-bottom:1px solid var(--line);
+    border-left:3px solid transparent;
+  }
+  .flow-table.glow .flow-table-head{ border-left-color:var(--accent); }
+  .ft-title{ font-family:var(--mono); font-size:12.5px; font-weight:600; letter-spacing:1px; color:var(--ink); }
+  .ft-title .ft-sub{ color:#909cab; font-weight:400; letter-spacing:0; margin-left:8px; font-size:11px; }
+  .flow-table-actions{ display:flex; gap:6px; flex:0 0 auto; }
+  .ft-btn{
+    font-family:var(--ui); font-size:11px; font-weight:600; letter-spacing:.3px;
+    color:var(--ink-dim); background:var(--panel-2); border:1px solid var(--line);
+    border-radius:5px; padding:5px 9px; cursor:pointer; white-space:nowrap;
+  }
+  .ft-btn:hover{ color:var(--ink); border-color:var(--line-strong); }
+  .ft-btn.primary{ color:var(--accent); border-color:var(--accent); }
+
+  /* hotkey badge on toolbar buttons */
+  .hotkey{
+    font-family:var(--mono); font-size:10px; font-weight:600; line-height:1;
+    padding:2px 5px; border-radius:4px; margin-left:2px;
+    background:var(--panel-2); border:1px solid var(--line); color:var(--ink-dim);
+  }
+  button.btn.active .hotkey{ background:rgba(255,255,255,.9); border-color:rgba(255,255,255,.9); color:var(--accent); }
+
+  /* floating Copy Map Image button over the map */
+  .map-btn{
+    position:absolute; top:14px; left:12px; z-index:1000;
+    font-family:var(--ui); font-size:12px; font-weight:600; letter-spacing:.3px;
+    color:var(--ink); background:rgba(255,255,255,.92); backdrop-filter:blur(4px);
+    border:1px solid var(--line); border-radius:6px; padding:8px 12px;
+    cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:.15s ease;
+  }
+  .map-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .map-btn .ic{ font-family:var(--mono); }
+
+  /* callout visibility panel, top left under the Copy Map button */
+  .callout-tools{
+    position:absolute; top:56px; left:12px; z-index:1000;
+    background:rgba(255,255,255,.92); backdrop-filter:blur(4px);
+    border:1px solid var(--line); border-radius:8px; padding:9px 11px;
+    display:flex; flex-direction:column; gap:6px; box-shadow:0 6px 20px -10px rgba(30,31,34,.4);
+  }
+  .callout-tools .ct-title{ font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-faint); font-weight:700; margin-bottom:1px; }
+  .callout-tools .ct-check{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink); cursor:pointer; white-space:nowrap; }
+  .callout-tools .ct-check input{ accent-color:var(--accent); width:14px; height:14px; }
+
+  /* help overlay (How to use / Good to know) */
+  .help-overlay{ position:fixed; inset:0; z-index:4000; background:rgba(30,31,34,.32);
+    display:flex; align-items:center; justify-content:center; padding:24px; }
+  .help-overlay[hidden]{ display:none; }
+  .help-panel{ position:relative; width:min(560px,92vw); max-height:84vh; overflow:auto;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:22px 24px 24px;
+    box-shadow:0 24px 60px -18px rgba(30,31,34,.5); font-family:var(--ui); }
+  .help-close{ position:absolute; top:12px; right:14px; border:0; background:transparent; cursor:pointer;
+    font-size:22px; line-height:1; color:var(--ink-faint); }
+  .help-close:hover{ color:var(--ink); }
+  .help-h{ font-size:11px; letter-spacing:1.5px; text-transform:uppercase; font-weight:700;
+    color:var(--accent); margin:14px 0 8px; }
+  .help-h:first-of-type{ margin-top:2px; }
+  .help-steps, .help-notes{ margin:0; padding-left:20px; }
+  .help-steps li, .help-notes li{ font-size:12.5px; line-height:1.6; color:var(--ink-dim); margin:0 0 9px; }
+  .help-steps li::marker{ color:var(--accent); font-weight:700; }
+
+  /* place search box, top right of the map, just left of the layer control */
+  .map-search{
+    position:absolute; top:12px; right:54px; z-index:1000;
+    display:flex; align-items:center; gap:6px;
+    background:rgba(255,255,255,.94); backdrop-filter:blur(4px);
+    border:1px solid var(--line); border-radius:8px; padding:5px 6px 5px 10px;
+    box-shadow:0 6px 20px -8px #000;
+  }
+  .map-search .ic{ font-family:var(--mono); color:var(--ink-faint); font-size:13px; }
+  .map-search input{
+    width:210px; background:transparent; border:none; outline:none;
+    color:var(--ink); font-family:var(--ui); font-size:13px; padding:3px 2px;
+  }
+  .map-search input::placeholder{ color:var(--ink-faint); }
+  .map-search button{
+    font-family:var(--ui); font-size:12px; font-weight:600; color:#ffffff;
+    background:var(--accent); border:none; border-radius:5px; padding:6px 12px; cursor:pointer;
+  }
+  .map-search button:hover{ filter:brightness(1.08); }
+  .map-search button:disabled{ opacity:.6; cursor:default; }
+
+  /* editable, autoscaling project title, top center of the map */
+  .proj-title{
+    position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:1001;
+    max-width:460px; text-align:center;
+  }
+  .proj-title #projTitleText{
+    display:inline-block; max-width:100%; cursor:text; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    font-family:var(--ui); font-weight:700; letter-spacing:.4px; color:var(--ink);
+    background:rgba(255,255,255,.80); backdrop-filter:blur(4px);
+    border:1px solid var(--line); border-radius:8px; padding:5px 14px;
+    box-shadow:0 6px 20px -8px #000; transition:border-color .15s ease;
+  }
+  .proj-title #projTitleText:hover{ border-color:var(--accent); }
+  .proj-title-input{
+    font-family:var(--ui); font-weight:700; letter-spacing:.4px; text-align:center;
+    color:var(--ink); background:rgba(255,255,255,.96); border:1px solid var(--accent);
+    border-radius:8px; padding:5px 14px; outline:none; min-width:240px; max-width:440px;
+  }
+
+  /* grid + snap controls, top left under the Copy Map button, clear of the layer dropdown */
+
+  /* bottom-left how-to overlay, small and out of the way */
+  .howto{
+    position:absolute; left:12px; bottom:12px; z-index:900; max-width:300px;
+    font-size:10.5px; line-height:1.55; color:var(--ink-dim);
+    background:rgba(255,255,255,.82); backdrop-filter:blur(4px);
+    border:1px solid var(--line-soft); border-radius:7px; padding:9px 11px;
+    pointer-events:none;
+  }
+  .howto b{ color:var(--accent); font-weight:600; }
+  .howto-title{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:4px;
+  }
+
+  /* live material take off, bottom left of the map */
+  .corner-bl{
+    position:absolute; left:12px; bottom:12px; z-index:900;
+    display:flex; flex-direction:column; gap:10px; align-items:flex-start;
+  }
+  .mto{
+    min-width:200px; max-width:320px;
+    background:rgba(255,255,255,.88); backdrop-filter:blur(5px);
+    border:1px solid var(--line-soft); border-radius:8px; padding:10px 12px;
+  }
+  .mto-title{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:1.6px; text-transform:uppercase;
+    color:#5C5E66; margin-bottom:7px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .mto-copy{
+    background:transparent; border:1px solid var(--line-soft); border-radius:5px;
+    color:#5C5E66; font-size:13px; line-height:1; padding:2px 6px; cursor:pointer;
+    flex:0 0 auto; transition:.15s ease;
+  }
+  .mto-copy:hover{ border-color:var(--accent); color:var(--accent); }
+  .mto-copy.ok{ border-color:var(--green); color:var(--green); }
+  .mto-row{ display:flex; align-items:center; gap:9px; font-family:var(--mono); font-size:11px; margin:4px 0; }
+  .mto-swatch{ width:22px; height:4px; border-radius:2px; flex:0 0 auto; }
+  .mto-label{ color:var(--ink); flex:1; white-space:nowrap; }
+  .mto-len{ color:var(--accent); font-weight:600; white-space:nowrap; }
+  .mto-total{ display:flex; justify-content:space-between; gap:9px; margin-top:7px; padding-top:7px;
+    border-top:1px solid var(--line); font-family:var(--mono); font-size:11px; }
+  .mto-total span:first-child{ color:var(--ink-faint); letter-spacing:1px; }
+  .mto-total span:last-child{ color:var(--green); font-weight:700; }
+  .mto-empty{ color:var(--ink-faint); font-family:var(--mono); font-size:11px; }
+  #flowmto{ max-width:min(560px,46vw); overflow-x:auto; }
+  .fp-table{ border-collapse:collapse; font-family:var(--mono); font-size:10.5px; color:var(--ink); }
+  .fp-table th, .fp-table td{ padding:3px 8px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line-soft); }
+  .fp-table thead th{ color:#5C5E66; font-weight:600; border-bottom:1px solid var(--line); }
+  .fp-table th:first-child, .fp-table td.fp-type{ text-align:left; color:var(--ink); }
+  .fp-table .fp-sw{ display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:6px; vertical-align:middle; }
+  .fp-table tfoot td{ color:var(--green); font-weight:700; border-top:1px solid var(--line); border-bottom:none; }
+  .fp-table th.fp-mto, .fp-table td.fp-mto{ border-left:1px solid var(--line); color:var(--accent); font-weight:600; }
+  .fp-table tfoot td.fp-mto{ color:var(--green); }
+  .fp-table .fp-flow{ color:var(--accent); font-weight:600; margin-left:6px; }
+  .fp-table .fp-flow.na{ color:var(--ink-faint); font-weight:400; font-style:italic; }
+  .fp-table .fp-delrow th{ color:#3BA55C; font-weight:600; font-size:9.5px; border-bottom:none; padding-bottom:1px; }
+  .fp-table .fp-delrow th.fp-delh{ color:#2C7A47; letter-spacing:.3px; }
+
+  /* sidebar how-to text */
+  .howto-section p{ font-size:11px; line-height:1.55; color:var(--ink-dim); margin:0 0 8px; }
+  .howto-section p:last-child{ margin-bottom:0; }
+  .howto-section b{ color:var(--accent); font-weight:600; }
+
+  /* table header right side */
+  .tablehead-right{ display:flex; align-items:center; gap:14px; }
+
+  /* elevation callout pinned to end nodes (dark like the length labels) */
+  .leaflet-tooltip.elev-label{
+    background:rgba(255,255,255,.92); border:1px solid var(--green); color:#1E1F22;
+    font-family:var(--mono); font-size:11px; font-weight:600; padding:2px 7px;
+    border-radius:4px; box-shadow:none; white-space:nowrap;
+  }
+  .leaflet-tooltip.elev-label::before{ display:none; }
+
+  /* draggable lettered node markers (divIcon) */
+  .node-div{ background:transparent; border:none; }
+  .node-wrap{ width:30px; height:30px; display:flex; align-items:center; justify-content:center; position:relative; }
+  .node-wrap.sm{ width:18px; height:18px; }
+  .node-min{ width:8px; height:8px; border-radius:50%; background:#ffffff; border:1.5px solid #1E1F22; box-shadow:0 0 0 1px rgba(255,255,255,.3); }
+  .nd-head.sm{ width:18px; height:18px; }
+  .node-dot{
+    min-width:23px; height:23px; padding:0 3px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; box-sizing:border-box; line-height:1;
+    background:#f4f7fa; color:#1E1F22; font-family:var(--mono); font-weight:700; font-size:12px;
+    border:3px solid #6b7787; box-shadow:0 0 0 1px rgba(0,0,0,.45);
+  }
+  .node-dot.t-float { border-style:dashed; border-color:#80848E; }
+  .node-dot.t-inline{ border-color:#80848E; }
+  .node-dot.t-tee   { border-color:#80848E; }
+  .node-dot.t-end   { border-color:#80848E; }
+  .node-dot.f-poi   { border-color:#D83C3E; box-shadow:0 0 0 1px #1E1F22, 0 0 9px rgba(216,60,62,.7); }
+  .nd-head{
+    position:absolute; width:31px; height:31px; border-radius:50%;
+    border:2px dashed var(--accent); animation:headspin 6s linear infinite;
+  }
+  .nd-poi{
+    position:absolute; width:29px; height:29px; border-radius:7px;
+    border:2px solid #c77dff; box-shadow:0 0 8px rgba(199,125,255,.65);
+  }
+  @keyframes headspin{ to{ transform:rotate(360deg); } }
+  .node-div:hover .node-dot{ filter:brightness(1.04); }
+
+  /* flow direction arrows on pipes */
+  .flow-arrow{ background:transparent; border:none; }
+  .flow-arrow span{ display:block; transform-origin:50% 50%; }
+
+  /* simple material legend, bottom right of the live map */
+  .map-legend{
+    position:absolute; right:12px; bottom:44px; z-index:900;
+    background:rgba(255,255,255,.86); backdrop-filter:blur(4px);
+    border:1px solid var(--line-soft); border-radius:7px; padding:9px 11px;
+    font-family:var(--mono); font-size:11px; color:var(--ink);
+  }
+  .print-frame{
+    position:absolute; z-index:840; pointer-events:none;
+    border:1.5px dashed rgba(88,101,242,.95); border-radius:2px;
+    box-shadow:0 0 0 9999px rgba(30,31,34,.30);
+  }
+  .print-frame .pf-tag{
+    position:absolute; top:0; left:0;
+    background:rgba(88,101,242,.95); color:#ffffff;
+    font-family:var(--ui); font-size:10px; font-weight:700; letter-spacing:.5px;
+    padding:2px 7px; border-radius:1px 0 6px 0; white-space:nowrap;
+  }
+  .scale-bar{
+    position:absolute; right:12px; bottom:12px; z-index:901; pointer-events:none;
+    height:7px; border:2px solid #1E1F22; border-top:0;
+    box-shadow:0 0 0 1px rgba(0,0,0,.55); min-width:30px;
+  }
+  .scale-bar .sb-label{
+    position:absolute; right:0; bottom:9px;
+    font-family:var(--mono); font-size:11px; font-weight:700; color:#fff;
+    text-shadow:0 0 3px #000,0 0 3px #000,0 0 3px #000; white-space:nowrap;
+  }
+  .map-legend .ml-title{ font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:#5C5E66; margin-bottom:6px; }
+  .map-legend .ml-row{ display:flex; align-items:center; gap:9px; margin:5px 0; }
+  .map-legend .ml-swatch{ width:24px; height:5px; border-radius:3px; flex:0 0 auto; }
+
+  /* warning state on the status bar */
+  .statusbar.warn{ color:var(--danger); border-color:var(--danger); }
+  .statusbar.warn .pulse{ background:var(--danger); }
+
+  /* ---------- Context menu ---------- */
+  #ctxmenu{
+    position:fixed; z-index:3000; display:none;
+    background:var(--panel-2); border:1px solid var(--line);
+    border-radius:7px; box-shadow:0 12px 30px -8px #000; overflow:hidden;
+    min-width:160px;
+  }
+  #ctxmenu button{
+    display:flex; align-items:center; gap:9px; width:100%;
+    background:none; border:none; color:var(--ink); text-align:left;
+    font-family:var(--ui); font-size:12.5px; padding:9px 13px; cursor:pointer;
+  }
+  #ctxmenu button:hover{ background:var(--accent); color:#ffffff; }
+  #ctxmenu button.danger:hover{ background:var(--danger); color:#fff; }
+  #ctxmenu .menu-title{
+    padding:6px 13px; font-family:var(--mono); font-size:10px; letter-spacing:1px;
+    color:var(--ink-faint); border-bottom:1px solid var(--line-soft); text-transform:uppercase;
+  }
+
+  /* ---------- Leaflet overrides ---------- */
+  .leaflet-tooltip.len-label{
+    background:rgba(255,255,255,.9); border:1px solid var(--line); color:var(--ink);
+    font-family:var(--mono); font-size:11px; font-weight:500; padding:2px 7px;
+    border-radius:4px; box-shadow:none; white-space:nowrap;
+  }
+  .leaflet-tooltip.len-label.manual{ color:var(--accent); font-style:italic; border-color:var(--accent); }
+  .leaflet-tooltip.len-label::before{ display:none; }
+
+  /* de-colliding map callouts (length + elevation) */
+  .callout-icon{ background:transparent; border:none; }
+  .map-callout{
+    transform:translate(-50%,-50%); display:inline-block; white-space:nowrap;
+    font-family:var(--mono); font-size:11px; line-height:1; padding:3px 6px; border-radius:4px;
+    background:rgba(255,255,255,.9); color:var(--ink); border:1px solid #E3E5E8; box-shadow:0 1px 4px rgba(0,0,0,.4);
+  }
+  .map-callout .co-txt{ vertical-align:middle; }
+  .map-callout .co-rev{
+    vertical-align:middle; margin-left:7px; cursor:pointer;
+    background:rgba(255,176,0,.12); color:var(--accent); border:1px solid rgba(255,176,0,.45);
+    border-radius:3px; font-size:11px; line-height:1; padding:1px 4px; pointer-events:auto;
+  }
+  .map-callout .co-rev:hover{ background:var(--accent); color:#1E1F22; }
+  .map-callout .co-rev.on{ background:var(--accent); color:#1E1F22; border-color:var(--accent); }
+  .map-callout.node-callout{ cursor:move; text-align:left; padding:4px 7px; }
+  .map-callout.node-callout .nc-line{ line-height:1.45; }
+  .map-callout.node-callout .nc-line + .nc-line{ color:var(--ink-dim); }
+  .map-callout.pipe-callout{ text-align:left; padding:5px 8px; }
+  .map-callout.pipe-callout .pc-line{ line-height:1.5; }
+  .map-callout.pipe-callout .pc-line:nth-child(1){ color:var(--accent); font-weight:600; }
+  .map-callout.pipe-callout .pc-line:nth-child(2),
+  .map-callout.pipe-callout .pc-line:nth-child(3){ color:var(--ink-dim); }
+  .map-callout.pipe-callout .pc-foot{ margin-top:4px; padding-top:4px; border-top:1px solid #E3E5E8; }
+  .map-callout.manual{ color:var(--accent); border-color:var(--accent); font-style:italic; }
+  .map-callout.elev, .map-callout.flow{ color:var(--ink); border-color:#E3E5E8; }
+  .leaflet-tooltip.measure-label{
+    background:var(--accent); color:#ffffff; border:none; font-family:var(--mono);
+    font-weight:600; font-size:12px; padding:3px 9px; border-radius:4px;
+  }
+  .leaflet-popup-content-wrapper{ background:var(--panel-2); color:var(--ink); border:1px solid var(--line); border-radius:8px; }
+  .leaflet-popup-tip{ background:var(--panel-2); border:1px solid var(--line); }
+  .leaflet-popup-content{ font-family:var(--ui); margin:12px 14px; }
+  .leaflet-container a.leaflet-popup-close-button{ color:var(--ink-dim); }
+  .popup-node h3{ margin:0 0 8px; font-size:13px; letter-spacing:.5px; }
+  .popup-node .meta{ font-family:var(--mono); font-size:11px; color:var(--ink-dim); margin-bottom:10px; }
+  .popup-node label{ font-size:10.5px; letter-spacing:.5px; color:var(--ink-dim); text-transform:uppercase; display:block; margin-bottom:4px; }
+  .popup-node input{ width:140px; }
+  .popup-node .note{ font-size:11px; color:var(--ink-faint); margin-top:8px; line-height:1.5; }
+  .flow-roles{ display:flex; gap:5px; }
+  .flow-roles button{
+    flex:1; font-family:var(--ui); font-size:11px; font-weight:600; cursor:pointer;
+    color:var(--ink-dim); background:var(--panel-2); border:1px solid var(--line);
+    border-radius:5px; padding:5px 4px;
+  }
+  .flow-roles button:hover{ color:var(--ink); border-color:var(--line-strong); }
+  .flow-roles button.active{ color:#ffffff; background:var(--accent); border-color:var(--accent); }
+  .flow-roles button.active.in{ background:var(--green); border-color:var(--green); }
+  .flow-roles button.active.out{ background:var(--danger); border-color:var(--danger); }
+  .flow-default{ font-size:10.5px; color:var(--ink-faint); margin-top:6px; }
+  .flow-default b{ color:var(--ink-dim); }
+  .leaflet-control-attribution{ background:rgba(255,255,255,.7)!important; color:var(--ink-faint)!important; }
+  .leaflet-control-attribution a{ color:var(--ink-dim)!important; }
+  #map.white-base{ background:#ffffff !important; }
+  .leaflet-bar a{ background:var(--panel-2); color:var(--ink); border-bottom-color:var(--line); }
+  .leaflet-bar a:hover{ background:var(--accent-tint); }
+  .leaflet-control-layers{
+    background:var(--panel-2); color:var(--ink);
+    border:1px solid var(--line); border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,.45);
+  }
+  .leaflet-control-layers-toggle{ background-color:var(--panel-2); border-radius:8px; }
+  .leaflet-control-layers-expanded{ padding:9px 12px; font-family:var(--ui); font-size:12px; color:var(--ink); }
+  .leaflet-control-layers label{ display:flex; align-items:center; gap:7px; margin:4px 0; white-space:nowrap; cursor:pointer; }
+  .leaflet-control-layers-selector{ accent-color:var(--accent); }
+
+  /* hidden file input */
+  #fileInput{ display:none; }
+  .filechip{
+    display:inline-flex; align-items:center; gap:6px; margin-left:4px;
+    font-family:var(--mono); font-size:11px; color:var(--ink-dim);
+    padding:5px 9px; border:1px solid var(--line); border-radius:6px; background:var(--panel-2);
+    max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .filechip.dirty{ color:var(--accent); border-color:var(--accent); }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:880px){
+    .body{ grid-template-columns:1fr; grid-template-rows:auto 1fr; }
+    aside.sidebar{ max-height:none; border-right:0; border-bottom:1px solid var(--line); }
+    .brand{ min-width:0; }
+    .brand small{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ TOP BAR ============ -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1>Pipeline Routing</h1>
+        <small>SITE PLANNING . WGS84</small>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="tool-group">
+        <button class="btn" id="btnDraw"><span class="ic">/</span> Draw Pipe <span class="hotkey">P</span></button>
+        <button class="btn" id="btnMeasure"><span class="ic">&#8596;</span> Measure <span class="hotkey">M</span></button>
+        <button class="btn" id="btnFit" onclick="try{fitToData()}catch(e){}" title="Zoom to the extent of the pipes drawn"><span class="ic">&#9974;</span> Zoom to pipes</button>
+      </div>
+      <div class="tool-group">
+        <button class="btn" id="btnUndo"><span class="ic">&#8630;</span> Undo</button>
+        <button class="btn" id="btnRedo"><span class="ic">&#8631;</span> Redo</button>
+      </div>
+      <div class="tool-group">
+        <button class="btn" id="btnNew"><span class="ic">&#9633;</span> New</button>
+        <button class="btn" id="btnSave"><span class="ic">&#8595;</span> Save</button>
+        <button class="btn" id="btnSaveAs"><span class="ic">&#8615;</span> Save As</button>
+        <button class="btn" id="btnLoad"><span class="ic">&#8593;</span> Open</button>
+        <span class="filechip" id="fileChip">Untitled</span>
+      </div>
+      <div class="tool-group">
+        <button class="btn" id="btnHelp"><span class="ic">&#9432;</span> Help</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ BODY ============ -->
+  <div class="body">
+
+    <!-- ---- SIDEBAR ---- -->
+    <aside class="sidebar">
+      <div class="section">
+        <h2>Pipe Specification</h2>
+        <div class="field">
+          <label for="selMaterial">Material</label>
+          <select id="selMaterial"></select>
+        </div>
+        <div class="field">
+          <label for="selRating">Rating</label>
+          <select id="selRating"></select>
+        </div>
+        <div class="field">
+          <label for="selSize">Nominal Diameter</label>
+          <select id="selSize"></select>
+        </div>
+        <div class="swatch-row">
+          <div class="swatch" id="specSwatch"></div>
+          <span>Active drawing colour</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ---- MAP + TABLE ---- -->
+    <div class="main">
+      <div class="mapwrap">
+        <div id="map"></div>
+        <div class="print-frame" id="printFrame"><span class="pf-tag">A3 LANDSCAPE PRINT AREA</span></div>
+        <div class="scale-bar" id="scaleBar"><span class="sb-label"></span></div>
+        <div class="statusbar" id="statusbar"><span class="pulse"></span><span id="statusText"></span></div>
+
+        <div class="proj-title" id="projTitle"></div>
+
+        <div class="map-search">
+          <span class="ic">&#9906;</span>
+          <input id="searchInput" type="text" placeholder="Search a place or address..." autocomplete="off" />
+          <button id="searchBtn">Go</button>
+        </div>
+
+        <button class="map-btn" id="btnCopyMap"><span class="ic">&#9113;</span> Copy Map Image</button>
+
+        <div class="callout-tools" id="calloutTools">
+          <div class="ct-title">Callouts</div>
+          <label class="ct-check"><input type="checkbox" id="coTgl_size" checked /> Pipe size</label>
+          <label class="ct-check"><input type="checkbox" id="coTgl_spec" checked /> Pipe spec</label>
+          <label class="ct-check"><input type="checkbox" id="coTgl_flow" checked /> Flow rate</label>
+          <label class="ct-check"><input type="checkbox" id="coTgl_vel" checked /> Velocity</label>
+          <label class="ct-check"><input type="checkbox" id="coTgl_elev" checked /> Elevation</label>
+          <label class="ct-check"><input type="checkbox" id="coTgl_length" checked /> Length</label>
+        </div>
+
+        <div class="corner-bl">
+          <div class="mto" id="flowmto" style="display:none">
+            <div class="mto-title"><span>Flow Path Summary</span><button class="mto-copy" id="flowCopyBtn" title="Copy table to clipboard" aria-label="Copy table">&#10697;</button></div>
+            <div class="mto-body" id="flowmtoBody"></div>
+          </div>
+        </div>
+
+        <div class="map-legend" id="mapLegend">
+          <div class="ml-title">Materials</div>
+          <div class="ml-row"><span class="ml-swatch" style="background:#36b0ff"></span> PE100</div>
+          <div class="ml-row"><span class="ml-swatch" style="background:#ff7a3d"></span> Carbon Steel</div>
+        </div>
+      </div>
+
+      <div class="tablepanel" id="tablePanel">
+        <div class="table-resizer" id="tableResizer" title="Drag to resize"></div>
+        <div class="table-scroll" id="tableScroll">
+          <div id="tablesContainer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="ctxmenu"></div>
+
+<div class="help-overlay" id="helpOverlay" hidden>
+  <div class="help-panel" role="dialog" aria-label="Help">
+    <button class="help-close" id="helpClose" aria-label="Close">&times;</button>
+    <div class="help-h">How to use</div>
+    <ol class="help-steps">
+      <li>Pick a material, rating and diameter under Pipe Specification. This sets the active drawing colour.</li>
+      <li>Press Draw Pipe (P). Click the map to drop nodes, click an existing node to branch a tee (up to three connections). Hold Shift to lock a segment to 15 degree steps. Right click finishes a run, Esc returns to the hand.</li>
+      <li>With the hand tool, click an end node to set its elevation and mark it Flow In or Flow Out with a flow rate. Right click an intermediate node to mark it a Point of Interest, a deliberate break in the flow.</li>
+      <li>The tool letters the consequential nodes, balances the flow through the network, and works out each pipe velocity from the catalogue bore.</li>
+      <li>Use the Callouts panel at the top left of the map, and the per element table under the map, to choose exactly what each callout shows.</li>
+      <li>Press Copy Map Image to place an A3 ready figure on the clipboard.</li>
+    </ol>
+    <div class="help-h">Good to know</div>
+    <ul class="help-notes">
+      <li>Drag a node to move it. Drag a node callout to reposition it for a clean printout. Right click a pipe to reverse its flow direction or delete it.</li>
+      <li>Deleting an inline node between two identical pipes merges them. If the two specs differ it leaves a gap.</li>
+      <li>Pan by left dragging with the hand, or by holding the middle mouse button in any tool. Zoom with the wheel.</li>
+      <li>Pipe lengths follow the map unless you enter a manual length. Auto elevations come from an online terrain service.</li>
+      <li>Velocity uses v = Q / A, with the internal bore read from the PE SDR and carbon steel schedule charts.</li>
+      <li>Save writes a project file you can reopen later. Your callout choices are stored inside it.</li>
+    </ul>
+  </div>
+</div>
+<input type="file" id="fileInput" accept="application/json,.json" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* =====================================================================
+   1. HARDCODED PIPE SPECIFICATIONS
+   Rating list depends on material. Size list depends on material + rating.
+   ===================================================================== */
+const SPECS = {
+  "PE100": {
+    color: "#36b0ff",
+    ratings: ["PN6.3","PN8","PN10","PN12.5","PN16","PN20","PN25"],
+    // outside diameter (mm) series, common to all PN classes for PE100
+    sizes: ["DN20","DN25","DN32","DN40","DN50","DN63","DN75","DN90","DN110",
+            "DN125","DN140","DN160","DN180","DN200","DN225","DN250","DN280",
+            "DN315","DN355","DN400","DN450","DN500","DN560","DN630"]
+  },
+  "Carbon Steel": {
+    color: "#ff7a3d",
+    ratings: ["SCH 10","SCH 40","SCH 80","SCH 160","SCH XS","SCH XXS"],
+    // metric nominal diameter (DN) series for steel pipe
+    sizes: ["DN15","DN20","DN25","DN40","DN50","DN65","DN80","DN100","DN150",
+            "DN200","DN250","DN300","DN350","DN400","DN450","DN500","DN600"]
+  }
+};
+
+/* true outside diameter (mm), used to scale line weight on the map */
+// steel: DN nominal bore differs from OD, so map each DN to its real OD
+const STEEL_OD = {
+  'DN15':21.3,'DN20':26.7,'DN25':33.4,'DN40':48.3,'DN50':60.3,'DN65':73.0,
+  'DN80':88.9,'DN100':114.3,'DN150':168.3,'DN200':219.1,'DN250':273.0,
+  'DN300':323.9,'DN350':355.6,'DN400':406.4,'DN450':457.2,'DN500':508.0,'DN600':609.6
+};
+function sizeToOD(material, size){
+  if(material==='Carbon Steel') return STEEL_OD[size] || 114;
+  const m = /DN(\d+)/.exec(size);   // PE100: DN is the outside diameter
+  return m ? parseFloat(m[1]) : 110;
+}
+// pipe line weight: NOT scaled by diameter. A constant thin line tuned to about 0.5 mm on an
+// A3 print (the print rect spans 420 mm), with a floor so it stays visible on screen.
+function pipeWeightPx(){
+  const r = printRect();
+  return Math.max(1.6, r.w/840);    // r.w css px == 420 mm, so r.w/840 css px == 0.5 mm
+}
+function weightForSize(){ return pipeWeightPx(); }
+
+/* =====================================================================
+   INTERNAL BORE + VELOCITY
+   PE100 mean I.D. by DN and SDR (Vinidex AS/NZS 4130 matrix); PN -> SDR.
+   Carbon steel bore = OD - 2*wall, walls from ASME B36.10M schedule chart.
+   ===================================================================== */
+// PE100 mean I.D. (mm), columns = PN6.3, PN8, PN10, PN12.5, PN16, PN20, PN25
+const PE_ID = {
+  'DN20':[17,17,17,17,16,15,14],'DN25':[22,22,22,21,20,19,18],'DN32':[29,29,28,27,26,24,23],
+  'DN40':[37,36,35,34,32,31,28],'DN50':[46,45,44,42,40,38,35],'DN63':[58,57,55,53,51,48,45],
+  'DN75':[69,67,66,63,61,58,53],'DN90':[83,81,78,76,73,69,65],'DN110':[101,99,96,93,89,84,78],
+  'DN125':[115,113,110,106,101,96,89],'DN140':[129,126,123,118,114,108,99],'DN160':[148,144,140,136,130,123,114],
+  'DN180':[166,163,158,153,145,138,128],'DN200':[184,180,175,170,162,154,143],'DN225':[207,203,198,191,183,173,161],
+  'DN250':[230,225,219,212,203,192,179],'DN280':[258,253,246,238,228,215,200],'DN315':[290,285,278,268,256,242,226],
+  'DN355':[328,320,311,301,289,273,255],'DN400':[370,362,351,340,326,307,287],'DN450':[415,406,395,382,366,347,322],
+  'DN500':[462,452,440,424,407,385,360],'DN560':[518,506,494,475,455,431,403],'DN630':[582,570,554,535,512,485,454]
+};
+const PE_PN_INDEX = {'PN6.3':0,'PN8':1,'PN10':2,'PN12.5':3,'PN16':4,'PN20':5,'PN25':6};
+// carbon steel wall thickness (mm) by DN and schedule
+const STEEL_WALL = {
+  'DN15':{'10':2.11,'40':2.77,'80':3.73,'160':4.78,'XS':3.73,'XXS':7.47},
+  'DN20':{'10':2.11,'40':2.87,'80':3.91,'160':5.56,'XS':3.91,'XXS':7.82},
+  'DN25':{'10':2.77,'40':3.38,'80':4.55,'160':6.35,'XS':4.55,'XXS':9.09},
+  'DN40':{'10':2.77,'40':3.68,'80':5.08,'160':7.14,'XS':5.08,'XXS':10.15},
+  'DN50':{'10':2.77,'40':3.91,'80':5.54,'160':8.74,'XS':5.54,'XXS':11.07},
+  'DN65':{'10':3.05,'40':5.16,'80':7.01,'160':9.53,'XS':7.01,'XXS':14.02},
+  'DN80':{'10':3.05,'40':5.49,'80':7.62,'160':11.13,'XS':7.62,'XXS':15.24},
+  'DN100':{'10':3.05,'40':6.02,'80':8.56,'160':13.49,'XS':8.56,'XXS':17.12},
+  'DN150':{'10':3.40,'40':7.11,'80':10.97,'160':18.26,'XS':10.97,'XXS':21.95},
+  'DN200':{'10':6.35,'40':8.18,'80':12.70,'160':23.01,'XS':12.70,'XXS':22.23},
+  'DN250':{'10':6.35,'40':9.27,'80':15.09,'160':28.58,'XS':12.70,'XXS':25.40},
+  'DN300':{'10':6.35,'40':10.31,'80':17.48,'160':33.32,'XS':12.70,'XXS':25.40},
+  'DN350':{'10':7.92,'40':11.13,'80':19.05,'160':35.71,'XS':12.70},
+  'DN400':{'10':6.35,'40':12.70,'80':21.44,'160':40.49,'XS':12.70},
+  'DN450':{'10':6.35,'40':14.27,'80':23.83,'160':45.24,'XS':12.70},
+  'DN500':{'10':6.35,'40':15.09,'80':26.19,'160':50.01,'XS':12.70},
+  'DN600':{'10':6.35,'40':17.48,'80':30.96,'160':59.54,'XS':12.70}
+};
+function steelSchKey(rating){ return (rating||'').replace(/^SCH\s*/,'').toUpperCase(); }
+// internal bore in mm, or null if the combination is not catalogued
+function innerDiameter(material, size, rating){
+  if(material==='PE100'){
+    const row=PE_ID[size]; const i=PE_PN_INDEX[rating];
+    return (row && i!=null) ? row[i] : null;
+  }
+  if(material==='Carbon Steel'){
+    const od=STEEL_OD[size]; const w=STEEL_WALL[size] && STEEL_WALL[size][steelSchKey(rating)];
+    return (od && w!=null) ? (od - 2*w) : null;
+  }
+  return null;
+}
+// mean flow velocity (m/s) from volumetric flow (m3/h); null if bore or flow unknown
+function pipeVelocity(p, q){
+  if(q==null || isNaN(q) || q<=0) return null;
+  const id=innerDiameter(p.material, p.size, p.rating); if(!id) return null;
+  const area=Math.PI/4*Math.pow(id/1000,2);            // m2
+  return (Math.abs(q)/3600)/area;                       // m/s
+}
+function fmtVel(v){ return (v>=10?v.toFixed(1):v.toFixed(2))+' m/s'; }
+// friendly material name for the concatenated pipe spec, e.g. "poly - PN10"
+function friendlyMat(m){ return m==='PE100' ? 'poly' : m==='Carbon Steel' ? 'steel' : m; }
+function pipeSpecText(p){ return friendlyMat(p.material)+' - '+p.rating; }
+
+/* callout visibility: global master toggles + per-element overrides */
+const CO_TYPES = ['size','spec','flow','vel','elev','length'];
+const coShow = { size:true, spec:true, flow:true, vel:true, elev:true, length:true };
+let coCell = {};   // coCell[elementId] = { type:false, ... }   (absent => shown)
+function coOn(id, type){
+  if(!coShow[type]) return false;
+  const c=coCell[id];
+  return !(c && c[type]===false);
+}
+
+/* =====================================================================
+   2. PROJECT STATE
+   nodes:  id -> { id, lat, lng, elevation }
+   pipes:  id -> { id, a, b, material, rating, size, manualLength }
+   ===================================================================== */
+let state = { nodes:{}, pipes:{}, nNode:0, nPipe:0 };
+
+const undoStack = [];
+const redoStack = [];
+const HISTORY_CAP = 80;
+
+function serialize(){
+  return JSON.stringify({
+    nodes:Object.values(state.nodes),
+    pipes:Object.values(state.pipes),
+    nNode:state.nNode, nPipe:state.nPipe
+  });
+}
+function restore(json){
+  const d = JSON.parse(json);
+  state.nodes = {}; state.pipes = {};
+  d.nodes.forEach(n => state.nodes[n.id] = n);
+  d.pipes.forEach(p => state.pipes[p.id] = p);
+  state.nNode = d.nNode; state.nPipe = d.nPipe;
+  current = null;
+  render();
+}
+function captureUndo(){
+  undoStack.push(serialize());
+  if(undoStack.length > HISTORY_CAP) undoStack.shift();
+  redoStack.length = 0;
+  syncUndoButtons();
+  markDirty();
+}
+// run a gesture, recording undo only if it actually changed the project
+function withUndo(fn){
+  const before = serialize();
+  fn();
+  if(serialize()!==before){
+    undoStack.push(before);
+    if(undoStack.length > HISTORY_CAP) undoStack.shift();
+    redoStack.length = 0;
+    syncUndoButtons();
+    markDirty();
+  }
+}
+function doUndo(){
+  if(!undoStack.length) return;
+  redoStack.push(serialize());
+  restore(undoStack.pop());
+  markDirty();
+  syncUndoButtons();
+}
+function doRedo(){
+  if(!redoStack.length) return;
+  undoStack.push(serialize());
+  restore(redoStack.pop());
+  markDirty();
+  syncUndoButtons();
+}
+function syncUndoButtons(){
+  document.getElementById('btnUndo').disabled = undoStack.length===0;
+  document.getElementById('btnRedo').disabled = redoStack.length===0;
+}
+
+/* =====================================================================
+   3. MAP SETUP (satellite via Esri World Imagery, no API key)
+   ===================================================================== */
+const map = L.map('map', { zoomControl:false, doubleClickZoom:false, boxZoom:false, attributionControl:false, maxZoom:23 })
+            .setView([-31.953, 115.857], 16);
+map.boxZoom.disable();   // shift drag is repurposed for orthogonal drawing, not zoom
+
+// The "map data not yet available" tile is served by the imagery PROVIDER for tiles
+// it has not captured at that zoom in that area. It is not a Leaflet limitation, so
+// switching mapping libraries would not change it. The cure is the tile source plus
+// maxNativeZoom: cap the highest tile actually requested and upscale (a little soft)
+// beyond it, and offer a provider with deeper global coverage.
+
+// Google imagery reaches deepest almost everywhere and over zooms gracefully -> default.
+// (No crossOrigin so it always displays; its tiles taint the canvas, so a copy-map while
+// this layer is active falls back to the clean schematic. Use a crossOrigin layer below
+// for a clean photo export.)
+const googleSat = L.tileLayer(
+  'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+  { subdomains:['0','1','2','3'], maxNativeZoom:21, maxZoom:23, keepBuffer:4 }
+);
+// Same Google imagery but requested cross origin, so the copy-map image is clean IF the
+// provider allows it. If tiles ever appear blank, the provider is blocking it; switch back.
+const googleSatX = L.tileLayer(
+  'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+  { subdomains:['0','1','2','3'], maxNativeZoom:21, maxZoom:23, keepBuffer:4, crossOrigin:'anonymous' }
+);
+// Esri imagery is CORS clean, so the copy map image keeps its satellite background.
+const esriSat = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  { maxNativeZoom:18, maxZoom:23, crossOrigin:true, keepBuffer:4 }
+);
+// Esri "Clarity" is a sharper World Imagery build, also CORS clean -> crisp clean exports.
+const esriClarity = L.tileLayer(
+  'https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  { maxNativeZoom:19, maxZoom:23, crossOrigin:true, keepBuffer:4 }
+);
+// Blank white drafting background (no tiles).
+const blankBase = L.layerGroup();
+
+googleSatX.addTo(map);     // default base (clean export capable)
+
+L.control.layers(
+  {
+    'Satellite (Google, deepest)':googleSat,
+    'Satellite (Google, clean export)':googleSatX,
+    'Satellite (Esri Clarity, sharp)':esriClarity,
+    'Satellite (Esri)':esriSat,
+    'Blank (white)':blankBase
+  },
+  null, { position:'topright', collapsed:true }
+).addTo(map);
+map.on('baselayerchange', (e)=>{
+  map.getContainer().classList.toggle('white-base', e.layer===blankBase);
+});
+
+// Layer groups, rebuilt on every render. Order sets stacking (later = on top).
+const glowLayer  = L.layerGroup().addTo(map);   // soft highlight under pipes
+const pipeLayer  = L.layerGroup().addTo(map);
+const arrowLayer = L.layerGroup().addTo(map);   // flow direction arrows
+const labelLayer = L.layerGroup().addTo(map);
+const nodeLayer  = L.layerGroup().addTo(map);
+const measureLayer = L.layerGroup().addTo(map);
+const previewLayer = L.layerGroup().addTo(map);   // live preview of the segment being drawn
+
+// (graph-paper grid feature removed)
+function snapLatLng(ll){ return ll; }
+
+/* =====================================================================
+   4. GEOMETRY  -  Haversine on the WGS84 sphere (metres)
+   ===================================================================== */
+const R_EARTH = 6378137; // WGS84 equatorial radius (m)
+function haversine(lat1,lng1,lat2,lng2){
+  const toRad = d => d*Math.PI/180;
+  const dLat = toRad(lat2-lat1), dLng = toRad(lng2-lng1);
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+  return 2*R_EARTH*Math.asin(Math.sqrt(a));
+}
+function calcLength(p){
+  const a = state.nodes[p.a], b = state.nodes[p.b];
+  if(!a||!b) return 0;
+  return haversine(a.lat,a.lng,b.lat,b.lng);
+}
+function pipeLength(p){
+  return (p.manualLength!=null) ? p.manualLength : calcLength(p);
+}
+// round to 3 significant figures and drop trailing zeros (1234 -> 1230, 12.99 -> 13)
+function sig3(x){
+  if(x===0 || !isFinite(x)) return 0;
+  return parseFloat(Number(x).toPrecision(3));
+}
+function fmt(m){ return Math.round(m)+' m'; }
+
+/* =====================================================================
+   5. NODE TOPOLOGY HELPERS
+   ===================================================================== */
+function degree(nodeId){
+  let d=0;
+  for(const id in state.pipes){
+    const p = state.pipes[id];
+    if(p.a===nodeId) d++;
+    if(p.b===nodeId) d++;
+  }
+  return d;
+}
+function isEndNode(nodeId){ return degree(nodeId)===1; }
+
+function pipeExists(a,b){
+  for(const id in state.pipes){
+    const p = state.pipes[id];
+    if((p.a===a&&p.b===b)||(p.a===b&&p.b===a)) return true;
+  }
+  return false;
+}
+
+/* ---- node lettering (A, B ... Z, AA, AB ...) by creation order ---- */
+function idNum(id){ return parseInt(id.slice(1),10) || 0; }
+function letterIndexToStr(i){
+  let s=''; i++;
+  while(i>0){ const r=(i-1)%26; s=String.fromCharCode(65+r)+s; i=Math.floor((i-1)/26); }
+  return s;
+}
+// do the two pipes meeting at an inline node differ in material, rating, or size?
+function nodeSpecsDiffer(id){
+  const a=adjacency()[id]||[]; if(a.length!==2) return false;
+  const p1=state.pipes[a[0].pipe], p2=state.pipes[a[1].pipe]; if(!p1||!p2) return false;
+  return p1.material!==p2.material || p1.rating!==p2.rating || p1.size!==p2.size;
+}
+// a node earns a letter only if it matters: an end, a tee, a point of interest,
+// or an inline node where the pipe spec changes. plain inline bends stay unlettered.
+function isLettered(id){
+  const d=degree(id);
+  if(d!==2) return true;
+  if(!!state.nodes[id].poi) return true;
+  return nodeSpecsDiffer(id);
+}
+function buildLetters(){
+  const ids = Object.keys(state.nodes).sort((a,b)=>idNum(a)-idNum(b));
+  const map={}; let i=0;
+  ids.forEach(id=>{ if(isLettered(id)){ map[id]=letterIndexToStr(i); i++; } });
+  return map;
+}
+
+/* ---- graph + flow path analysis ---- */
+
+// effective flow role. explicit setting wins. otherwise the earliest end node is
+// assumed to be the source (Flow In) and every other end node a sink (Flow Out).
+function hasExplicitIn(){
+  for(const id in state.nodes) if(degree(id)===1 && state.nodes[id].flow==='in') return true;
+  return false;
+}
+function defaultInNode(){
+  if(hasExplicitIn()) return null;              // a manual source already exists
+  let best=null;
+  for(const id in state.nodes){
+    if(degree(id)!==1) continue;
+    if(state.nodes[id].flow==='out') continue;  // explicitly a sink, cannot be the assumed source
+    if(best===null || idNum(id)<idNum(best)) best=id;
+  }
+  return best;
+}
+function effFlow(id){
+  const n=state.nodes[id]; if(!n) return null;
+  if(n.flow==='in' || n.flow==='out') return n.flow;   // manual override
+  if(degree(id)!==1) return null;                       // only end nodes carry flow
+  return (id===defaultInNode()) ? 'in' : 'out';         // assumed default
+}
+
+function adjacency(){
+  const adj={}; for(const id in state.nodes) adj[id]=[];
+  for(const pid in state.pipes){
+    const p=state.pipes[pid];
+    if(!state.nodes[p.a]||!state.nodes[p.b]) continue;
+    adj[p.a].push({node:p.b,pipe:pid}); adj[p.b].push({node:p.a,pipe:pid});
+  }
+  return adj;
+}
+function findPath(adj,start,goal){
+  const prev={}, prevPipe={}, vis={[start]:true}, q=[start];
+  while(q.length){
+    const u=q.shift(); if(u===goal) break;
+    for(const e of adj[u]) if(!vis[e.node]){ vis[e.node]=true; prev[e.node]=u; prevPipe[e.node]=e.pipe; q.push(e.node); }
+  }
+  if(!vis[goal]) return null;
+  const nodes=[goal], pipes=[]; let cur=goal;
+  while(cur!==start){ pipes.unshift(prevPipe[cur]); cur=prev[cur]; nodes.unshift(cur); }
+  return {nodes,pipes};
+}
+// flow paths: a route between consecutive "break" nodes following the network.
+// breaks are flow-in ends, flow-out ends, and points of interest. A point of
+// interest is an intermediate node that splits flow, so you get the run TO it
+// and FROM it rather than straight through it.
+function flowPaths(){
+  const letters=buildLetters(), adj=adjacency(), dir=flowDirections();
+  const isPOI = id => !!state.nodes[id].poi && degree(id)>=2;
+  const ins=[], outs=[], breakSet=new Set();
+  for(const id in state.nodes){
+    const end = degree(id)===1, f=effFlow(id);
+    if(end && f==='in'){ ins.push(id); breakSet.add(id); }
+    else if(end && f==='out'){ outs.push(id); breakSet.add(id); }
+    if(isPOI(id)){ ins.push(id); outs.push(id); breakSet.add(id); }   // both a sink (to) and a source (from)
+  }
+  const paths=[], used=new Set(), seen=new Set();
+  ins.sort((a,b)=>idNum(a)-idNum(b)).forEach(i=>
+    outs.sort((a,b)=>idNum(a)-idNum(b)).forEach(o=>{
+      if(i===o) return;
+      const path=findPath(adj,i,o); if(!path || !path.pipes.length) return;
+      for(let k=1;k<path.nodes.length-1;k++) if(breakSet.has(path.nodes[k])) return;  // no break in the middle
+      // every segment must run with the flow direction (drops backward routes through a tee in loops)
+      const withFlow = path.pipes.every((pid,k)=>{ const d=dir[pid]; return !d || d.from===path.nodes[k]; });
+      if(!withFlow) return;
+      const key=path.pipes.slice().sort().join(','); if(seen.has(key)) return; seen.add(key);
+      const segments=path.pipes.map((pid,k)=>{
+        const f=path.nodes[k], t=path.nodes[k+1]; used.add(pid);
+        return { pipeId:pid, from:f, to:t, code:letters[f]+letters[t] };
+      });
+      paths.push({ id:'F'+letters[i]+letters[o], name:'Flow '+letters[i]+letters[o], inId:i, outId:o, segments });
+    })
+  );
+  const unassigned=[]; for(const pid in state.pipes) if(!used.has(pid)) unassigned.push(pid);
+  return { paths, unassigned, letters };
+}
+// orient each pipe away from the nearest flow-in source (multi source BFS)
+function flowDirections(){
+  const adj=adjacency(); const ins=[];
+  for(const id in state.nodes) if(degree(id)===1 && effFlow(id)==='in') ins.push(id);
+  const dist={}, q=[]; ins.forEach(i=>{ dist[i]=0; q.push(i); });
+  while(q.length){ const u=q.shift(); for(const e of adj[u]) if(dist[e.node]===undefined){ dist[e.node]=dist[u]+1; q.push(e.node); } }
+  const dir={};
+  for(const pid in state.pipes){
+    const p=state.pipes[pid];
+    if(p.dir==='ab'){ dir[pid]={from:p.a,to:p.b}; continue; }   // manual override (user reversed it)
+    if(p.dir==='ba'){ dir[pid]={from:p.b,to:p.a}; continue; }
+    const da=dist[p.a], db=dist[p.b];
+    if(da===undefined && db===undefined) dir[pid]=null;
+    else if(da===undefined) dir[pid]={from:p.b,to:p.a};
+    else if(db===undefined) dir[pid]={from:p.a,to:p.b};
+    else dir[pid] = (da<=db) ? {from:p.a,to:p.b} : {from:p.b,to:p.a};
+  }
+  return dir;
+}
+// flip a pipe's flow direction (records an explicit override so the balance and summary follow it)
+function reversePipe(pid){
+  const p=state.pipes[pid]; if(!p) return;
+  const d=flowDirections()[pid];
+  captureUndo();
+  if(d){ p.dir = (d.from===p.a) ? 'ba' : 'ab'; }
+  else  { p.dir = (p.dir==='ab') ? 'ba' : 'ab'; }   // no flow context yet: just toggle
+  render();
+}
+
+// format a flow rate (m3/h): trim to at most 2 decimals, drop trailing zeros
+function fmtFlow(v){ if(v==null || isNaN(v)) return ''; return (+(+v).toFixed(2)).toString(); }
+
+// Mass balance: solve the flow in every pipe from the flow rates entered at end nodes.
+// Demand is entered at flow-out (sink) end nodes; supply at the flow-in (source) end node
+// can be entered or left to be assumed. Conservation at each junction then fills the rest:
+// a known inflow minus the known branches gives the unknown branch, and known branches sum
+// to the inflow. Returns pipeId -> flow (m3/h) or null when undetermined.
+function computeFlows(){
+  const dir=flowDirections(), adj=adjacency(), flow={};
+  for(const pid in state.pipes) flow[pid]=null;
+  // seed: an end node with a stated rate fixes the flow in its single pipe
+  for(const id in state.nodes){
+    if(degree(id)!==1) continue;
+    const r=state.nodes[id].flowRate;
+    if(r==null || isNaN(r)) continue;
+    const inc=adj[id]; if(inc.length) flow[inc[0].pipe]=r;
+  }
+  // seed: a point of interest with a stated through-flow fixes the flow in both of its legs,
+  // so the upstream tee then splits by conservation (e.g. two heat exchangers off one supply main)
+  for(const id in state.nodes){
+    const n=state.nodes[id];
+    if(!n.poi || degree(id)!==2) continue;
+    const r=n.flowRate;
+    if(r==null || isNaN(r)) continue;
+    for(const e of adj[id]){ if(dir[e.pipe]) flow[e.pipe]=r; }   // both legs carry the through-flow
+  }
+  // propagate conservation at junctions until nothing else can be resolved
+  let changed=true, guard=0;
+  while(changed && guard++<2000){
+    changed=false;
+    for(const id in state.nodes){
+      if(degree(id)<2) continue;                 // conservation is applied at junctions
+      const inc=adj[id]; let known=0, unk=null, unkCount=0, bad=false;
+      for(const e of inc){
+        const d=dir[e.pipe]; if(!d){ bad=true; break; }
+        const sign=(d.to===id)?1:-1;             // +1 flowing into the node, -1 leaving it
+        if(flow[e.pipe]==null){ unkCount++; unk={pipe:e.pipe, sign}; }
+        else known += sign*flow[e.pipe];
+      }
+      if(bad || unkCount!==1) continue;          // solvable only when one branch is unknown
+      flow[unk.pipe] = -known/unk.sign;          // sum of signed flows at a junction is zero
+      changed=true;
+    }
+  }
+  return flow;
+}
+// the rate the system would use at an end node (its single pipe flow), or null
+function inferredRate(id){
+  if(degree(id)!==1) return null;
+  const inc=adjacency()[id]; if(!inc.length) return null;
+  const v=computeFlows()[inc[0].pipe];
+  return (v==null || isNaN(v)) ? null : v;
+}
+// the through-flow at a point of interest (the equal flow in its two legs), or null
+function inferredThrough(id){
+  if(degree(id)!==2) return null;
+  const inc=adjacency()[id]; if(inc.length<2) return null;
+  const f=computeFlows();
+  for(const e of inc){ const v=f[e.pipe]; if(v!=null && !isNaN(v)) return Math.abs(v); }
+  return null;
+}
+// flow callout text for a point of interest ("14 m\u00b3/h" or assumed "16 m\u00b3/h (auto)"), or null
+function poiFlowText(id){
+  const n=state.nodes[id]; if(!n) return null;
+  if(n.flowRate!=null) return fmtFlow(n.flowRate)+' m\u00b3/h';
+  const inf=inferredThrough(id);
+  return (inf==null) ? null : (fmtFlow(inf)+' m\u00b3/h (auto)');
+}
+
+/* ---- auto elevation from an online elevation lookup (open-meteo, no key) ---- */
+const autoElevCache = {};      // coordKey -> metres (or null if lookup failed)
+const _elevPending  = {};
+function coordKey(n){ return n.lat.toFixed(5)+','+n.lng.toFixed(5); }
+function autoElevation(id){
+  const n=state.nodes[id]; if(!n) return null;
+  const k=coordKey(n);
+  if(k in autoElevCache) return autoElevCache[k];
+  if(!_elevPending[k]){
+    _elevPending[k]=true;
+    fetch('https://api.open-meteo.com/v1/elevation?latitude='+n.lat+'&longitude='+n.lng)
+      .then(r=>r.json())
+      .then(j=>{ autoElevCache[k] = (j && j.elevation && j.elevation.length!=null) ? j.elevation[0] : null;
+                 delete _elevPending[k]; scheduleLabels(); })
+      .catch(()=>{ autoElevCache[k]=null; delete _elevPending[k]; });
+  }
+  return null;   // not ready yet
+}
+// elevation callout text for an end node ("2 m EL" or auto "2 m EL (auto)"), or null
+function elevText(id){
+  const n=state.nodes[id]; if(!n) return null;
+  if(n.elevation!=null) return sig3(n.elevation)+' m EL';
+  const a=autoElevation(id);
+  return (a==null) ? null : (sig3(a)+' m EL (auto)');
+}
+// flow callout text for an end node ("10 m\u00b3/h IN" or assumed "16 m\u00b3/h OUT (auto)"), or null
+function flowText(id){
+  const n=state.nodes[id]; if(!n) return null;
+  const role = effFlow(id)==='in' ? 'IN' : 'OUT';
+  if(n.flowRate!=null) return fmtFlow(n.flowRate)+' m\u00b3/h '+role;
+  const inf=inferredRate(id);
+  return (inf==null) ? null : (fmtFlow(inf)+' m\u00b3/h '+role+' (auto)');
+}
+// numeric elevation for a node: manual if set, else the auto lookup, else null
+function nodeElev(id){
+  const n=state.nodes[id]; if(!n) return null;
+  if(n.elevation!=null) return n.elevation;
+  const a=autoElevation(id);
+  return (a==null) ? null : a;
+}
+// elevation rise from a path's inlet to its outlet (out - in), or null if either is unknown
+function pathElevDiff(inId, outId){
+  const a=nodeElev(inId), b=nodeElev(outId);
+  return (a==null || b==null) ? null : (b-a);
+}
+// short signed label for an elevation difference, e.g. "+1.0", "-2.5", or a dash
+function elevDiffLabel(d){ return (d==null) ? '\u2014' : ((d>0?'+':'')+sig3(d)); }
+
+/* =====================================================================
+   6. MUTATIONS  (each user level action captures undo first)
+   ===================================================================== */
+function addNode(lat,lng){
+  const id = 'N'+(++state.nNode);
+  state.nodes[id] = { id, lat, lng, elevation:null, flow:null, flowRate:null };
+  return id;
+}
+function addPipe(a,b){
+  if(a===b || pipeExists(a,b)) return null;
+  if(degree(a)>=3 || degree(b)>=3) return null;   // max 3 connections: elbow or tee only
+  const id = 'P'+(++state.nPipe);
+  state.pipes[id] = {
+    id, a, b,
+    material: selMaterial.value,
+    rating:   selRating.value,
+    size:     selSize.value,
+    manualLength:null
+  };
+  return id;
+}
+function deletePipe(id){
+  captureUndo();
+  delete state.pipes[id];
+  render();
+}
+function deleteNode(id){
+  // an inline node (exactly 2 links) joining two pipes of identical spec merges into one
+  // continuous pipe; differing specs fall through to a plain delete so the gap prompts a rethink.
+  const adj = adjacency()[id] || [];
+  if(adj.length===2){
+    const e1=adj[0], e2=adj[1];
+    const p1=state.pipes[e1.pipe], p2=state.pipes[e2.pipe];
+    const a=e1.node, b=e2.node;
+    const sameSpec = p1 && p2 && p1.material===p2.material && p1.rating===p2.rating && p1.size===p2.size;
+    if(sameSpec && a!==b && !pipeExists(a,b)){
+      captureUndo();
+      // keep a manual length only when both segments were manual (sum them); else let it auto compute
+      const ml = (p1.manualLength!=null && p2.manualLength!=null) ? (p1.manualLength+p2.manualLength) : null;
+      const mat=p1.material, rat=p1.rating, sz=p1.size;
+      shownPipes.delete(e1.pipe); shownPipes.delete(e2.pipe);
+      delete state.pipes[e1.pipe]; delete state.pipes[e2.pipe];
+      delete state.nodes[id];
+      const nid='P'+(++state.nPipe);
+      state.pipes[nid]={ id:nid, a, b, material:mat, rating:rat, size:sz, manualLength:ml };
+      if(current===id) current=null;
+      render();
+      return;
+    }
+  }
+  captureUndo();
+  for(const pid in state.pipes){
+    const p = state.pipes[pid];
+    if(p.a===id||p.b===id){ shownPipes.delete(pid); delete state.pipes[pid]; }
+  }
+  delete state.nodes[id];
+  if(current===id){ current=null; }
+  render();
+}
+
+/* =====================================================================
+   7. DRAWING ENGINE
+   ===================================================================== */
+let mode = 'none';            // 'none' | 'draw' | 'measure'
+let current = null;           // last node id in the active run
+let runStack = [];            // ordered node ids of the active run (so undo can step back the head)
+let measurePts = [];          // measure tool click points
+
+let markerGuard = 0;          // suppress map click right after a marker click
+
+// stylish high-visibility crosshair (amber on dark outline) with a small tool glyph
+function buildCursor(glyph){
+  const cross =
+   "<g fill='none' stroke='#1E1F22' stroke-width='5' stroke-linecap='round'>"+
+   "<line x1='17' y1='1' x2='17' y2='10'/><line x1='17' y1='24' x2='17' y2='33'/>"+
+   "<line x1='1' y1='17' x2='10' y2='17'/><line x1='24' y1='17' x2='33' y2='17'/>"+
+   "<circle cx='17' cy='17' r='6'/></g>"+
+   "<g fill='none' stroke='#5865F2' stroke-width='2.4' stroke-linecap='round'>"+
+   "<line x1='17' y1='1' x2='17' y2='10'/><line x1='17' y1='24' x2='17' y2='33'/>"+
+   "<line x1='1' y1='17' x2='10' y2='17'/><line x1='24' y1='17' x2='33' y2='17'/>"+
+   "<circle cx='17' cy='17' r='6'/></g>"+
+   "<circle cx='17' cy='17' r='1.5' fill='#5865F2'/>";
+  const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>"+cross+glyph+"</svg>";
+  return "url(\"data:image/svg+xml;utf8,"+encodeURIComponent(svg)+"\") 17 17, crosshair";
+}
+// little pipe symbol (capsule with two flanges)
+const PIPE_GLYPH =
+  "<g stroke='#1E1F22' stroke-width='6' stroke-linecap='round'><line x1='30' y1='37' x2='44' y2='37'/></g>"+
+  "<g stroke='#5865F2' stroke-width='3.4' stroke-linecap='round'><line x1='30' y1='37' x2='44' y2='37'/></g>"+
+  "<g stroke='#1E1F22' stroke-width='2'><line x1='30' y1='33' x2='30' y2='41'/><line x1='44' y1='33' x2='44' y2='41'/></g>";
+// little ruler symbol
+const RULER_GLYPH =
+  "<rect x='28' y='33' width='17' height='8' rx='1.5' fill='#1E1F22'/>"+
+  "<rect x='29' y='34' width='15' height='6' rx='1' fill='none' stroke='#5865F2' stroke-width='1.6'/>"+
+  "<g stroke='#5865F2' stroke-width='1.2'><line x1='33' y1='34' x2='33' y2='37'/><line x1='37' y1='34' x2='37' y2='37'/><line x1='41' y1='34' x2='41' y2='37'/></g>";
+const DRAW_CURSOR    = buildCursor(PIPE_GLYPH);
+const MEASURE_CURSOR = buildCursor(RULER_GLYPH);
+
+function setMode(m){
+  mode = m;
+  btnDraw.classList.toggle('active', m==='draw');
+  btnMeasure.classList.toggle('active', m==='measure');
+  map.getContainer().style.cursor =
+    m==='draw' ? DRAW_CURSOR : m==='measure' ? MEASURE_CURSOR : '';
+  // left drag only pans with the hand tool. middle button pans in any mode (handled separately)
+  if(m==='none') map.dragging.enable(); else map.dragging.disable();
+  if(m!=='draw'){ current=null; runStack=[]; previewLayer.clearLayers(); lastMoveLatLng=null; }
+  if(m!=='measure'){ measurePts=[]; measureLayer.clearLayers(); }
+  render();          // rebuild nodes so drag handles match the active tool
+  updateStatus();
+}
+function updateStatus(){
+  const bar = document.getElementById('statusbar');
+  const txt = document.getElementById('statusText');
+  if(mode==='draw'){
+    bar.classList.add('show');
+    txt.textContent = current ? 'Drawing run . click to extend . right click / Esc to finish'
+                              : 'Drawing . click map to place first node';
+  } else if(mode==='measure'){
+    bar.classList.add('show');
+    txt.textContent = measurePts.length===1 ? 'Measure . click the second point'
+                                            : 'Measure . click the first point';
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+// transient warning shown in the status bar (e.g. tee limit)
+let warnTimer = null;
+function warn(msg){
+  const bar = document.getElementById('statusbar');
+  const txt = document.getElementById('statusText');
+  bar.classList.add('show','warn');
+  txt.textContent = msg;
+  clearTimeout(warnTimer);
+  warnTimer = setTimeout(()=>{ bar.classList.remove('warn'); updateStatus(); }, 2000);
+}
+
+// snap a screen click to a nearby existing node (returns node id or null)
+function nodeNear(latlng, px=14){
+  const cp = map.latLngToContainerPoint(latlng);
+  let best=null, bestD=px;
+  for(const id in state.nodes){
+    const n = state.nodes[id];
+    const p = map.latLngToContainerPoint([n.lat,n.lng]);
+    const d = cp.distanceTo(p);
+    if(d<=bestD){ bestD=d; best=id; }
+  }
+  return best;
+}
+
+// find an existing pipe under a click (returns {pipeId, latlng} of the perpendicular point, or null)
+function pipeNear(latlng){
+  const cp = map.latLngToContainerPoint(latlng);
+  let best=null, bestD=Infinity;
+  for(const id in state.pipes){
+    const p=state.pipes[id], a=state.nodes[p.a], b=state.nodes[p.b]; if(!a||!b) continue;
+    const A=map.latLngToContainerPoint([a.lat,a.lng]);
+    const B=map.latLngToContainerPoint([b.lat,b.lng]);
+    const vx=B.x-A.x, vy=B.y-A.y, L2=vx*vx+vy*vy; if(L2<1) continue;
+    const t=((cp.x-A.x)*vx + (cp.y-A.y)*vy)/L2;
+    if(t<0.06 || t>0.94) continue;                       // near an end -> let node snap handle it
+    const qx=A.x+t*vx, qy=A.y+t*vy;
+    const d=Math.hypot(cp.x-qx, cp.y-qy);
+    const tol=Math.max(16, weightForSize(p.material,p.size)/2 + 10);
+    if(d<=tol && d<bestD){ bestD=d; best={ pipeId:id, latlng:map.containerPointToLatLng(L.point(qx,qy)) }; }
+  }
+  return best;
+}
+
+// insert a node on an existing pipe at the given point, splitting it into two segments (a tee)
+function splitPipe(pipeId, atLatLng){
+  const p=state.pipes[pipeId]; const b=p.b;
+  const nid=addNode(atLatLng.lat, atLatLng.lng);
+  const id2='P'+(++state.nPipe);
+  state.pipes[id2]={ id:id2, a:nid, b, material:p.material, rating:p.rating, size:p.size, manualLength:null };
+  p.b=nid; p.manualLength=null;               // shorten the original to a -> new node
+  return nid;
+}
+
+function extendRun(targetNodeId){
+  if(current===null){
+    if(degree(targetNodeId)>=3){ warn('That node is already a tee . max 3 connections'); return; }
+    current = targetNodeId; runStack=[targetNodeId];   // start the run from here
+    updateStatus(); return;
+  }
+  if(targetNodeId===current) return;
+  if(degree(current)>=3 || degree(targetNodeId)>=3){
+    warn('Tee limit reached . a node allows at most 3 connections');
+    return;
+  }
+  if(pipeExists(current,targetNodeId)){ current = targetNodeId; runStack.push(targetNodeId); updateStatus(); return; }
+  addPipe(current, targetNodeId);           // elbow, or tee if target already had 2 links
+  current = targetNodeId; runStack.push(targetNodeId);
+  updateStatus();
+}
+
+function orthogonalize(fromLatLng, toLatLng){
+  // snap the segment bearing (screen space) to the nearest 15 degree increment
+  const p0 = map.latLngToContainerPoint(fromLatLng);
+  const p1 = map.latLngToContainerPoint(toLatLng);
+  const dx = p1.x-p0.x, dy = p1.y-p0.y;
+  const len = Math.hypot(dx,dy);
+  if(len < 1) return toLatLng;
+  const step = Math.PI/12;                       // 15 degrees
+  const ang = Math.round(Math.atan2(dy,dx)/step)*step;
+  return map.containerPointToLatLng(L.point(p0.x + len*Math.cos(ang), p0.y + len*Math.sin(ang)));
+}
+
+let lastMoveLatLng = null;
+function updatePreview(shift){
+  previewLayer.clearLayers();
+  if(mode!=='draw' || current===null || !state.nodes[current] || !lastMoveLatLng) return;
+  const from = L.latLng(state.nodes[current].lat, state.nodes[current].lng);
+  const to = shift ? orthogonalize(from, lastMoveLatLng) : snapLatLng(lastMoveLatLng);
+  const color = (SPECS[selMaterial.value]?.color) || '#5865F2';
+  // preview looks exactly like the pipe would once laid
+  L.polyline([from,to], { color, weight:weightForSize(selMaterial.value, selSize.value),
+                          opacity:.9, interactive:false }).addTo(previewLayer);
+  L.circleMarker(to, { radius:4, color:'#5865F2', weight:2, fillColor:'#ffffff', fillOpacity:1,
+                       interactive:false }).addTo(previewLayer);
+  const mid = L.latLng((from.lat+to.lat)/2,(from.lng+to.lng)/2);
+  L.tooltip({ permanent:true, direction:'center', className:'len-label', interactive:false })
+    .setLatLng(mid).setContent(fmt(haversine(from.lat,from.lng,to.lat,to.lng))).addTo(previewLayer);
+}
+
+function handleDrawClick(latlng, shift){
+  // 1) connect to an existing node if the click is on one
+  const nodeId = nodeNear(latlng);
+  if(nodeId){ withUndo(()=> extendRun(nodeId)); render(); updatePreview(shift); return; }
+
+  // 2) tee onto an existing pipe: insert a node at the clicked point and split it
+  const onPipe = pipeNear(latlng);
+  if(onPipe){
+    if(current!==null && degree(current)>=3){
+      warn('Cannot draw off a tee . max 3 connections');
+      return;
+    }
+    withUndo(()=>{
+      const nid = splitPipe(onPipe.pipeId, onPipe.latlng);
+      extendRun(nid);                          // start at / connect the run to the new tee
+    });
+    render(); updatePreview(shift); return;
+  }
+
+  // 3) otherwise drop a free node (Shift locks the angle, else snap to grid if on)
+  let target = latlng;
+  if(shift && current!==null) target = orthogonalize(L.latLng(state.nodes[current].lat, state.nodes[current].lng), latlng);
+  else target = snapLatLng(latlng);
+
+  if(current!==null && degree(current)>=3){
+    warn('Cannot draw off a tee . max 3 connections');
+    return;
+  }
+  withUndo(()=>{
+    const id = addNode(target.lat, target.lng);
+    extendRun(id);
+  });
+  render();
+  updatePreview(shift);
+}
+
+function finishRun(){
+  if(mode==='draw' && current!==null){
+    current = null; runStack=[];
+    previewLayer.clearLayers();
+    render();
+  }
+}
+
+// undo the last drawn segment while keeping the draw tool active and the run continuable
+function undoInDraw(){
+  if(runStack.length>=2){
+    doUndo();                                   // restore() reverts the segment and clears current
+    runStack.pop();
+    while(runStack.length && !state.nodes[runStack[runStack.length-1]]) runStack.pop();
+    current = runStack.length ? runStack[runStack.length-1] : null;
+    render(); updatePreview(false); updateStatus();
+    return;
+  }
+  // only the start node is left: drop it too if we just created it, then reset (tool stays active)
+  if(runStack.length===1 && current!=null && state.nodes[current] && degree(current)===0 && undoStack.length){
+    doUndo();
+  }
+  runStack=[]; current=null;
+  previewLayer.clearLayers();
+  render(); updateStatus();
+}
+
+/* =====================================================================
+   8. MEASURE TOOL
+   ===================================================================== */
+function handleMeasureClick(latlng){
+  measurePts.push(latlng);
+  if(measurePts.length>2) measurePts = [latlng];
+  measureLayer.clearLayers();
+  measurePts.forEach(pt=>{
+    L.circleMarker(pt,{radius:5,color:'#5865F2',weight:2,fillColor:'#ffffff',fillOpacity:1})
+      .addTo(measureLayer);
+  });
+  if(measurePts.length===2){
+    const [p1,p2]=measurePts;
+    const d = haversine(p1.lat,p1.lng,p2.lat,p2.lng);
+    L.polyline([p1,p2],{color:'#5865F2',weight:2,dashArray:'6 5'}).addTo(measureLayer);
+    const mid = L.latLng((p1.lat+p2.lat)/2,(p1.lng+p2.lng)/2);
+    L.tooltip({permanent:true,direction:'center',className:'measure-label'})
+      .setLatLng(mid).setContent(fmt(d)).addTo(measureLayer);
+  }
+  updateStatus();
+}
+
+/* =====================================================================
+   9. RENDER  (rebuild all map layers + table from state)
+   ===================================================================== */
+let pipeRefs = {};   // pipeId -> { layer, label }
+let nodeRefs = {};   // nodeId -> marker
+let nodeDragEndTs = 0;
+
+function nodeIcon(letter, deg, flow, isHead, poi){
+  // an unlettered inline bend renders as a small unobtrusive dot
+  if(!letter && !poi){
+    const ring = isHead ? '<span class="nd-head sm"></span>' : '';
+    return L.divIcon({ className:'node-div',
+      html:'<div class="node-wrap sm">'+ring+'<span class="node-min"></span></div>',
+      iconSize:[18,18], iconAnchor:[9,9] });
+  }
+  let t = deg===0?'t-float':deg===1?'t-end':deg===2?'t-inline':'t-tee';
+  let f = '';
+  if(poi) f += ' f-poi';                       // point of interest: red dot (flow in/out shown by the big arrow)
+  const ring = isHead ? '<span class="nd-head"></span>' : '';
+  return L.divIcon({
+    className:'node-div',
+    html:'<div class="node-wrap">'+ring+'<span class="node-dot '+t+f+'">'+(letter||'')+'</span></div>',
+    iconSize:[30,30], iconAnchor:[15,15]
+  });
+}
+function arrowIcon(angleDeg){
+  const svg = "<svg width='15' height='15' viewBox='0 0 16 16'>"+
+    "<path d='M3 8 H11 M7.5 4.5 L12 8 L7.5 11.5' fill='none' stroke='#f4f7fa' stroke-width='4.6' stroke-linecap='round' stroke-linejoin='round'/>"+
+    "<path d='M3 8 H11 M7.5 4.5 L12 8 L7.5 11.5' fill='none' stroke='#1E1F22' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>";
+  return L.divIcon({ className:'flow-arrow', iconSize:[15,15], iconAnchor:[7.5,7.5],
+    html:'<span style="transform:rotate('+angleDeg+'deg)">'+svg+'</span>' });
+}
+// large arrow that marks a flow-in (source) or flow-out (sink) end node, no node colour needed
+function bigArrowIcon(angleDeg){
+  const svg = "<svg width='34' height='34' viewBox='0 0 34 34'>"+
+    "<path d='M5 17 H25 M19 9 L27 17 L19 25' fill='none' stroke='#ffffff' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/>"+
+    "<path d='M5 17 H25 M19 9 L27 17 L19 25' fill='none' stroke='#1E1F22' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/></svg>";
+  return L.divIcon({ className:'flow-arrow big', iconSize:[34,34], iconAnchor:[17,17],
+    html:'<span style="transform:rotate('+angleDeg+'deg);display:inline-block">'+svg+'</span>' });
+}
+
+let flowInfo = { paths:[], unassigned:[], letters:{} };
+let highlightFlowId = null;
+let hoverPipeSet = null;   // flow path(s) glowing because a node is hovered
+
+/* =====================================================================
+   MAP CALLOUTS  (length + elevation) with overlap avoidance and leaders
+   ===================================================================== */
+let dragOverride = null;   // {id,lat,lng} while a node is being dragged
+let _labelRaf = null;
+const _calCanvas = document.createElement('canvas');
+const _calCtx = _calCanvas.getContext('2d');
+function calWidth(text){ _calCtx.font = '11px "IBM Plex Mono", monospace'; return _calCtx.measureText(text).width; }
+function nodePos(id){ return (dragOverride && dragOverride.id===id) ? dragOverride : state.nodes[id]; }
+function scheduleLabels(){ if(_labelRaf) return; _labelRaf = requestAnimationFrame(()=>{ _labelRaf=null; renderLabels(); }); }
+
+// nudge label boxes apart in screen space, springing back toward their anchor
+function layoutLabels(items){
+  const pos = items.map(it=>({ x: it.anchor.x + it.off.x, y: it.anchor.y + it.off.y }));
+  for(let t=0; t<90; t++){
+    for(let i=0;i<items.length;i++){
+      for(let j=i+1;j<items.length;j++){
+        const a=pos[i], b=pos[j], A=items[i], B=items[j];
+        let dx=b.x-a.x, dy=b.y-a.y;
+        if(dx===0 && dy===0){ dx=(Math.random()-0.5); dy=(Math.random()-0.5); }
+        const ox=(A.w+B.w)/2 + 6 - Math.abs(dx);
+        const oy=(A.h+B.h)/2 + 4 - Math.abs(dy);
+        if(ox>0 && oy>0){                       // boxes overlap, separate on the cheaper axis
+          if(ox<oy){ const s=(dx>=0?1:-1)*ox/2; a.x-=s; b.x+=s; }
+          else     { const s=(dy>=0?1:-1)*oy/2; a.y-=s; b.y+=s; }
+        }
+      }
+    }
+    for(let i=0;i<items.length;i++){            // gentle pull back toward preferred spot
+      pos[i].x += (items[i].anchor.x + items[i].off.x - pos[i].x)*0.06;
+      pos[i].y += (items[i].anchor.y + items[i].off.y - pos[i].y)*0.06;
+    }
+  }
+  return pos;
+}
+
+const shownPipes = new Set();   // pipes whose length callout is currently shown (click to toggle)
+let calloutOverride = {};       // key (nodeId:elev|flow) -> {dx,dy} manual drag offset; cleared on zoom
+
+function renderLabels(){
+  labelLayer.clearLayers();
+  const items = [];
+  const flows = computeFlows();
+  // pipe property callout for every pipe; each line gated by the callout toggles + per-element table
+  for(const id in state.pipes){
+    const p=state.pipes[id]; const a=nodePos(p.a), b=nodePos(p.b); if(!a||!b) continue;
+    const dragging = dragOverride && (p.a===dragOverride.id || p.b===dragOverride.id);
+    const len = dragging ? haversine(a.lat,a.lng,b.lat,b.lng) : pipeLength(p);
+    const fv = flows[id];
+    const q = (fv!=null && !isNaN(fv)) ? Math.abs(fv) : null;
+    const lines=[];
+    if(coOn(id,'size'))   lines.push(p.size);
+    if(coOn(id,'spec'))   lines.push(pipeSpecText(p));
+    if(coOn(id,'flow') && q!=null) lines.push(fmtFlow(q)+' m\u00b3/h');
+    if(coOn(id,'vel')){ const v=pipeVelocity(p,q); if(v!=null) lines.push(fmtVel(v)); }
+    if(coOn(id,'length')) lines.push(fmt(len));
+    if(!lines.length) continue;
+    const w = Math.max.apply(null, lines.map(s=>calWidth(s))) + 18;
+    const h = lines.length*15 + 6;
+    items.push({ anchor: map.latLngToContainerPoint([(a.lat+b.lat)/2,(a.lng+b.lng)/2]),
+                 lines, w, h, off:{x:0,y:0}, cls:'pipe-callout', pipeId:id });
+  }
+  // one combined callout per end node / point of interest (elevation + flow), draggable for print layout
+  for(const id in state.nodes){
+    const isEnd = degree(id)===1;
+    const isPoi = !!state.nodes[id].poi && degree(id)>=2;
+    if(!isEnd && !isPoi) continue;
+    const n=nodePos(id);
+    const lines=[];
+    if(coOn(id,'elev')){ const et=elevText(id); if(et) lines.push(et); }
+    if(coOn(id,'flow')){ const ft = isEnd ? flowText(id) : poiFlowText(id); if(ft) lines.push(ft); }
+    if(!lines.length) continue;
+    const w = Math.max.apply(null, lines.map(s=>calWidth(s))) + 18;
+    const h = lines.length*15 + 6;
+    items.push({ anchor: map.latLngToContainerPoint([n.lat,n.lng]),
+                 lines, w, h, off:{x:0,y:-28}, cls:'node-callout', key:id });
+  }
+  if(!items.length) return;
+
+  const pos = layoutLabels(items);
+  const leadW = pipeWeightPx();   // leader matches the pipeline weight, drawn black
+
+  items.forEach((it,i)=>{
+    const ov = it.key ? calloutOverride[it.key] : null;
+    const cx = ov ? it.anchor.x + ov.dx : pos[i].x;
+    const cy = ov ? it.anchor.y + ov.dy : pos[i].y;
+    const labelLL = map.containerPointToLatLng(L.point(cx, cy));
+    const anchorLL = map.containerPointToLatLng(it.anchor);
+    const moved = ov || Math.hypot(cx-it.anchor.x, cy-it.anchor.y) > 8;
+    let leader = null;
+    if(moved){
+      leader = L.polyline([anchorLL, labelLL],
+        { color:'#000000', weight:leadW, opacity:1, lineCap:'round', interactive:false }).addTo(labelLayer);
+    }
+    if(it.pipeId){
+      // pipe property callout (stacked, non-interactive)
+      const html='<div class="map-callout pipe-callout">'+
+        it.lines.map(l=>'<div class="pc-line">'+l+'</div>').join('')+'</div>';
+      L.marker(labelLL, { interactive:false, keyboard:false, icon: L.divIcon({
+        className:'callout-icon', iconSize:[0,0], iconAnchor:[0,0], html }) }).addTo(labelLayer);
+    } else if(it.key){
+      // combined node callout: draggable, so it can be arranged for a clean printout
+      const html='<div class="map-callout node-callout">'+
+        it.lines.map(l=>'<div class="nc-line">'+l+'</div>').join('')+'</div>';
+      const mk=L.marker(labelLL, { draggable:true, interactive:true, keyboard:false, icon: L.divIcon({
+        className:'callout-icon', iconSize:[0,0], iconAnchor:[0,0], html }) }).addTo(labelLayer);
+      mk.on('drag', ()=>{ if(leader) leader.setLatLngs([anchorLL, mk.getLatLng()]); });
+      mk.on('dragend', ()=>{
+        const p2 = map.latLngToContainerPoint(mk.getLatLng());
+        calloutOverride[it.key] = { dx: p2.x - it.anchor.x, dy: p2.y - it.anchor.y };
+        renderLabels();
+      });
+    }
+  });
+}
+map.on('moveend', renderLabels);
+map.on('zoomend', ()=>{ calloutOverride = {}; renderLabels(); });   // zoom resets dragged callouts to auto layout
+
+function render(){
+  glowLayer.clearLayers();
+  pipeLayer.clearLayers();
+  arrowLayer.clearLayers();
+  labelLayer.clearLayers();
+  nodeLayer.clearLayers();
+  pipeRefs = {}; nodeRefs = {};
+
+  // analyse flow network once per render
+  const letters = buildLetters();
+  const dirs = flowDirections();
+  flowInfo = flowPaths();
+
+  // ---- highlight glow under a focused flow path ----
+  if(highlightFlowId && !flowInfo.paths.some(f=>f.id===highlightFlowId)) highlightFlowId=null;
+  glowLayer.clearLayers();
+
+  // ---- pipes ----
+  for(const id in state.pipes){
+    const p = state.pipes[id];
+    const a = state.nodes[p.a], b = state.nodes[p.b];
+    if(!a||!b) continue;
+    const color = (SPECS[p.material]?.color) || '#cccccc';
+    const w = weightForSize(p.material,p.size);
+    // invisible wide hit area for easy clicking / right-clicking
+    const hit = L.polyline([[a.lat,a.lng],[b.lat,b.lng]],
+                 { color:'#000', weight:Math.max(24, w+18), opacity:0 }).addTo(pipeLayer);
+    const line = L.polyline([[a.lat,a.lng],[b.lat,b.lng]],
+                 { color, weight:w, opacity:.95, interactive:false }).addTo(pipeLayer);
+
+    hit.on('contextmenu', (ev)=>{
+      L.DomEvent.preventDefault(ev); L.DomEvent.stopPropagation(ev);
+      openContextMenu(ev.originalEvent, 'Pipe '+id, [
+        { label:'Reverse flow direction', action:()=>reversePipe(id) },
+        { label:'Delete Pipe', danger:true, action:()=>deletePipe(id) }
+      ]);
+    });
+    hit.on('click', (ev)=>{
+      if(mode==='draw'){
+        L.DomEvent.stopPropagation(ev); markerGuard = Date.now();
+        handleDrawClick(ev.latlng, ev.originalEvent && ev.originalEvent.shiftKey);
+      } else if(mode==='measure'){
+        L.DomEvent.stopPropagation(ev); markerGuard = Date.now();
+        handleMeasureClick(ev.latlng);
+      }
+    });
+
+    pipeRefs[id] = { layer:line, hit };
+
+    // ---- flow direction arrows, placed adjacent to each node (clear of the midpoint length label) ----
+    const d = dirs[id];
+    if(d){
+      const fn = state.nodes[d.from], tn = state.nodes[d.to];
+      const PF = map.latLngToContainerPoint([fn.lat,fn.lng]);
+      const PT = map.latLngToContainerPoint([tn.lat,tn.lng]);
+      const dx = PT.x-PF.x, dy = PT.y-PF.y;
+      const dist = Math.hypot(dx,dy);
+      if(dist > 6){
+        const ang = Math.atan2(dy,dx) * 180/Math.PI;
+        const ux = dx/dist, uy = dy/dist;
+        const off = Math.min(26, dist*0.34);          // sit just outside each node
+        [PF, PT].forEach(base=>{
+          const sign = (base===PF) ? 1 : -1;            // step inward from whichever node
+          const cpt = L.point(base.x + ux*off*sign, base.y + uy*off*sign);
+          const ll = map.containerPointToLatLng(cpt);
+          L.marker(ll, { icon:arrowIcon(ang), interactive:false, keyboard:false }).addTo(arrowLayer);
+        });
+      }
+    }
+  }
+
+  // ---- big source / sink arrows at flow-in and flow-out end nodes (direction, no colour on the node) ----
+  const adjB = adjacency();
+  for(const id in state.nodes){
+    if(degree(id)!==1) continue;
+    const ef = effFlow(id); if(ef!=='in' && ef!=='out') continue;
+    const nb = (adjB[id]||[])[0]; if(nb==null) continue;
+    const n = state.nodes[id], nbn = state.nodes[nb]; if(!nbn) continue;
+    const PN = map.latLngToContainerPoint([n.lat,n.lng]);
+    const PB = map.latLngToContainerPoint([nbn.lat,nbn.lng]);
+    let dx = PB.x-PN.x, dy = PB.y-PN.y; const dd = Math.hypot(dx,dy)||1; dx/=dd; dy/=dd;
+    const theta = Math.atan2(dy,dx) * 180/Math.PI;       // node -> neighbour bearing
+    const off = 34;                                       // sit on the far side, before the node
+    const ll = map.containerPointToLatLng(L.point(PN.x - dx*off, PN.y - dy*off));
+    const pointDeg = (ef==='in') ? theta : theta+180;     // in: points into node; out: points away
+    L.marker(ll, { icon:bigArrowIcon(pointDeg), interactive:false, keyboard:false }).addTo(arrowLayer);
+  }
+
+  // ---- nodes (draggable lettered markers) ----
+  for(const id in state.nodes){
+    const n = state.nodes[id];
+    const deg = degree(id);
+    const m = L.marker([n.lat,n.lng], {
+      icon: nodeIcon(letters[id], deg, effFlow(id), id===current, !!state.nodes[id].poi && deg>=2),
+      draggable: (mode==='none'),     // only rearrange with the hand tool
+      autoPan:false, keyboard:false, bubblingMouseEvents:false
+    }).addTo(nodeLayer);
+    nodeRefs[id] = m;
+
+    m.on('click', (ev)=>{
+      markerGuard = Date.now();
+      L.DomEvent.stopPropagation(ev);
+      if(Date.now()-nodeDragEndTs < 250) return;   // ignore the click that ends a drag
+      if(mode==='draw'){
+        withUndo(()=> extendRun(id));
+        render();
+      } else if(mode==='none'){
+        if(isEndNode(id) || (!!state.nodes[id].poi && deg>=2)) openNodePopup(id, ev.latlng);
+      }
+    });
+    m.on('contextmenu', (ev)=>{
+      L.DomEvent.preventDefault(ev); L.DomEvent.stopPropagation(ev);
+      const kind = deg===0?'Floating node':deg===1?'End node':deg>=3?'Tee / junction':'Inline node';
+      const items=[];
+      if(deg>=2){      // a POI is always an intermediate node (a deliberate break in the flow)
+        const isP = !!state.nodes[id].poi;
+        items.push({ label: isP?'Clear Point of Interest':'Mark as Point of Interest',
+          action:()=>{ captureUndo(); state.nodes[id].poi = !isP; render(); } });
+      }
+      let delLabel='Delete Node';
+      const adj2=adjacency()[id]||[];
+      if(adj2.length===2){
+        const q1=state.pipes[adj2[0].pipe], q2=state.pipes[adj2[1].pipe];
+        const same=q1&&q2&&q1.material===q2.material&&q1.rating===q2.rating&&q1.size===q2.size;
+        delLabel = same ? 'Delete node . merge pipes' : 'Delete node . leaves a gap (specs differ)';
+      }
+      items.push({ label:delLabel, danger:true, action:()=>deleteNode(id) });
+      openContextMenu(ev.originalEvent, (letters[id]||id)+' . '+kind, items);
+    });
+    // hovering a node lights the whole flow path(s) running through it
+    m.on('mouseover', ()=>{});
+    m.on('mouseout',  ()=>{});
+
+    // ---- drag to rearrange ----
+    m.on('dragstart', ()=>{ captureUndo(); });
+    m.on('drag', (ev)=>{
+      let ll = ev.target.getLatLng();
+      
+      for(const pid in state.pipes){
+        const p = state.pipes[pid];
+        if(p.a!==id && p.b!==id) continue;
+        const ref = pipeRefs[pid]; if(!ref) continue;
+        const oa = state.nodes[p.a], ob = state.nodes[p.b];
+        const A = (p.a===id) ? ll : L.latLng(oa.lat, oa.lng);
+        const B = (p.b===id) ? ll : L.latLng(ob.lat, ob.lng);
+        ref.layer.setLatLngs([A,B]);
+        if(ref.hit) ref.hit.setLatLngs([A,B]);
+      }
+      dragOverride = { id, lat:ll.lat, lng:ll.lng };
+      scheduleLabels();                       // live, de-collided length labels follow the drag
+    });
+    m.on('dragend', (ev)=>{
+      let ll = ev.target.getLatLng();
+      
+      state.nodes[id].lat = ll.lat;
+      state.nodes[id].lng = ll.lng;
+      dragOverride = null;
+      for(const pid in state.pipes){
+        const p = state.pipes[pid];
+        if(p.a===id || p.b===id) p.manualLength = null;
+      }
+      nodeDragEndTs = Date.now();
+      render();
+    });
+
+    // elevation callouts are now drawn by renderLabels (with de-collision and leaders)
+  }
+
+  renderTables();
+  updateFlowMTO();
+  renderLabels();
+}
+
+function updateMTO(){
+  const body=document.getElementById('mtoBody'); if(!body) return;
+  const groups=pipeTypeGroups();
+  if(!groups.length){ body.innerHTML='<div class="mto-empty">No pipe routed yet</div>'; return; }
+  let total=0; groups.forEach(g=>total+=g.length);
+  body.innerHTML = groups.map(g=>
+    '<div class="mto-row"><span class="mto-swatch" style="background:'+g.color+'"></span>'+
+    '<span class="mto-label">'+g.label+'</span><span class="mto-len">'+fmt(g.length)+'</span></div>'
+  ).join('') + '<div class="mto-total"><span>TOTAL</span><span>'+fmt(total)+'</span></div>';
+}
+// flow path summary: rows are pipe type (diameter / material / rating) combined with the
+// computed flow rate, columns are the flow paths, cells are the summed metreage, and a
+// final MTO column gives the whole-project total for that type+rate.
+function updateFlowMTO(){
+  const box=document.getElementById('flowmto'), body=document.getElementById('flowmtoBody');
+  if(!box||!body) return;
+  if(!Object.keys(state.pipes).length){ box.style.display='none'; return; }
+  box.style.display='';
+  const flows=computeFlows();
+  const fp=flowPaths(), L=fp.letters, paths=fp.paths;
+  const flowKey = pid => { const v=flows[pid]; return (v==null||isNaN(v))?'na':String(Math.round(v*100)/100); };
+  const rowKey  = pid => typeLabel(state.pipes[pid])+'||'+flowKey(pid);
+
+  const rows={};                                   // every pipe grouped by type + rate (the MTO totals)
+  for(const pid in state.pipes){
+    const p=state.pipes[pid], k=rowKey(pid);
+    if(!rows[k]) rows[k]={ label:typeLabel(p), color:(SPECS[p.material]?.color)||'#cccccc', flow:flows[pid], total:0 };
+    rows[k].total += pipeLength(p);
+  }
+  const cell={}, colTotal={}; paths.forEach(p=>colTotal[p.id]=0);
+  paths.forEach(path=> path.segments.forEach(s=>{
+    const p=state.pipes[s.pipeId]; if(!p) return;
+    const k=rowKey(s.pipeId), len=pipeLength(p);
+    (cell[k]=cell[k]||{})[path.id]=((cell[k]||{})[path.id]||0)+len;
+    colTotal[path.id]+=len;
+  }));
+
+  const keys=Object.keys(rows).sort((a,b)=>{
+    if(rows[a].label!==rows[b].label) return rows[a].label<rows[b].label?-1:1;
+    return (rows[a].flow==null?-1:rows[a].flow) - (rows[b].flow==null?-1:rows[b].flow);
+  });
+  const colName = path => (L[path.inId]||'?')+'\u2192'+(L[path.outId]||'?');
+  const delHdr  = path => '<th class="fp-delcell">'+elevDiffLabel(pathElevDiff(path.inId,path.outId))+'</th>';
+  let grand=0;
+  let html='<table class="fp-table"><thead>'+
+    '<tr class="fp-delrow"><th class="fp-delh">\u0394EL (m)</th>'+paths.map(delHdr).join('')+'<th></th></tr>'+
+    '<tr><th></th>'+paths.map(p=>'<th>'+colName(p)+'</th>').join('')+'<th class="fp-mto">MTO</th></tr>'+
+    '</thead><tbody>';
+  keys.forEach(k=>{
+    const r=rows[k]; grand+=r.total;
+    const tag = (r.flow==null||isNaN(r.flow))
+      ? '<span class="fp-flow na">flow n/a</span>'
+      : '<span class="fp-flow">'+fmtFlow(r.flow)+' m\u00b3/h</span>';
+    html+='<tr><td class="fp-type"><span class="fp-sw" style="background:'+r.color+'"></span>'+r.label+' '+tag+'</td>'+
+      paths.map(p=>{ const v=(cell[k]||{})[p.id]; return '<td>'+(v?Math.round(v):'')+'</td>'; }).join('')+
+      '<td class="fp-mto">'+Math.round(r.total)+'</td></tr>';
+  });
+  html+='</tbody><tfoot><tr><td class="fp-type">TOTAL</td>'+
+    paths.map(p=>'<td>'+Math.round(colTotal[p.id])+'</td>').join('')+
+    '<td class="fp-mto">'+Math.round(grand)+'</td></tr></tfoot></table>';
+  body.innerHTML=html;
+}
+
+/* =====================================================================
+   10. DATA TABLE  (synced with map, all fields editable)
+   ===================================================================== */
+function endNodesForPipe(p){
+  // elevation belongs to end nodes only (degree 1)
+  return [p.a,p.b].filter(nid=>isEndNode(nid)).map(nid=>state.nodes[nid]);
+}
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function optionsHtml(arr, selected){
+  return arr.map(v=>'<option value="'+escAttr(v)+'"'+(v===selected?' selected':'')+'>'+escAttr(v)+'</option>').join('');
+}
+function optionsHtmlDN(arr, selected){
+  // table diameter column: keep the canonical value, show just the number (no DN prefix)
+  return arr.map(v=>'<option value="'+escAttr(v)+'"'+(v===selected?' selected':'')+'>'+escAttr(String(v).replace(/^DN/,''))+'</option>').join('');
+}
+
+function pipeRowHtml(pipeId, code){
+  const p = state.pipes[pipeId];
+  const manual = (p.manualLength!=null);
+  const len = pipeLength(p);
+  const ends = endNodesForPipe(p);
+  const elevHtml = ends.length
+    ? ends.map(n=>'<input class="elev-input" type="number" step="0.01" placeholder="elev" value="'+
+        (n.elevation!=null?sig3(n.elevation):'')+'" data-node="'+n.id+'" />').join('<br>')
+    : '<span class="elev-cell none">n/a</span>';
+  return '<tr data-pipe="'+pipeId+'">'+
+    '<td>'+code+'</td>'+
+    '<td><select class="cell-select" data-id="'+pipeId+'" data-field="material">'+optionsHtml(Object.keys(SPECS),p.material)+'</select></td>'+
+    '<td><select class="cell-select" data-id="'+pipeId+'" data-field="rating">'+optionsHtml(SPECS[p.material].ratings,p.rating)+'</select></td>'+
+    '<td><select class="cell-select" data-id="'+pipeId+'" data-field="size">'+optionsHtmlDN(SPECS[p.material].sizes,p.size)+'</select></td>'+
+    '<td><div class="len-cell"><input class="len-input'+(manual?' manual':'')+'" type="number" step="1" value="'+Math.round(len)+'" data-id="'+pipeId+'" />'+
+        (manual?'<button class="revert" data-revert="'+pipeId+'" title="Revert to calculated">&#8635;</button>':'')+'</div></td>'+
+    '<td>'+elevHtml+'</td></tr>';
+}
+function tableBlockHtml(block, isFirst){
+  const head='<tr><th>Pipe</th><th>Material</th><th>Rating</th><th>Nominal Diameter</th><th>Length</th><th>Elevation</th></tr>';
+  const body=block.segments.map(s=>pipeRowHtml(s.pipeId, s.code)).join('');
+  const actions='<button class="ft-btn" data-export="'+block.id+'">Copy</button>'+
+                (isFirst?'<button class="ft-btn primary" data-export-all="1">Copy All</button>':'');
+  return '<div class="flow-table" data-flow="'+block.id+'">'+
+    '<div class="flow-table-head"><div class="ft-title">'+block.name+
+      '<span class="ft-sub">'+block.sub+'</span></div>'+
+      '<div class="flow-table-actions">'+actions+'</div></div>'+
+    '<table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
+}
+
+let flowTables = [];   // [{id, name, sub, segments:[{pipeId,code}]}]
+
+function renderTables(){
+  const cont = document.getElementById('tablesContainer');
+  const scroll = document.getElementById('tableScroll');
+  const keepScroll = scroll ? scroll.scrollTop : 0;
+  const fp = flowInfo;
+
+  flowTables = [];
+  fp.paths.forEach(path=>{
+    const len = path.segments.reduce((t,s)=>t+pipeLength(state.pipes[s.pipeId]),0);
+    flowTables.push({ id:path.id, name:path.name,
+      sub:path.segments.length+' segments . '+fmt(len),
+      segments:path.segments.map(s=>({pipeId:s.pipeId, code:s.code})) });
+  });
+  if(fp.unassigned.length){
+    const len = fp.unassigned.reduce((t,pid)=>t+pipeLength(state.pipes[pid]),0);
+    flowTables.push({ id:'UNASSIGNED', name:'Unassigned',
+      sub:fp.unassigned.length+' segments . '+fmt(len),
+      segments:fp.unassigned.map(pid=>{ const p=state.pipes[pid];
+        return {pipeId:pid, code:(fp.letters[p.a]||'?')+(fp.letters[p.b]||'?')}; }) });
+  }
+
+  if(!flowTables.length){
+    cont.innerHTML = '<div class="flow-table"><div class="flow-table-head"><div class="ft-title">Pipe Schedule</div></div>'+
+      '<table><tbody><tr class="empty-row"><td>No pipes yet. Pick a spec, draw a run, then click end nodes to set Flow In or Flow Out.</td></tr></tbody></table></div>';
+    return;
+  }
+  cont.innerHTML = flowTables.map((b,i)=>tableBlockHtml(b, i===0)).join('');
+  cont.insertAdjacentHTML('beforeend', '<div class="flow-table" id="calloutMatrixBlock"></div>');
+  if(scroll) scroll.scrollTop = keepScroll;
+  wireTableEvents(cont);
+  updateCalloutMatrix();
+}
+
+// per-element callout control: rows = pipes + consequential nodes, columns = callout types
+const CO_COLS = [
+  {type:'size',label:'Size'},{type:'spec',label:'Spec'},{type:'flow',label:'Flow'},
+  {type:'vel',label:'Vel'},{type:'elev',label:'Elev'},{type:'length',label:'Len'}
+];
+const PIPE_CO = {size:1,spec:1,flow:1,vel:1,length:1};
+const NODE_CO = {flow:1,elev:1};
+function setCell(id,type,val){ (coCell[id]||(coCell[id]={}))[type]=val; }
+function updateCalloutMatrix(){
+  const host=document.getElementById('calloutMatrixBlock'); if(!host) return;
+  const letters=(flowInfo && flowInfo.letters) || {};
+  const rows=[];
+  for(const id in state.pipes){ const p=state.pipes[id];
+    rows.push({id,applies:PIPE_CO,label:'Pipe '+(letters[p.a]||'?')+'-'+(letters[p.b]||'?')}); }
+  for(const id in state.nodes){
+    const isEnd=degree(id)===1, isPoi=!!state.nodes[id].poi && degree(id)>=2;
+    if(!isEnd && !isPoi) continue;
+    rows.push({id,applies:NODE_CO,label:'Node '+(letters[id]||'?')}); }
+  if(!rows.length){ host.style.display='none'; host.innerHTML=''; return; }
+  host.style.display='';
+
+  let html='<div class="flow-table-head"><div class="ft-title">Callout Control</div></div>';
+  html+='<table class="co-matrix"><thead><tr><th class="co-rowhdr">Element</th>';
+  CO_COLS.forEach(c=>{ html+='<th><label class="co-colh" title="Toggle this callout everywhere"><span>'+c.label+
+    '</span><input type="checkbox" class="co-col" data-type="'+c.type+'"'+(coShow[c.type]?' checked':'')+'></label></th>'; });
+  html+='</tr></thead><tbody>';
+  rows.forEach(r=>{
+    html+='<tr><td class="co-rowlabel" data-id="'+r.id+'" title="Toggle this whole row">'+r.label+'</td>';
+    CO_COLS.forEach(c=>{
+      if(r.applies[c.type]){
+        const on=!(coCell[r.id] && coCell[r.id][c.type]===false);
+        html+='<td class="co-cellwrap'+(coShow[c.type]?'':' dim')+'"><input type="checkbox" class="co-cell" data-id="'+
+          r.id+'" data-type="'+c.type+'"'+(on?' checked':'')+'></td>';
+      } else { html+='<td class="co-na"></td>'; }
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  host.innerHTML=html;
+
+  // column master (mirrors the Callouts panel)
+  host.querySelectorAll('.co-col').forEach(cb=>{
+    cb.addEventListener('change', e=>{
+      const t=e.target.dataset.type; coShow[t]=e.target.checked;
+      const panel=document.getElementById('coTgl_'+t); if(panel) panel.checked=coShow[t];
+      markDirty(); renderLabels(); updateCalloutMatrix();
+    });
+  });
+  // individual cell
+  host.querySelectorAll('.co-cell').forEach(cb=>{
+    cb.addEventListener('change', e=>{
+      setCell(e.target.dataset.id, e.target.dataset.type, e.target.checked);
+      markDirty(); renderLabels(); updateCalloutMatrix();
+    });
+  });
+  // whole row
+  host.querySelectorAll('.co-rowlabel').forEach(td=>{
+    td.addEventListener('click', ()=>{
+      const id=td.dataset.id; const meta=rows.find(r=>r.id===id); if(!meta) return;
+      const types=Object.keys(meta.applies);
+      const allOn=types.every(t=> !(coCell[id] && coCell[id][t]===false));
+      types.forEach(t=> setCell(id,t,!allOn));
+      markDirty(); renderLabels(); updateCalloutMatrix();
+    });
+  });
+}
+
+function wireTableEvents(cont){
+  cont.querySelectorAll('.cell-select').forEach(sel=>{
+    sel.addEventListener('change', e=>{
+      const id=e.target.dataset.id, field=e.target.dataset.field, val=e.target.value;
+      const p=state.pipes[id]; if(!p) return;
+      captureUndo();
+      if(field==='material'){ p.material=val;
+        if(!SPECS[val].ratings.includes(p.rating)) p.rating=SPECS[val].ratings[0];
+        if(!SPECS[val].sizes.includes(p.size)) p.size=SPECS[val].sizes[0];
+      } else if(field==='rating'){ p.rating=val; }
+      else if(field==='size'){ p.size=val; }
+      render();
+    });
+  });
+  cont.querySelectorAll('.len-input').forEach(inp=>{
+    inp.addEventListener('change', e=>{
+      const id=e.target.dataset.id, v=parseFloat(e.target.value);
+      captureUndo(); state.pipes[id].manualLength=(isNaN(v)||v<0)?null:v; render();
+    });
+  });
+  cont.querySelectorAll('[data-revert]').forEach(btn=>{
+    btn.addEventListener('click', e=>{ captureUndo(); state.pipes[e.target.dataset.revert].manualLength=null; render(); });
+  });
+  cont.querySelectorAll('.elev-input').forEach(inp=>{
+    inp.addEventListener('change', e=>{
+      const nid=e.target.dataset.node, v=parseFloat(e.target.value);
+      if(!state.nodes[nid]) return;
+      captureUndo(); state.nodes[nid].elevation=isNaN(v)?null:v; render();
+    });
+  });
+  cont.querySelectorAll('[data-export]').forEach(b=> b.addEventListener('click', ()=> copyFlow(b.dataset.export, b)));
+  cont.querySelectorAll('[data-export-all]').forEach(b=> b.addEventListener('click', ()=> copyAllTables(b)));
+  cont.querySelectorAll('tbody tr[data-pipe]').forEach(tr=>{
+    const pid=tr.dataset.pipe;
+    tr.addEventListener('mouseenter',()=>highlightPipe(pid,true));
+    tr.addEventListener('mouseleave',()=>highlightPipe(pid,false));
+  });
+}
+
+/* ---- per table copy to clipboard (tab separated, pastes into Excel / Sheets) ---- */
+function blockCsvRows(block){
+  const rows=[['Pipe','Material','Rating','Nominal Diameter','Length (m)','Elevation (m)']];
+  block.segments.forEach(s=>{
+    const p=state.pipes[s.pipeId]; if(!p) return;
+    const elev=endNodesForPipe(p).filter(n=>n.elevation!=null).map(n=>sig3(n.elevation)).join(' ; ');
+    rows.push([s.code, p.material, p.rating, p.size, String(Math.round(pipeLength(p))), elev]);
+  });
+  return rows;
+}
+function blockTsv(block){ return blockCsvRows(block).map(r=>r.join('\t')).join('\n'); }
+async function copyTextWithFeedback(text, btn, savedName){
+  const old=btn.textContent;
+  try{
+    await navigator.clipboard.writeText(text);
+    btn.textContent='Copied';
+  }catch(e){
+    download(savedName, text.replace(/\t/g,','), 'text/csv');   // clipboard blocked -> save instead
+    btn.textContent='Saved';
+  }
+  setTimeout(()=>{ btn.textContent=old; }, 1200);
+}
+function copyFlow(id, btn){
+  const b=flowTables.find(t=>t.id===id); if(!b) return;
+  copyTextWithFeedback(blockTsv(b), btn, b.name.replace(/\s+/g,'_')+'.csv');
+}
+function copyAllTables(btn){
+  let out=[];
+  flowTables.forEach((b,i)=>{ if(i) out.push(''); out.push(b.name); out.push(blockTsv(b)); });
+  copyTextWithFeedback(out.join('\n'), btn, 'pipe-schedules-all.csv');
+}
+
+// tab-separated dump of the flow path summary matrix (letters, delta-EL, type rows, totals)
+function flowSummaryTsv(){
+  const d=flowSummaryData();
+  if(!d.rows.length) return '';
+  const cols=d.columns;
+  const lines=[];
+  lines.push([''].concat(cols.map(c=>c.name)).concat(['MTO']));
+  lines.push(['\u0394EL (m)'].concat(cols.map(c=>elevDiffLabel(c.dEL))).concat(['']));
+  d.rows.forEach(r=>{
+    const label=(r.label+' '+flowTagText(r.flow)).trim();
+    const cells=cols.map(c=>{ const v=r.cells[c.id]; return v?String(Math.round(v)):''; });
+    lines.push([label].concat(cells).concat([String(Math.round(r.total))]));
+  });
+  lines.push(['TOTAL'].concat(cols.map(c=>String(Math.round(d.colTotal[c.id]||0)))).concat([String(Math.round(d.grand))]));
+  return lines.map(r=>r.join('\t')).join('\n');
+}
+async function copyFlowSummary(btn){
+  const tsv=flowSummaryTsv(); if(!tsv) return;
+  try{
+    await navigator.clipboard.writeText(tsv);
+    const o=btn.innerHTML; btn.classList.add('ok'); btn.innerHTML='\u2713';
+    setTimeout(()=>{ btn.innerHTML=o; btn.classList.remove('ok'); }, 1200);
+  }catch(e){
+    download('flow-path-summary.csv', tsv.replace(/\t/g,','), 'text/csv');
+  }
+}
+
+/* ---- subtle map glow for the flow path currently in view ---- */
+function drawGlow(){
+  glowLayer.clearLayers();
+  let pipeIds = null;
+  if(hoverPipeSet && hoverPipeSet.size){
+    pipeIds = [...hoverPipeSet];
+  } else if(highlightFlowId){
+    const hp = flowInfo.paths.find(f=>f.id===highlightFlowId);
+    if(hp) pipeIds = hp.segments.map(s=>s.pipeId);
+  }
+  if(!pipeIds) return;
+  pipeIds.forEach(pid=>{
+    const p=state.pipes[pid]; if(!p) return;
+    const a=state.nodes[p.a], b=state.nodes[p.b]; if(!a||!b) return;
+    const w=weightForSize(p.material,p.size);
+    L.polyline([[a.lat,a.lng],[b.lat,b.lng]],{color:'#5865F2',weight:w+16,opacity:.16,lineCap:'round',interactive:false}).addTo(glowLayer);
+    L.polyline([[a.lat,a.lng],[b.lat,b.lng]],{color:'#5865F2',weight:w+7,opacity:.28,lineCap:'round',interactive:false}).addTo(glowLayer);
+  });
+}
+// pipes belonging to any flow path that passes through a given node
+function pipesThroughNode(nodeId){
+  const set=new Set();
+  flowInfo.paths.forEach(p=>{
+    if(p.segments.some(s=> s.from===nodeId || s.to===nodeId))
+      p.segments.forEach(s=> set.add(s.pipeId));
+  });
+  return set;
+}
+function updateFlowHighlightFromScroll(){
+  const scroll=document.getElementById('tableScroll');
+  const blocks=[...document.querySelectorAll('.flow-table[data-flow]')];
+  if(!scroll || blocks.length<=1){
+    blocks.forEach(b=>b.classList.remove('glow'));
+    if(highlightFlowId){ highlightFlowId=null; drawGlow(); }
+    return;
+  }
+  const sRect=scroll.getBoundingClientRect();
+  const viewLine=sRect.top + sRect.height*0.35;   // a line 35% down the visible table area
+  let best=null, bestD=Infinity;
+  blocks.forEach(b=>{
+    const r=b.getBoundingClientRect();
+    const c=r.top + r.height/2;
+    const d=Math.abs(c-viewLine);
+    if(d<bestD){ bestD=d; best=b; }
+  });
+  const focus=(best && best.dataset.flow!=='UNASSIGNED') ? best.dataset.flow : null;
+  blocks.forEach(b=> b.classList.toggle('glow', b.dataset.flow===focus));
+  if(focus!==highlightFlowId){ highlightFlowId=focus; drawGlow(); }
+}
+
+let highlightLine = null;
+function highlightPipe(id, on){
+  if(highlightLine){ map.removeLayer(highlightLine); highlightLine=null; }
+  if(!on) return;
+  const p = state.pipes[id]; if(!p) return;
+  const a=state.nodes[p.a], b=state.nodes[p.b]; if(!a||!b) return;
+  highlightLine = L.polyline([[a.lat,a.lng],[b.lat,b.lng]],
+      {color:'#fff',weight:10,opacity:.5,interactive:false}).addTo(map);
+}
+
+function typeLabel(p){
+  // e.g. DN100 Carbon Steel SCH 40   /   DN110 PE100 PN16
+  return p.size+' '+p.material+' '+p.rating;
+}
+// group pipes by type for the sidebar totals and the export legend
+function pipeTypeGroups(){
+  const g = {};
+  for(const id in state.pipes){
+    const p = state.pipes[id];
+    const key = typeLabel(p);
+    if(!g[key]) g[key] = { label:key, color:(SPECS[p.material]?.color)||'#cccccc', length:0 };
+    g[key].length += pipeLength(p);
+  }
+  return Object.values(g).sort((a,b)=> a.label<b.label?-1:1);
+}
+
+/* =====================================================================
+   11. NODE POPUP  (elevation input for END NODES only)
+   ===================================================================== */
+function openNodePopup(id, latlng){
+  const n = state.nodes[id];
+  const deg = degree(id);
+  const end = isEndNode(id);
+  const poi = !!n.poi && deg>=2;
+  if(!end && !poi) return;
+  const letter = buildLetters()[id] || id;
+  let html = '<div class="popup-node"><h3>Node '+letter+(poi&&!end?' . Point of Interest':'')+'</h3>';
+  // elevation applies to end nodes and points of interest
+  html += '<label>Elevation (m AHD)</label>'+
+          '<input id="elevIn" type="number" step="0.01" placeholder="enter elevation" '+
+          'value="'+(n.elevation!=null?sig3(n.elevation):'')+'" />';
+  if(end){
+    const roleWord = effFlow(id)==='in' ? 'in' : 'out';
+    const inf = inferredRate(id);
+    const ratePlace = inf!=null ? ('auto '+fmtFlow(inf)) : 'auto';
+    html += '<label style="margin-top:9px">Flow role</label>'+
+            '<div class="flow-roles">'+
+              '<button data-role="none"'+(!n.flow?' class="active"':'')+'>Auto</button>'+
+              '<button data-role="in"'+(n.flow==='in'?' class="active in"':'')+'>Flow In</button>'+
+              '<button data-role="out"'+(n.flow==='out'?' class="active out"':'')+'>Flow Out</button>'+
+            '</div>'+
+            '<div class="flow-default" id="flowDefault"'+(n.flow?' style="display:none"':'')+'>Auto assumes <b>'+(effFlow(id)==='in'?'Flow In':'Flow Out')+'</b></div>'+
+            '<label style="margin-top:9px">Flow rate '+roleWord+' (m\u00b3/h)</label>'+
+            '<input id="flowRateIn" type="number" step="0.1" min="0" placeholder="'+ratePlace+'" '+
+            'value="'+(n.flowRate!=null?fmtFlow(n.flowRate):'')+'" />';
+  } else if(poi){
+    const inf = inferredThrough(id);
+    const ratePlace = inf!=null ? ('auto '+fmtFlow(inf)) : 'auto';
+    html += '<label style="margin-top:9px">Flow through (m\u00b3/h)</label>'+
+            '<input id="flowRateIn" type="number" step="0.1" min="0" placeholder="'+ratePlace+'" '+
+            'value="'+(n.flowRate!=null?fmtFlow(n.flowRate):'')+'" />'+
+            '<div class="flow-default">Splits the supply at the tee upstream</div>';
+  }
+  html += '</div>';
+
+  const popup = L.popup({closeButton:true, autoClose:true}).setLatLng([n.lat,n.lng]).setContent(html).openOn(map);
+  const root = popup.getElement();
+
+  // ---- elevation (always present) ----
+  let committed = false;
+  const commit = (raw)=>{
+    const node = state.nodes[id]; if(!node) return;
+    const txt = String(raw==null?'':raw).trim();
+    const v = txt==='' ? null : parseFloat(txt);
+    const next = (v==null || isNaN(v)) ? null : v;
+    committed = true;
+    if(next === node.elevation) return;
+    captureUndo();
+    node.elevation = next;
+    render();
+  };
+  const inp = root ? root.querySelector('#elevIn') : null;
+  if(inp){
+    inp.focus(); try{ inp.select(); }catch(e){}
+    inp.addEventListener('blur', ()=> commit(inp.value));
+    inp.addEventListener('keydown', (ev)=>{
+      if(ev.key==='Enter'){ ev.preventDefault(); commit(inp.value); map.closePopup(); }
+    });
+  }
+
+  // ---- flow rate (m3/h): end node demand/supply, or POI through-flow ----
+  const frInp = ((end||poi) && root) ? root.querySelector('#flowRateIn') : null;
+  const commitFlow = (raw)=>{
+    const node = state.nodes[id]; if(!node) return;
+    const txt = String(raw==null?'':raw).trim();
+    const v = txt==='' ? null : parseFloat(txt);
+    const next = (v==null || isNaN(v)) ? null : v;
+    if(next === node.flowRate) return;
+    captureUndo();
+    node.flowRate = next;
+    render();
+  };
+  if(frInp){
+    frInp.addEventListener('blur', ()=> commitFlow(frInp.value));
+    frInp.addEventListener('keydown', (ev)=>{
+      if(ev.key==='Enter'){ ev.preventDefault(); commitFlow(frInp.value); map.closePopup(); }
+    });
+  }
+
+  const onClose = ()=>{
+    if(!committed && inp) commit(inp.value);
+    if(frInp) commitFlow(frInp.value);
+    map.off('popupclose', onClose);
+  };
+  map.on('popupclose', onClose);
+
+  // ---- flow role, end nodes only ----
+  if(end && root){
+    root.querySelectorAll('.flow-roles button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const role = btn.dataset.role;
+        const node = state.nodes[id]; if(!node) return;
+        const next = (role==='none') ? null : role;
+        if(next !== node.flow){ captureUndo(); node.flow = next; }
+        root.querySelectorAll('.flow-roles button').forEach(b=>b.className='');
+        btn.className = 'active'+(role==='in'?' in':role==='out'?' out':'');
+        render();
+        const hint = root.querySelector('#flowDefault');
+        if(hint){
+          if(next===null){ hint.style.display=''; hint.innerHTML='Auto assumes <b>'+(effFlow(id)==='in'?'Flow In':'Flow Out')+'</b>'; }
+          else hint.style.display='none';
+        }
+      });
+    });
+  }
+}
+
+/* =====================================================================
+   12. CONTEXT MENU
+   ===================================================================== */
+const ctx = document.getElementById('ctxmenu');
+function openContextMenu(domEvent, title, items){
+  ctx.innerHTML = '<div class="menu-title">'+title+'</div>';
+  items.forEach(it=>{
+    const b = document.createElement('button');
+    if(it.danger) b.className='danger';
+    b.textContent = it.label;
+    b.onclick = ()=>{ hideContextMenu(); it.action(); };
+    ctx.appendChild(b);
+  });
+  ctx.style.display='block';
+  const pad=6, w=ctx.offsetWidth, h=ctx.offsetHeight;
+  let x=domEvent.clientX, y=domEvent.clientY;
+  if(x+w>innerWidth-pad) x=innerWidth-w-pad;
+  if(y+h>innerHeight-pad) y=innerHeight-h-pad;
+  ctx.style.left=x+'px'; ctx.style.top=y+'px';
+}
+function hideContextMenu(){ ctx.style.display='none'; }
+document.addEventListener('click', hideContextMenu);
+document.addEventListener('scroll', hideContextMenu, true);
+
+/* =====================================================================
+   13. MAP EVENTS
+   ===================================================================== */
+map.on('click', e=>{
+  if(Date.now()-markerGuard < 60) return;   // a node marker already handled this
+  if(mode==='draw')      handleDrawClick(e.latlng, e.originalEvent.shiftKey);
+  else if(mode==='measure') handleMeasureClick(e.latlng);
+});
+map.on('mousemove', e=>{
+  if(mode!=='draw') return;
+  lastMoveLatLng = e.latlng;
+  updatePreview(e.originalEvent.shiftKey);
+});
+map.on('contextmenu', e=>{
+  // empty-map right click finishes an active drawing run
+  L.DomEvent.preventDefault(e);
+  if(mode==='draw') finishRun();
+});
+
+/* =====================================================================
+   14. SPEC DROPDOWN CASCADE
+   ===================================================================== */
+const selMaterial = document.getElementById('selMaterial');
+const selRating   = document.getElementById('selRating');
+const selSize     = document.getElementById('selSize');
+const specSwatch  = document.getElementById('specSwatch');
+
+function fill(sel, arr){
+  sel.innerHTML='';
+  arr.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+}
+function refreshMaterial(){
+  fill(selMaterial, Object.keys(SPECS));
+  refreshRating();
+}
+function refreshRating(){
+  const m = selMaterial.value;
+  fill(selRating, SPECS[m].ratings);
+  refreshSize();
+  specSwatch.style.background = SPECS[m].color;
+}
+function refreshSize(){
+  const m = selMaterial.value;
+  fill(selSize, SPECS[m].sizes);    // size list keyed off the current material/rating
+}
+// apply a saved spec to the draw dropdowns (used when opening a project)
+function setSpec(spec){
+  if(!spec) return;
+  if(spec.material && SPECS[spec.material]) selMaterial.value = spec.material;
+  refreshRating();                  // rebuild rating + size lists and swatch for the material
+  const m = selMaterial.value;
+  if(spec.rating && SPECS[m].ratings.includes(spec.rating)) selRating.value = spec.rating;
+  if(spec.size && SPECS[m].sizes.includes(spec.size)) selSize.value = spec.size;
+}
+selMaterial.addEventListener('change', ()=>{ refreshRating(); markDirty(); });
+selRating.addEventListener('change', ()=>{ refreshSize(); markDirty(); });
+selSize.addEventListener('change', markDirty);
+
+/* =====================================================================
+   15. SAVE / LOAD / EXPORT
+   ===================================================================== */
+function download(filename, text, type){
+  const blob = new Blob([text],{type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),500);
+}
+
+// the file the project is currently bound to (for overwrite-on-Save)
+let fileHandle = null;
+let fileName   = null;
+let projectName = 'Untitled Project';
+let dirty = false;
+
+/* ---- project title: editable, autoscaling, shown on the map and on exports ---- */
+function fitTitle(){
+  const wrap=document.getElementById('projTitle'); if(!wrap) return;
+  const el=wrap.querySelector('#projTitleText'); if(!el) return;
+  const mapW=(document.getElementById('map').clientWidth)||900;
+  const maxW=Math.max(160, Math.min(460, mapW-340));
+  wrap.style.maxWidth=maxW+'px';
+  let fs=26; el.style.fontSize=fs+'px';
+  while(el.scrollWidth>el.clientWidth && fs>13){ fs-=1; el.style.fontSize=fs+'px'; }
+}
+function renderTitle(){
+  const wrap=document.getElementById('projTitle'); if(!wrap) return;
+  wrap.innerHTML='';
+  const sp=document.createElement('span'); sp.id='projTitleText'; sp.textContent=projectName;
+  sp.title='Click to rename'; sp.onclick=startTitleEdit;
+  wrap.appendChild(sp); fitTitle();
+}
+function startTitleEdit(){
+  const wrap=document.getElementById('projTitle');
+  const cur=wrap.querySelector('#projTitleText');
+  const fs=(cur && cur.style.fontSize) ? cur.style.fontSize : '26px';   // match the displayed size
+  const inp=document.createElement('input');
+  inp.type='text'; inp.className='proj-title-input'; inp.value=projectName; inp.maxLength=80;
+  inp.style.fontSize=fs;
+  wrap.innerHTML=''; wrap.appendChild(inp); inp.focus(); inp.select();
+  const commit=(keep)=>{
+    if(keep){ const v=inp.value.trim(); if(v && v!==projectName){ projectName=v; markDirty(); } }
+    renderTitle();
+  };
+  inp.addEventListener('keydown', e=>{ e.stopPropagation();
+    if(e.key==='Enter'){ e.preventDefault(); commit(true); }
+    else if(e.key==='Escape'){ e.preventDefault(); commit(false); } });
+  inp.addEventListener('blur', ()=> commit(true));
+}
+// turn the project name into a safe default file name
+function titleToFilename(){
+  const base=(projectName||'pipe-project').trim().replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ');
+  return (base||'pipe-project')+'.json';
+}
+
+function markDirty(){ dirty=true; const c=document.getElementById('fileChip'); if(c) c.classList.add('dirty'); }
+function clearDirty(){ dirty=false; const c=document.getElementById('fileChip'); if(c) c.classList.remove('dirty'); }
+
+function buildProjectData(){
+  return {
+    version:1,
+    savedAt:new Date().toISOString(),
+    title:projectName,
+    lastSpec:{ material:selMaterial.value, rating:selRating.value, size:selSize.value },
+    nodes:Object.values(state.nodes),
+    pipes:Object.values(state.pipes),
+    counters:{ node:state.nNode, pipe:state.nPipe },
+    callouts:{ show:Object.assign({}, coShow), cell:JSON.parse(JSON.stringify(coCell)) },
+    view:{ center:[map.getCenter().lat, map.getCenter().lng], zoom:map.getZoom() }
+  };
+}
+function updateFileChip(){
+  const el=document.getElementById('fileChip');
+  if(el) el.textContent = fileName || 'Untitled';
+}
+function flashSaved(btn){
+  if(!btn) return;
+  const html=btn.innerHTML;
+  btn.innerHTML='<span class="ic">&#10003;</span> Saved';
+  setTimeout(()=>{ btn.innerHTML=html; }, 1100);
+}
+
+// --- File System Access API (Chromium): real overwrite + native dialogs ---
+async function writeHandle(handle, data){
+  const w = await handle.createWritable();
+  await w.write(JSON.stringify(data, null, 2));
+  await w.close();
+}
+async function verifyRW(handle){
+  const opts={ mode:'readwrite' };
+  if((await handle.queryPermission(opts))==='granted') return true;
+  if((await handle.requestPermission(opts))==='granted') return true;
+  return false;
+}
+function downloadProject(data){
+  download(fileName || 'pipe-project.json', JSON.stringify(data,null,2), 'application/json');
+}
+
+// Save: overwrite the bound file by default; if none yet, behave like Save As
+async function save(btn){
+  const data=buildProjectData();
+  if(fileHandle && window.showSaveFilePicker){
+    try{
+      if(!(await verifyRW(fileHandle))) return saveAs(btn);
+      await writeHandle(fileHandle, data);
+      clearDirty(); flashSaved(btn);
+    }catch(err){ if(err && err.name!=='AbortError') saveAs(btn); }
+  } else {
+    saveAs(btn);
+  }
+}
+// Save As: native save dialog, default name = project name -> bind to the chosen file
+async function saveAs(btn){
+  if(window.showSaveFilePicker){
+    try{
+      const handle=await window.showSaveFilePicker({
+        suggestedName: titleToFilename(),
+        types:[{ description:'Pipe project (JSON)', accept:{ 'application/json':['.json'] } }]
+      });
+      projectName = handle.name.replace(/\.json$/i,'') || projectName;   // rename project to the new file
+      renderTitle();
+      await writeHandle(handle, buildProjectData());
+      fileHandle=handle; fileName=handle.name; updateFileChip(); clearDirty(); flashSaved(btn);
+    }catch(err){ if(err && err.name!=='AbortError') downloadProject(buildProjectData()); }
+  } else {
+    downloadProject(buildProjectData());     // older browsers: plain download
+  }
+}
+// Open: native picker so we get a writable handle for later Save
+async function openProject(){
+  if(window.showOpenFilePicker){
+    try{
+      const [handle]=await window.showOpenFilePicker({
+        multiple:false,
+        types:[{ description:'Pipe project (JSON)', accept:{ 'application/json':['.json'] } }]
+      });
+      const file=await handle.getFile();
+      const text=await file.text();
+      if(applyProjectData(text)){
+        fileHandle=handle; fileName=handle.name;
+        try{ await verifyRW(handle); }catch(e){}   // secure write now so later Save never re-prompts
+        projectName = handle.name.replace(/\.json$/i,'') || projectName;   // project name tracks the file name
+        renderTitle(); updateFileChip(); clearDirty();
+      }
+    }catch(err){ if(err && err.name!=='AbortError') alert('Could not open that file. '+err.message); }
+  } else {
+    document.getElementById('fileInput').click();   // fallback
+  }
+}
+// New: open a fresh blank project in a new tab, leaving the current one untouched
+function newProject(){
+  const w=window.open(window.location.href, '_blank');
+  if(!w) alert('Please allow pop-ups so a new project can open in a new tab.');
+}
+
+// shared loader used by both the native picker and the <input> fallback
+function applyProjectData(text){
+  try{
+    const d = JSON.parse(text);
+    captureUndo();
+    state.nodes={}; state.pipes={};
+    (d.nodes||[]).forEach(n=>{ if(n.elevation===undefined) n.elevation=null; if(n.flow===undefined) n.flow=null; if(n.flowRate===undefined) n.flowRate=null; state.nodes[n.id]=n; });
+    (d.pipes||[]).forEach(p=>{ if(p.manualLength===undefined) p.manualLength=null; state.pipes[p.id]=p; });
+    state.nNode = d.counters? d.counters.node : Object.keys(state.nodes).length;
+    state.nPipe = d.counters? d.counters.pipe : Object.keys(state.pipes).length;
+    // restore callout visibility (default everything on for older files)
+    coCell = (d.callouts && d.callouts.cell) ? d.callouts.cell : {};
+    CO_TYPES.forEach(t=>{ coShow[t] = (d.callouts && d.callouts.show && d.callouts.show[t]!==undefined) ? !!d.callouts.show[t] : true; });
+    CO_TYPES.forEach(t=>{ const el=document.getElementById('coTgl_'+t); if(el) el.checked=coShow[t]; });
+    projectName = d.title || 'Untitled Project'; renderTitle();
+    if(d.lastSpec) setSpec(d.lastSpec);
+    current=null; setMode('none'); render();
+    if(Object.keys(state.nodes).length) fitToData();
+    else if(d.view && d.view.center) map.setView(d.view.center, d.view.zoom||16);
+    clearDirty();
+    return true;
+  }catch(err){
+    alert('Could not read that project file. '+err.message);
+    return false;
+  }
+}
+function loadProject(file){       // <input> fallback: no handle, so Save acts as Save As
+  const reader = new FileReader();
+  reader.onload = ()=>{ if(applyProjectData(reader.result)){
+    fileName=file.name; fileHandle=null;
+    projectName = file.name.replace(/\.json$/i,'') || projectName;
+    renderTitle(); updateFileChip(); clearDirty();
+  } };
+  reader.readAsText(file);
+}
+function fitToData(){
+  const pts = Object.values(state.nodes).map(n=>[n.lat,n.lng]);
+  if(pts.length) map.fitBounds(pts,{padding:[60,60]});
+}
+
+function csvCell(v){
+  const s = String(v==null?'':v);
+  return /[",\n\t]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+function pipeRows(){
+  // Required column order: Material, Rating, Nominal Diameter, Length, Elevation
+  const rows = [['Material','Rating','Nominal Diameter','Length (m)','Elevation (m)']];
+  for(const id in state.pipes){
+    const p = state.pipes[id];
+    const len = Math.round(pipeLength(p));
+    const elev = endNodesForPipe(p)
+        .filter(n=>n.elevation!=null)
+        .map(n=>sig3(n.elevation)).join(' ; ');
+    rows.push([p.material, p.rating, p.size, String(len), elev]);
+  }
+  return rows;
+}
+
+// brief visual confirmation on a button
+function flashBtn(btn, msg){
+  const old = btn.innerHTML;
+  btn.innerHTML = '<span class="ic">&#10003;</span> '+msg;
+  btn.style.borderColor = 'var(--green)';
+  btn.style.color = 'var(--green)';
+  setTimeout(()=>{ btn.innerHTML = old; btn.style.borderColor=''; btn.style.color=''; }, 1400);
+}
+
+// copy the schedule as tab separated text (pastes straight into Excel / Sheets)
+async function copyTable(btn){
+  const rows = pipeRows();
+  if(rows.length<=1){ flashBtn(btn,'Table empty'); return; }
+  const tsv = rows.map(r=>r.join('\t')).join('\n');
+  try{
+    await navigator.clipboard.writeText(tsv);
+    flashBtn(btn,'Copied');
+  }catch(err){
+    download('pipe-schedule.csv',
+      rows.map(r=>r.map(csvCell).join(',')).join('\n'), 'text/csv');
+    flashBtn(btn,'Saved CSV');
+  }
+}
+
+// copy a PNG screenshot of the map to the clipboard (download fallback)
+/* ---- canvas drawing helpers for the exported map image ---- */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function drawTextBox(ctx,text,cx,cy,color,bg,border){
+  const padX=6, bh=18, w=ctx.measureText(text).width, bw=w+padX*2;
+  roundRect(ctx, cx-bw/2, cy-bh/2, bw, bh, 4);
+  ctx.fillStyle=bg; ctx.fill();
+  ctx.lineWidth=1; ctx.strokeStyle=border; ctx.stroke();
+  ctx.fillStyle=color; ctx.fillText(text, cx, cy+0.5);
+}
+// multi-line callout box (left aligned), centered on cx,cy
+function drawLinesBox(ctx,lines,cx,cy,bg,border){
+  const padX=7, padY=5, lineH=15;
+  let w=0; ctx.font='600 12px "IBM Plex Mono", monospace';
+  lines.forEach(l=> w=Math.max(w, ctx.measureText(l).width));
+  const bw=w+padX*2, bh=lines.length*lineH+padY*2;
+  const x=cx-bw/2, y=cy-bh/2;
+  roundRect(ctx, x, y, bw, bh, 5);
+  ctx.fillStyle=bg; ctx.fill(); ctx.lineWidth=1; ctx.strokeStyle=border; ctx.stroke();
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  lines.forEach((l,k)=>{ ctx.fillStyle = k===0 ? '#1E1F22' : '#4E5058'; ctx.fillText(l, x+padX, y+padY+lineH*k+lineH/2); });
+  ctx.textAlign='center';
+}
+// structured flow-path summary (shared by the on-map table and the export)
+function flowSummaryData(){
+  const flows=computeFlows();
+  const fp=flowPaths(), L=fp.letters, paths=fp.paths;
+  const flowKey=pid=>{const v=flows[pid];return (v==null||isNaN(v))?'na':String(Math.round(v*100)/100);};
+  const rowKey=pid=>typeLabel(state.pipes[pid])+'||'+flowKey(pid);
+  const rows={};
+  for(const pid in state.pipes){ const p=state.pipes[pid], k=rowKey(pid);
+    if(!rows[k]) rows[k]={label:typeLabel(p), color:(SPECS[p.material]?.color)||'#cccccc', flow:flows[pid], total:0, cells:{}};
+    rows[k].total+=pipeLength(p);
+  }
+  const colTotal={}; paths.forEach(p=>colTotal[p.id]=0);
+  paths.forEach(path=> path.segments.forEach(s=>{ const p=state.pipes[s.pipeId]; if(!p) return;
+    const k=rowKey(s.pipeId), len=pipeLength(p);
+    rows[k].cells[path.id]=(rows[k].cells[path.id]||0)+len; colTotal[path.id]+=len;
+  }));
+  const keys=Object.keys(rows).sort((a,b)=> rows[a].label!==rows[b].label
+      ? (rows[a].label<rows[b].label?-1:1)
+      : ((rows[a].flow==null?-1:rows[a].flow)-(rows[b].flow==null?-1:rows[b].flow)));
+  let grand=0; keys.forEach(k=>grand+=rows[k].total);
+  return { columns:paths.map(p=>({id:p.id, name:(L[p.inId]||'?')+'\u2192'+(L[p.outId]||'?'), dEL:pathElevDiff(p.inId,p.outId)})),
+           rows:keys.map(k=>rows[k]), colTotal, grand };
+}
+function flowTagText(f){ return (f==null||isNaN(f)) ? '(flow n/a)' : ('@'+fmtFlow(f)+' m\u00b3/h'); }
+
+// draw the flow-path summary matrix bottom-left of the export (replaces the old take-off box)
+// ---- scale bar + A3 print area geometry (shared by live map and export) ----
+function niceScale(maxMeters){
+  if(!(maxMeters>0)) return 1;
+  const pow=Math.pow(10,Math.floor(Math.log10(maxMeters))), f=maxMeters/pow;
+  return (f>=5?5:f>=2?2:1)*pow;
+}
+function metersPerPixel(){
+  const lat=map.getCenter().lat*Math.PI/180;
+  return 40075016.6856*Math.cos(lat)/(256*Math.pow(2,map.getZoom()));
+}
+function scaleBarInfo(maxPx){
+  const mpp=metersPerPixel(), meters=niceScale(mpp*maxPx);
+  const label = meters>=1000 ? ((+(meters/1000).toFixed(meters%1000?1:0))+' km') : (Math.round(meters)+' m');
+  return { meters, px:meters/mpp, label };
+}
+const A3_ASPECT = 420/297;     // landscape A3, width : height
+function printRect(){
+  const s=map.getSize(), margin=0.94;
+  let w=s.x*margin, h=w/A3_ASPECT;
+  if(h>s.y*margin){ h=s.y*margin; w=h*A3_ASPECT; }
+  return { x:Math.round((s.x-w)/2), y:Math.round((s.y-h)/2), w:Math.round(w), h:Math.round(h) };
+}
+function printInset(r){ return Math.round(Math.min(r.w,r.h)*0.035); }   // printer dead-zone safe margin
+function updateScaleBar(){
+  const el=document.getElementById('scaleBar'); if(!el) return;
+  const info=scaleBarInfo(120);
+  el.style.width=Math.round(info.px)+'px';
+  const lab=el.querySelector('.sb-label'); if(lab) lab.textContent=info.label;
+}
+function updatePrintFrame(){
+  const el=document.getElementById('printFrame'); if(!el) return;
+  const r=printRect();
+  el.style.left=r.x+'px'; el.style.top=r.y+'px'; el.style.width=r.w+'px'; el.style.height=r.h+'px';
+}
+// keep every printed overlay (title, flow summary, materials, scale bar) inside the A3 safe area
+function updateOverlayLayout(){
+  updatePrintFrame(); updateScaleBar();
+  const r=printRect(), s=map.getSize(), m=printInset(r);
+  const rightOff=(s.x-(r.x+r.w))+m, bottomOff=(s.y-(r.y+r.h))+m, leftOff=r.x+m, topOff=r.y+m;
+  const pt=document.getElementById('projTitle');
+  if(pt){ pt.style.top=topOff+'px'; pt.style.left=(r.x+r.w/2)+'px'; pt.style.transform='translateX(-50%)'; }
+  const bl=document.querySelector('.corner-bl');
+  if(bl){ bl.style.left=leftOff+'px'; bl.style.bottom=bottomOff+'px'; }
+  const lg=document.getElementById('mapLegend');
+  if(lg){ lg.style.right=rightOff+'px'; lg.style.bottom=bottomOff+'px'; }
+  const sb=document.getElementById('scaleBar');
+  if(sb){ const lw=lg?lg.offsetWidth:0; sb.style.right=(rightOff+lw+12)+'px'; sb.style.bottom=(bottomOff+2)+'px'; }
+}
+
+// draw a scale bar on the export, with its right end at rightX and bar resting on baseY
+function drawScaleBar(ctx, rightX, baseY, maxPx){
+  const info=scaleBarInfo(maxPx);
+  const bw=Math.round(info.px), bx=rightX-bw, tick=6;
+  ctx.strokeStyle='#1E1F22'; ctx.lineWidth=2; ctx.lineCap='butt';
+  ctx.beginPath();
+  ctx.moveTo(bx, baseY-tick); ctx.lineTo(bx, baseY); ctx.lineTo(rightX, baseY); ctx.lineTo(rightX, baseY-tick);
+  ctx.stroke();
+  ctx.font='700 11px "IBM Plex Mono", monospace'; ctx.textAlign='right'; ctx.textBaseline='bottom';
+  ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.85)'; ctx.strokeText(info.label, rightX, baseY-tick-2);
+  ctx.fillStyle='#ffffff'; ctx.fillText(info.label, rightX, baseY-tick-2);
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+}
+
+function drawFlowSummary(ctx, rect){
+  const data=flowSummaryData();
+  const pad=12, cpadX=10, lineH=18, headH=20, titleH=16;
+  ctx.textBaseline='middle';
+  if(!data.rows.length){
+    const m=printInset(rect);
+    const boxW=190, boxH=titleH+lineH+pad*2, x=rect.x+m, y=Math.max(rect.y+m, rect.y+rect.h-boxH-m);
+    roundRect(ctx,x,y,boxW,boxH,8); ctx.fillStyle='rgba(255,255,255,.93)'; ctx.fill(); ctx.lineWidth=1; ctx.strokeStyle='#E3E5E8'; ctx.stroke();
+    ctx.fillStyle='#4E5058'; ctx.font='700 10px "IBM Plex Mono", monospace'; ctx.textAlign='left'; ctx.fillText('FLOW PATH SUMMARY', x+pad, y+pad+2);
+    ctx.fillStyle='#5c6675'; ctx.font='500 11px "IBM Plex Mono", monospace'; ctx.fillText('No pipe routed', x+pad, y+pad+titleH+6);
+    return;
+  }
+  ctx.font='500 11px "IBM Plex Mono", monospace';
+  let c0=70;
+  data.rows.forEach(r=>{ c0=Math.max(c0, ctx.measureText(r.label+'  '+flowTagText(r.flow)).width); });
+  c0=Math.max(c0, ctx.measureText('TOTAL').width)+18;
+  ctx.font='600 11px "IBM Plex Mono", monospace';
+  const cols=data.columns;
+  const colW=cols.map(c=>{
+    let w=ctx.measureText(c.name).width;
+    data.rows.forEach(r=>{ const v=r.cells[c.id]; if(v) w=Math.max(w, ctx.measureText(String(Math.round(v))).width); });
+    w=Math.max(w, ctx.measureText(String(Math.round(data.colTotal[c.id]||0))).width);
+    return w+cpadX*2;
+  });
+  let mtoW=ctx.measureText('MTO').width;
+  data.rows.forEach(r=> mtoW=Math.max(mtoW, ctx.measureText(String(Math.round(r.total))).width));
+  mtoW=Math.max(mtoW, ctx.measureText(String(Math.round(data.grand))).width); mtoW+=cpadX*2;
+  const tableW=c0+colW.reduce((a,b)=>a+b,0)+mtoW;
+  const nRows=data.rows.length;
+  const delH=16;
+  const boxW=tableW+pad*2, boxH=titleH+delH+headH+nRows*lineH+lineH+pad*2;
+  const m=printInset(rect);
+  const x=rect.x+m, y=Math.max(rect.y+m, rect.y+rect.h-boxH-m);
+  roundRect(ctx,x,y,boxW,boxH,8); ctx.fillStyle='rgba(255,255,255,.93)'; ctx.fill(); ctx.lineWidth=1; ctx.strokeStyle='#E3E5E8'; ctx.stroke();
+  ctx.fillStyle='#4E5058'; ctx.font='700 10px "IBM Plex Mono", monospace'; ctx.textAlign='left';
+  ctx.fillText('FLOW PATH SUMMARY', x+pad, y+pad+2);
+  const x0=x+pad; const colLeft=[]; let cur=x0+c0;
+  cols.forEach((c,i)=>{ colLeft.push(cur); cur+=colW[i]; });
+  const mtoLeft=cur;
+  // delta-elevation row, just above the flow-path letters
+  const dy=y+pad+titleH+delH/2;
+  ctx.font='600 10px "IBM Plex Mono", monospace'; ctx.textAlign='left'; ctx.fillStyle='#2C7A47';
+  ctx.fillText('\u0394EL (m)', x0, dy);
+  ctx.textAlign='right'; ctx.fillStyle='#3BA55C';
+  cols.forEach((c,i)=> ctx.fillText(elevDiffLabel(c.dEL), colLeft[i]+colW[i]-cpadX, dy));
+  // column header (flow-path letters)
+  const hy=y+pad+titleH+delH+headH/2;
+  ctx.font='600 11px "IBM Plex Mono", monospace'; ctx.textAlign='right';
+  ctx.fillStyle='#2E3035'; cols.forEach((c,i)=> ctx.fillText(c.name, colLeft[i]+colW[i]-cpadX, hy));
+  ctx.fillStyle='#5865F2'; ctx.fillText('MTO', mtoLeft+mtoW-cpadX, hy);
+  ctx.strokeStyle='#E3E5E8'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x0, y+pad+titleH+delH+headH-2); ctx.lineTo(x+boxW-pad, y+pad+titleH+delH+headH-2); ctx.stroke();
+  ctx.font='500 11px "IBM Plex Mono", monospace';
+  data.rows.forEach((r,ri)=>{
+    const ry=y+pad+titleH+delH+headH + ri*lineH + lineH/2;
+    ctx.strokeStyle=r.color; ctx.lineWidth=4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x0, ry); ctx.lineTo(x0+12, ry); ctx.stroke();
+    ctx.fillStyle='#1E1F22'; ctx.textAlign='left'; ctx.fillText(r.label, x0+18, ry);
+    const lw=ctx.measureText(r.label).width;
+    ctx.fillStyle='#4E5058'; ctx.fillText('  '+flowTagText(r.flow), x0+18+lw, ry);
+    ctx.textAlign='right';
+    cols.forEach((c,i)=>{ const v=r.cells[c.id]; if(v){ ctx.fillStyle='#2E3035'; ctx.fillText(String(Math.round(v)), colLeft[i]+colW[i]-cpadX, ry); } });
+    ctx.fillStyle='#5865F2'; ctx.fillText(String(Math.round(r.total)), mtoLeft+mtoW-cpadX, ry);
+  });
+  const ty=y+pad+titleH+headH + nRows*lineH + lineH/2;
+  ctx.strokeStyle='#E3E5E8'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x0, ty-lineH/2); ctx.lineTo(x+boxW-pad, ty-lineH/2); ctx.stroke();
+  ctx.fillStyle='#4E5058'; ctx.textAlign='left'; ctx.font='700 11px "IBM Plex Mono", monospace'; ctx.fillText('TOTAL', x0, ty);
+  ctx.textAlign='right'; ctx.font='600 11px "IBM Plex Mono", monospace';
+  cols.forEach((c,i)=>{ ctx.fillStyle='#2E3035'; ctx.fillText(String(Math.round(data.colTotal[c.id]||0)), colLeft[i]+colW[i]-cpadX, ty); });
+  ctx.fillStyle='#2C7A47'; ctx.fillText(String(Math.round(data.grand)), mtoLeft+mtoW-cpadX, ty);
+  ctx.textAlign='left';
+}
+
+function drawMapOverlay(ctx, rect){
+  const cp = ll => map.latLngToContainerPoint(ll);
+  const letters = buildLetters();
+  const dirs = flowDirections();
+
+  // pipes (constant thin line, ~0.5 mm on the A3 print)
+  ctx.lineCap='round';
+  const pw = Math.max(0.8, rect.w/840);
+  for(const id in state.pipes){
+    const p=state.pipes[id], a=state.nodes[p.a], b=state.nodes[p.b]; if(!a||!b) continue;
+    const A=cp([a.lat,a.lng]), B=cp([b.lat,b.lng]);
+    ctx.strokeStyle=(SPECS[p.material]?.color)||'#cccccc';
+    ctx.lineWidth=pw;
+    ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
+  }
+  // flow direction arrows adjacent to each node, dark with a light halo
+  for(const id in state.pipes){
+    const d=dirs[id]; if(!d) continue;
+    const fn=state.nodes[d.from], tn=state.nodes[d.to]; if(!fn||!tn) continue;
+    const F=cp([fn.lat,fn.lng]), T=cp([tn.lat,tn.lng]);
+    const dx=T.x-F.x, dy=T.y-F.y, dist=Math.hypot(dx,dy);
+    if(dist<=6) continue;
+    const ang=Math.atan2(dy,dx), ux=dx/dist, uy=dy/dist, off=Math.min(26,dist*0.34);
+    [[F,1],[T,-1]].forEach(pair=>{
+      const base=pair[0], sign=pair[1];
+      ctx.save(); ctx.translate(base.x+ux*off*sign, base.y+uy*off*sign); ctx.rotate(ang);
+      ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.lineWidth=4.6; ctx.strokeStyle='#f4f7fa';
+      ctx.beginPath(); ctx.moveTo(-5,0); ctx.lineTo(3,0); ctx.moveTo(-3,-4); ctx.lineTo(3,0); ctx.lineTo(-3,4); ctx.stroke();
+      ctx.lineWidth=2.1; ctx.strokeStyle='#1E1F22';
+      ctx.beginPath(); ctx.moveTo(-5,0); ctx.lineTo(3,0); ctx.moveTo(-3,-4); ctx.lineTo(3,0); ctx.lineTo(-3,4); ctx.stroke();
+      ctx.restore();
+    });
+  }
+  // big source / sink arrows at flow-in and flow-out end nodes
+  const adjX = adjacency();
+  for(const id in state.nodes){
+    if(degree(id)!==1) continue;
+    const ef=effFlow(id); if(ef!=='in' && ef!=='out') continue;
+    const nb=(adjX[id]||[])[0]; if(nb==null) continue;
+    const nn=state.nodes[id], bn=state.nodes[nb]; if(!bn) continue;
+    const PN=cp([nn.lat,nn.lng]), PB=cp([bn.lat,bn.lng]);
+    let dx=PB.x-PN.x, dy=PB.y-PN.y; const dd=Math.hypot(dx,dy)||1; dx/=dd; dy/=dd;
+    const base=Math.atan2(dy,dx), ang=(ef==='in')?base:base+Math.PI;
+    const ox=PN.x-dx*34, oy=PN.y-dy*34;
+    ctx.save(); ctx.translate(ox,oy); ctx.rotate(ang); ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.lineWidth=7; ctx.strokeStyle='#ffffff';
+    ctx.beginPath(); ctx.moveTo(-10,0); ctx.lineTo(8,0); ctx.moveTo(2,-7); ctx.lineTo(10,0); ctx.lineTo(2,7); ctx.stroke();
+    ctx.lineWidth=3.4; ctx.strokeStyle='#1E1F22';
+    ctx.beginPath(); ctx.moveTo(-10,0); ctx.lineTo(8,0); ctx.moveTo(2,-7); ctx.lineTo(10,0); ctx.lineTo(2,7); ctx.stroke();
+    ctx.restore();
+  }
+  // node markers: lettered circles for consequential nodes, small dots for plain inline bends
+  for(const id in state.nodes){
+    const n=state.nodes[id], deg=degree(id), pt=cp([n.lat,n.lng]);
+    const letter=letters[id];
+    if(!letter){                                   // inconsequential inline bend: small dot
+      ctx.beginPath(); ctx.arc(pt.x,pt.y,3.5,0,2*Math.PI);
+      ctx.fillStyle='#ffffff'; ctx.fill();
+      ctx.lineWidth=1.5; ctx.strokeStyle='#1E1F22'; ctx.stroke();
+      continue;
+    }
+    let stroke='#80848E', dash=[];
+    if(deg===0){ dash=[3,2]; }
+    if(!!n.poi && deg>=2) stroke='#D83C3E';        // point of interest: red (flow in/out shown by big arrow)
+    const r=11;
+    ctx.beginPath(); ctx.arc(pt.x,pt.y,r,0,2*Math.PI);
+    ctx.fillStyle='#f4f7fa'; ctx.fill();
+    ctx.setLineDash(dash); ctx.lineWidth=3; ctx.strokeStyle=stroke; ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#1E1F22'; ctx.font='700 12px "IBM Plex Mono", monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(letter, pt.x, pt.y+0.5);
+  }
+  // property callouts: every pipe + each end node / POI, each line gated by the callout toggles
+  ctx.font='600 12px "IBM Plex Mono", monospace';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const labItems=[];
+  const xflows=computeFlows();
+  for(const id in state.pipes){
+    const p=state.pipes[id], a=state.nodes[p.a], b=state.nodes[p.b]; if(!a||!b) continue;
+    const fv=xflows[id]; const q=(fv!=null&&!isNaN(fv))?Math.abs(fv):null;
+    const lines=[];
+    if(coOn(id,'size'))   lines.push(p.size);
+    if(coOn(id,'spec'))   lines.push(pipeSpecText(p));
+    if(coOn(id,'flow') && q!=null) lines.push(fmtFlow(q)+' m\u00b3/h');
+    if(coOn(id,'vel')){ const v=pipeVelocity(p,q); if(v!=null) lines.push(fmtVel(v)); }
+    if(coOn(id,'length')) lines.push(fmt(pipeLength(p)));
+    if(!lines.length) continue;
+    const pt=cp([(a.lat+b.lat)/2,(a.lng+b.lng)/2]);
+    let w=0; lines.forEach(l=> w=Math.max(w, ctx.measureText(l).width));
+    labItems.push({ anchor:{x:pt.x,y:pt.y}, lines, w:w+16, h:lines.length*15+10, off:{x:0,y:0} });
+  }
+  for(const id in state.nodes){
+    const isEnd = degree(id)===1;
+    const isPoi = !!state.nodes[id].poi && degree(id)>=2;
+    if(!isEnd && !isPoi) continue;
+    const n=state.nodes[id], pt=cp([n.lat,n.lng]);
+    const lines=[];
+    if(coOn(id,'elev')){ const et=elevText(id); if(et) lines.push(et); }
+    if(coOn(id,'flow')){ const ft = isEnd ? flowText(id) : poiFlowText(id); if(ft) lines.push(ft); }
+    if(!lines.length) continue;
+    let w=0; lines.forEach(l=> w=Math.max(w, ctx.measureText(l).width));
+    labItems.push({ anchor:{x:pt.x,y:pt.y}, lines, w:w+16, h:lines.length*15+10, off:{x:0,y:-28}, key:id });
+  }
+  if(labItems.length){
+    const lp=layoutLabels(labItems);
+    const place=labItems.map((it,i)=>{
+      const ov=it.key ? calloutOverride[it.key] : null;
+      return ov ? {x:it.anchor.x+ov.dx, y:it.anchor.y+ov.dy} : lp[i];
+    });
+    ctx.lineWidth=Math.max(0.8, rect.w/840); ctx.strokeStyle='#000000'; ctx.lineCap='round';
+    labItems.forEach((it,i)=>{
+      if(Math.hypot(place[i].x-it.anchor.x, place[i].y-it.anchor.y) > 8){
+        ctx.beginPath(); ctx.moveTo(it.anchor.x,it.anchor.y); ctx.lineTo(place[i].x,place[i].y); ctx.stroke();
+      }
+    });
+    labItems.forEach((it,i)=> drawLinesBox(ctx, it.lines, place[i].x, place[i].y, 'rgba(255,255,255,.92)', '#E3E5E8'));
+  }
+
+  // flow path summary matrix, bottom left (replaces the old material take off box)
+  drawFlowSummary(ctx, rect);
+
+  // materials colour key, bottom right
+  const mats=[['PE100','#36b0ff'],['Carbon Steel','#ff7a3d']];
+  ctx.font='500 11px "IBM Plex Mono", monospace'; ctx.textBaseline='middle';
+  let kw=0; mats.forEach(m=> kw=Math.max(kw, ctx.measureText(m[0]).width));
+  const kPad=11, kSw=24, kLineH=20, kTitleH=16;
+  const kBoxW = kSw+8 + kw + kPad*2;
+  const kBoxH = kTitleH + mats.length*kLineH + kPad*2 - 6;
+  const m=printInset(rect);
+  const kx = rect.x+rect.w - kBoxW - m, ky = Math.max(rect.y+m, rect.y+rect.h - kBoxH - m);
+  roundRect(ctx, kx, ky, kBoxW, kBoxH, 8); ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fill();
+  ctx.lineWidth=1; ctx.strokeStyle='#E3E5E8'; ctx.stroke();
+  ctx.fillStyle='#4E5058'; ctx.font='700 10px "IBM Plex Mono", monospace'; ctx.textAlign='left';
+  ctx.fillText('MATERIALS', kx+kPad, ky+kPad+3);
+  ctx.font='500 11px "IBM Plex Mono", monospace';
+  mats.forEach((m,i)=>{
+    const ry = ky+kPad+kTitleH + i*kLineH;
+    ctx.strokeStyle=m[1]; ctx.lineWidth=5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(kx+kPad, ry); ctx.lineTo(kx+kPad+kSw, ry); ctx.stroke();
+    ctx.fillStyle='#1E1F22'; ctx.fillText(m[0], kx+kPad+kSw+8, ry);
+  });
+  ctx.textAlign='left';
+
+  // scale bar, just left of the materials key, resting on its base line
+  drawScaleBar(ctx, kx-14, ky+kBoxH, Math.min(150, rect.w*0.22));
+
+  // project title, top center (autoscaled to the export width)
+  if(projectName){
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    const fam='"Archivo", system-ui, sans-serif';
+    let fs=Math.max(16, Math.min(34, Math.round(rect.w*0.032)));
+    ctx.font='700 '+fs+'px '+fam;
+    const maxW=rect.w*0.7;
+    while(ctx.measureText(projectName).width>maxW && fs>12){ fs--; ctx.font='700 '+fs+'px '+fam; }
+    const tw=ctx.measureText(projectName).width;
+    const padX=16, padY=9, bw=tw+padX*2, bh=fs+padY*2, cx=rect.x+rect.w/2, ty=rect.y+m;
+    roundRect(ctx, cx-bw/2, ty, bw, bh, 9);
+    ctx.fillStyle='rgba(255,255,255,.82)'; ctx.fill();
+    ctx.lineWidth=1; ctx.strokeStyle='#E3E5E8'; ctx.stroke();
+    ctx.fillStyle='#1E1F22'; ctx.fillText(projectName, cx, ty+padY);
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+  }
+}
+
+// draw the currently loaded map tiles onto ctx, aligned to the map container origin
+function drawTiles(ctx){
+  const container = map.getContainer();
+  const origin = container.getBoundingClientRect();
+  const imgs = container.querySelectorAll('.leaflet-tile-pane img.leaflet-tile-loaded, .leaflet-tile-pane img.leaflet-tile');
+  imgs.forEach(img=>{
+    if(!img.complete || !img.naturalWidth) return;
+    const r = img.getBoundingClientRect();
+    const x = r.left - origin.left, y = r.top - origin.top;
+    try{ ctx.drawImage(img, x, y, r.width, r.height); }catch(e){}
+  });
+}
+// Load Esri World Imagery tiles (CORS clean) for the current view and draw them.
+// Used for the export so the satellite always composites, even when the on-screen
+// base is Google (whose tiles taint the canvas and cannot be exported).
+function exportSatellite(ctx, size){
+  return new Promise((resolve)=>{
+    const z = Math.max(0, Math.min(18, Math.round(map.getZoom())));
+    const nw = map.project(map.containerPointToLatLng([0,0]), z);
+    const se = map.project(map.containerPointToLatLng([size.x,size.y]), z);
+    const scaleX = size.x/(se.x-nw.x), scaleY = size.y/(se.y-nw.y);
+    const span = Math.pow(2,z);
+    const tiles=[];
+    for(let tx=Math.floor(nw.x/256); tx<=Math.floor(se.x/256); tx++){
+      for(let ty=Math.floor(nw.y/256); ty<=Math.floor(se.y/256); ty++){
+        if(ty<0 || ty>=span) continue;
+        tiles.push({ tx, ty, wx:((tx%span)+span)%span });
+      }
+    }
+    let pending=tiles.length;
+    if(!pending){ resolve(); return; }
+    let done=false; const finish=()=>{ if(!done){ done=true; resolve(); } };
+    const timer=setTimeout(finish, 5000);            // never hang the capture
+    tiles.forEach(t=>{
+      const img=new Image(); img.crossOrigin='anonymous';
+      const after=()=>{ if(--pending<=0){ clearTimeout(timer); finish(); } };
+      img.onload=()=>{
+        const dx=(t.tx*256 - nw.x)*scaleX, dy=(t.ty*256 - nw.y)*scaleY;
+        try{ ctx.drawImage(img, dx, dy, 256*scaleX, 256*scaleY); }catch(e){}
+        after();
+      };
+      img.onerror=after;
+      img.src='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+z+'/'+t.ty+'/'+t.wx;
+    });
+  });
+}
+function buildExportCanvas(withTiles){
+  const size = map.getSize(), rect = printRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const c = document.createElement('canvas');
+  c.width = Math.round(rect.w*dpr); c.height = Math.round(rect.h*dpr);
+  const ctx = c.getContext('2d');
+  const white = map.getContainer().classList.contains('white-base');
+  ctx.save(); ctx.scale(dpr,dpr); ctx.translate(-rect.x,-rect.y);
+  ctx.fillStyle = white ? '#ffffff' : '#ffffff'; ctx.fillRect(rect.x,rect.y,rect.w,rect.h);
+  if(withTiles) drawTiles(ctx);
+  drawMapOverlay(ctx, rect);
+  ctx.restore();
+  return c;
+}
+async function buildExportCanvasAsync(){
+  const size = map.getSize(), rect = printRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const c = document.createElement('canvas');
+  c.width = Math.round(rect.w*dpr); c.height = Math.round(rect.h*dpr);
+  const ctx = c.getContext('2d');
+  const white = map.getContainer().classList.contains('white-base');
+  ctx.save(); ctx.scale(dpr,dpr); ctx.translate(-rect.x,-rect.y);
+  ctx.fillStyle = white ? '#ffffff' : '#ffffff'; ctx.fillRect(rect.x,rect.y,rect.w,rect.h);
+  if(!white) await exportSatellite(ctx, size);     // CORS-clean imagery for the export
+  drawMapOverlay(ctx, rect);
+  ctx.restore();
+  return c;
+}
+function toBlobSafe(canvas){
+  return new Promise((res,rej)=>{
+    try{ canvas.toBlob(b=> b?res(b):rej(new Error('null blob')), 'image/png'); }
+    catch(e){ rej(e); }
+  });
+}
+async function deliverBlob(blob, btn){
+  try{
+    await navigator.clipboard.write([ new ClipboardItem({'image/png':blob}) ]);
+    flashBtn(btn,'Copied');
+  }catch(err){
+    download('pipe-map.png', blob, 'image/png');
+    flashBtn(btn,'Saved PNG');
+  }
+}
+async function copyMapImage(btn){
+  const old = btn.innerHTML;
+  btn.innerHTML = '<span class="ic">&#8987;</span> Capturing...';
+  try{
+    let blob;
+    try{ blob = await toBlobSafe(buildExportCanvas(true)); }          // capture the layer currently shown
+    catch(e){ blob = await toBlobSafe(buildExportCanvas(false)); }    // layer taints canvas -> clean schematic
+    btn.innerHTML = old;
+    await deliverBlob(blob, btn);
+  }catch(err){
+    btn.innerHTML = old;
+    flashBtn(btn,'Capture failed');
+  }
+}
+
+/* =====================================================================
+   15b. PLACE SEARCH  (OpenStreetMap Nominatim, no key)
+   ===================================================================== */
+const searchInput = document.getElementById('searchInput');
+const searchBtn   = document.getElementById('searchBtn');
+async function geocode(){
+  const q = searchInput.value.trim();
+  if(!q) return;
+  const label = searchBtn.textContent;
+  searchBtn.disabled = true; searchBtn.textContent = '...';
+  try{
+    const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(q);
+    const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
+    const data = await res.json();
+    if(!data || !data.length){
+      searchInput.value=''; searchInput.placeholder='No match, try another search';
+    } else {
+      const r = data[0];
+      if(r.boundingbox){
+        const bb = r.boundingbox.map(Number);   // [south, north, west, east]
+        map.fitBounds([[bb[0],bb[2]],[bb[1],bb[3]]], { maxZoom:18 });
+      } else {
+        map.setView([+r.lat, +r.lon], 16);
+      }
+    }
+  }catch(err){
+    searchInput.placeholder='Search failed, check connection';
+  }finally{
+    searchBtn.disabled=false; searchBtn.textContent=label;
+  }
+}
+searchBtn.onclick = geocode;
+searchInput.addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ e.preventDefault(); geocode(); }
+  e.stopPropagation();   // keep tool hotkeys from firing while typing a place name
+});
+
+/* =====================================================================
+   16. TOOLBAR + KEYBOARD WIRING
+   ===================================================================== */
+const btnDraw=document.getElementById('btnDraw');
+const btnMeasure=document.getElementById('btnMeasure');
+
+btnDraw.onclick   = ()=> setMode(mode==='draw'?'none':'draw');
+btnMeasure.onclick= ()=> setMode(mode==='measure'?'none':'measure');
+document.getElementById('btnUndo').onclick = doUndo;
+document.getElementById('btnRedo').onclick = doRedo;
+document.getElementById('btnNew').onclick    = newProject;
+document.getElementById('btnSave').onclick   = (e)=> save(e.currentTarget);
+document.getElementById('btnSaveAs').onclick = (e)=> saveAs(e.currentTarget);
+document.getElementById('btnCopyMap').onclick   = (e)=> copyMapImage(e.currentTarget);
+document.getElementById('flowCopyBtn').onclick  = (e)=> copyFlowSummary(e.currentTarget);
+
+// help overlay
+(function(){
+  const ov=document.getElementById('helpOverlay');
+  const open=()=>{ ov.hidden=false; };
+  const close=()=>{ ov.hidden=true; };
+  document.getElementById('btnHelp').onclick=open;
+  document.getElementById('helpClose').onclick=close;
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !ov.hidden) close(); });
+})();
+
+// callout visibility toggles (global master switches)
+Object.keys(coShow).forEach(type=>{
+  const el=document.getElementById('coTgl_'+type);
+  if(el) el.onchange=(e)=>{ coShow[type]=e.target.checked; markDirty(); renderLabels(); updateCalloutMatrix(); };
+});
+
+const fileInput=document.getElementById('fileInput');
+document.getElementById('btnLoad').onclick = openProject;
+fileInput.addEventListener('change', e=>{
+  if(e.target.files[0]) loadProject(e.target.files[0]);
+  e.target.value='';
+});
+
+document.addEventListener('keydown', e=>{
+  const typing = ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName);
+  if(e.key==='Escape'){
+    // finish any open run, then fully deactivate the active tool (back to hand)
+    finishRun();
+    if(mode!=='none') setMode('none');
+    hideContextMenu();
+  }
+  if((e.ctrlKey||e.metaKey) && !typing){
+    if(e.key.toLowerCase()==='z' && !e.shiftKey){ e.preventDefault(); if(mode==='draw') undoInDraw(); else doUndo(); }
+    else if((e.key.toLowerCase()==='y') || (e.key.toLowerCase()==='z'&&e.shiftKey)){ e.preventDefault(); doRedo(); }
+    else if(e.key.toLowerCase()==='s' && e.shiftKey){ e.preventDefault(); saveAs(document.getElementById('btnSaveAs')); }
+    else if(e.key.toLowerCase()==='s'){ e.preventDefault(); save(document.getElementById('btnSave')); }
+  }
+  // single key tool shortcuts (ignored while typing or with modifiers)
+  if(!typing && !e.ctrlKey && !e.metaKey && !e.altKey){
+    if(e.key==='p' || e.key==='P'){ e.preventDefault(); setMode(mode==='draw'?'none':'draw'); }
+    else if(e.key==='m' || e.key==='M'){ e.preventDefault(); setMode(mode==='measure'?'none':'measure'); }
+  }
+  // refresh the orthogonal preview the instant Shift is pressed
+  if(e.key==='Shift' && mode==='draw') updatePreview(true);
+});
+document.addEventListener('keyup', e=>{
+  if(e.key==='Shift' && mode==='draw') updatePreview(false);
+});
+
+// redraw labels stay sane after zoom (tooltips reposition automatically)
+map.on('zoomend', ()=>{ /* labels are latlng-anchored, nothing required */ });
+
+/* ---- drag the top edge of the schedule to show more rows ---- */
+(function(){
+  const panel = document.getElementById('tablePanel');
+  const handle = document.getElementById('tableResizer');
+  let dragging=false, startY=0, startH=0;
+
+  handle.addEventListener('mousedown', e=>{
+    dragging=true; startY=e.clientY; startH=panel.offsetHeight;
+    document.body.style.userSelect='none';
+    document.body.style.cursor='row-resize';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    const maxH = window.innerHeight - 180;          // keep room for the map
+    let h = startH + (startY - e.clientY);          // drag up -> taller table
+    h = Math.max(90, Math.min(maxH, h));
+    panel.style.height = h+'px';
+    map.invalidateSize();                           // keep Leaflet tiles correct
+  });
+  window.addEventListener('mouseup', ()=>{
+    if(!dragging) return;
+    dragging=false;
+    document.body.style.userSelect='';
+    document.body.style.cursor='';
+    map.invalidateSize();
+  });
+})();
+
+/* ---- middle mouse button (scroll wheel button) pans in any tool ---- */
+(function(){
+  const c = map.getContainer();
+  let panning=false, last=null;
+  c.addEventListener('mousedown', e=>{
+    if(e.button!==1) return;                 // middle button only
+    panning=true; last={x:e.clientX,y:e.clientY};
+    c.style.cursor='grabbing'; e.preventDefault();
+  });
+  window.addEventListener('mousemove', e=>{
+    if(!panning) return;
+    map.panBy([ last.x-e.clientX, last.y-e.clientY ], {animate:false});
+    last={x:e.clientX,y:e.clientY};
+  });
+  window.addEventListener('mouseup', e=>{
+    if(e.button!==1 || !panning) return;
+    panning=false;
+    c.style.cursor = mode==='draw' ? DRAW_CURSOR : mode==='measure' ? MEASURE_CURSOR : '';
+  });
+  c.addEventListener('auxclick', e=>{ if(e.button===1) e.preventDefault(); });   // no autoscroll
+})();
+
+/* =====================================================================
+   17. BOOT
+   ===================================================================== */
+refreshMaterial();
+setMode('none');
+syncUndoButtons();
+renderTitle();
+render();
+updateOverlayLayout();
+
+// keep the scale bar in step with zoom, and the print overlays centered on resize
+map.on('moveend zoomend', updateScaleBar);
+map.on('resize', updateOverlayLayout);
+
+// warn before leaving with unsaved changes; stays quiet once saved
+window.addEventListener('beforeunload', (e)=>{
+  if(dirty){ e.preventDefault(); e.returnValue=''; }
+});
+// keep the title fitted when the window or panels resize
+window.addEventListener('resize', ()=>{ fitTitle(); updateOverlayLayout(); });
+map.on('resize', fitTitle);
+</script>
+</body>
+</html>

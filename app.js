@@ -209,19 +209,25 @@
   function pillNPSH(o) { if (o.npshOK == null) return { cls: 'warn', t: 'enter NPSHr' }; return o.npshOK ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'cavitation' }; }
 
   // settling-velocity methods shown in the calc; the ticked one sets Vlim
+  // [key, label, refKey, when-to-use, formula]   (g = 9.81 m/s²)
   const SETTLE_METHODS = [
-    ['durand', 'Durand & Condolios (1952)', 'durand', 'Standard method (Warman handbook). Best for closely-graded particles (d80/d20 &lt; 2) and 2% &lt; Cv &lt; 15%. Conservative for slurries with a wide spread of particle sizes — this is the default, and the value built into the Excel calc.'],
-    ['wilson', 'Wilson', 'wilson', 'For large pipes and particles near the “Murphian” size (the size giving the largest settling velocity). Returns the maximum (worst-case) limiting velocity, so it is conservative.'],
-    ['thomas', 'Thomas', 'thomas', 'For fine particles (&lt; 0.15 mm). Assumes turbulent flow and gives the minimum settling velocity — indicates the behaviour of fines that ride within the carrier fluid.'],
-    ['wasp', 'Wasp', 'wasp', 'An improved Durand for more dilute slurries; accounts for fines flowing over a moving bed of coarse solids (asymmetric-suspension to moving-bed transition).'],
-    ['sinclair', 'Sinclair', 'sinclair', 'For d85/ID &lt; 0.001, or particle diameter roughly 30–2000 µm.']
+    ['durand', 'Durand & Condolios (1952)', 'durand', 'Standard method (Warman handbook). Best for closely-graded particles (d80/d20 &lt; 2) and 2% &lt; Cv &lt; 15%. Conservative for slurries with a wide spread of particle sizes — this is the default, and the value built into the Excel calc.',
+      'V = FL·√(2g·(IDs/1000)·(Ss − SL)/SL)\nFL = 1.3·Cv^0.125·(1 − e^(−6.9·d50/1000))'],
+    ['wilson', 'Wilson & Judge', 'wilson', 'For large pipes and particles near the “Murphian” size (the size giving the largest settling velocity). Returns the maximum (worst-case) limiting velocity, so it is conservative.',
+      'V = (2 + 0.305·log₁₀(X) + 1.1e-4·X^−0.489 − 0.044·(10⁷·X)^−1.06)·√(2g·D·(Ss − 1))\nX = d / (D·w),  d = d50·10⁻⁶ m,  D = ID·10⁻³ m\nw = drag group from µl, Ss and d (Stokes→Newton transition)'],
+    ['thomas', 'Thomas', 'thomas', 'For fine particles (&lt; 0.15 mm). Assumes turbulent flow and gives the minimum settling velocity — indicates the behaviour of fines that ride within the carrier fluid.',
+      'V = 9·(g·µl/(1000·SL))·(1000·Ss − 1000·SL)^0.37·( ID·10⁻³ / (µl/(SL·1000)) )^0.11'],
+    ['wasp', 'Wasp', 'wasp', 'An improved Durand for more dilute slurries; accounts for fines flowing over a moving bed of coarse solids (asymmetric-suspension to moving-bed transition).',
+      'V = 3.116·Q^0.18·√(2g·ID·10⁻³·(Ss − SL)/SL)·( d50·10⁻⁶ / (ID·10⁻³) )^(1/6)'],
+    ['sinclair', 'Sinclair', 'sinclair', 'For d85/ID &lt; 0.001, or particle diameter roughly 30–2000 µm.',
+      'V = √(650·(4/6)·g·d50·10⁻⁶·(Ss/SL)^0.8)']
   ];
   function settlingBlock(o, p) {
     const frag = document.createDocumentFragment();
     frag.appendChild(el('div', { class: 'section-title' }, 'Settling velocity — tick the method that applies'));
     frag.appendChild(el('div', { class: 'settle-note' }, 'The ticked method sets the limiting velocity (Vlim) used for the V/Vlim ratio and the settling check above. Durand is conservative — switch to another where it is too conservative (e.g. when fines dominate).'));
     SETTLE_METHODS.forEach(m => {
-      const [key, label, refKey, info] = m;
+      const [key, label, refKey, info, formula] = m;
       const sel = (p.discharge.settleMethod || 'durand') === key;
       const row = el('div', { class: 'orow settle-row' });
       const lab = el('label', { class: 'olabel settle-label' + (sel ? ' sel' : '') });
@@ -233,7 +239,9 @@
       row.appendChild(el('div', { class: 'oval design' }, ''));
       row.appendChild(el('div', { class: 'ounit' }, 'm/s'));
       const R = META.REFERENCES[refKey];
-      const html = info + (R ? `<div style="margin-top:8px;color:var(--grey);font-size:11px"><b>Source:</b> ${R.cite}</div>` : '');
+      const html = info
+        + (formula ? `<div class="formula">${formula}</div>` : '')
+        + (R ? `<div style="margin-top:8px;color:var(--grey);font-size:11px"><b>Source:</b> ${R.cite}</div>` : '');
       const ib = el('button', { class: 'info', title: 'When to use ' + label }, 'i');
       ib.addEventListener('click', (e) => openInfo(e.currentTarget, label + ' — settling velocity', html));
       row.appendChild(ib);
@@ -243,28 +251,51 @@
   }
 
   // -------- dynamic input sizing -------------------------------------------
+  // measure-based dynamic input width (reliable across fonts/values)
+  const _measureCtx = document.createElement('canvas').getContext('2d');
   function sizeInput(inp) {
-    if (inp.tagName === 'SELECT') return; // selects size to the value column
-    const txt = (inp.value !== '' ? inp.value : inp.placeholder) || '';
-    inp.style.width = Math.max(5, Math.min(17, txt.length + 2.5)) + 'ch';
+    if (inp.tagName === 'SELECT') return; // selects size to their content
+    const cs = getComputedStyle(inp);
+    _measureCtx.font = (cs.fontWeight || '400') + ' ' + (cs.fontSize || '13px') + ' ' + (cs.fontFamily || 'sans-serif');
+    const txt = (inp.value !== '' ? inp.value : inp.placeholder) || '0';
+    const w = _measureCtx.measureText(txt).width;
+    inp.style.width = Math.max(48, Math.min(360, Math.ceil(w) + 26)) + 'px';
   }
 
-  // -------- render: calculator ---------------------------------------------
+  // -------- render: pumps (Map / Calculation / Curve sub-tabs) -------------
   let procInputs = {}, slurryStatusEl = null, autoInputs = {}, curN = null;
+  let subtab = 'calc'; // default: Calculation
   function renderCalc() {
-    const root = $('#view'); root.innerHTML = ''; procInputs = {}; autoInputs = {};
+    const root = $('#view'); root.innerHTML = '';
     const p = activePump();
     const both = ENGINE.computeBoth(p); curN = both.n;
 
-    // sticky band: pump chips + results summary stay visible while scrolling
+    // sticky band: pump chips + sub-tab nav + results summary
     const sticky = el('div', { class: 'calc-sticky' });
     sticky.appendChild(pumpBar());
+    sticky.appendChild(subTabNav());
     sticky.appendChild(kpis(both.n, both.d));
     root.appendChild(sticky);
     requestAnimationFrame(updateSticky);
 
+    const sub = el('div', { id: 'subview' });
+    root.appendChild(sub);
+    if (subtab === 'map') renderMap(sub, p);
+    else if (subtab === 'curve') sub.appendChild(pumpCurveBlock());
+    else renderCalcSub(sub, p, both);
+  }
+  function subTabNav() {
+    const nav = el('div', { class: 'subtabs' });
+    [['map', 'Map'], ['calc', 'Calculation'], ['curve', 'Curve']].forEach(([k, l]) => {
+      const b = el('button', { class: 'subtab' + (subtab === k ? ' active' : '') }, l);
+      b.addEventListener('click', () => { subtab = k; renderCalc(); });
+      nav.appendChild(b);
+    });
+    return nav;
+  }
+  function renderCalcSub(root, p, both) {
+    procInputs = {}; autoInputs = {};
     const grid = el('div', { class: 'grid' });
-    // inputs card
     const inCard = el('div', { class: 'card' });
     inCard.appendChild(el('h2', {}, 'Inputs'));
     const inBody = el('div', { class: 'body' });
@@ -275,7 +306,6 @@
     });
     inCard.appendChild(inBody);
 
-    // outputs card (Nominal + Design)
     const outCard = el('div', { class: 'card' });
     outCard.appendChild(el('h2', {}, 'Calculated Results'));
     const outBody = el('div', { class: 'body' });
@@ -289,10 +319,6 @@
 
     grid.appendChild(inCard); grid.appendChild(outCard);
     root.appendChild(grid);
-
-    // pump-curve block (full width)
-    root.appendChild(pumpCurveBlock());
-
     document.querySelectorAll('#view .row input, #view .proc-input').forEach(sizeInput);
   }
 
@@ -504,6 +530,19 @@
     body.appendChild(frame);
     card.appendChild(body);
     return card;
+  }
+
+  // Map sub-tab: embeds the (restyled) pipe-route planner
+  function renderMap(root, p) {
+    const card = el('div', { class: 'card', style: 'margin-top:8px' });
+    card.appendChild(el('h2', {}, 'Pipe Route Map'));
+    const body = el('div', { class: 'mapbody' });
+    const frame = el('iframe', { class: 'mapframe', title: 'Pipe Route Map' });
+    if (window.PIPE_ROUTER_SRCDOC) frame.srcdoc = window.PIPE_ROUTER_SRCDOC;
+    else frame.src = 'piperouter.html';
+    body.appendChild(frame);
+    card.appendChild(body);
+    root.appendChild(card);
   }
 
   function pumpBar() {
@@ -720,6 +759,7 @@
   function commit(rerender) { save(); if (rerender) TABS[current](); else refreshOutputs(); }
   function refreshOutputs() {
     if (current !== 'calc') { TABS[current](); return; }
+    if (subtab !== 'calc') return; // inputs only live on the Calculation sub-tab
     const both = ENGINE.computeBoth(activePump()); curN = both.n;
     const view = $('#view');
     const kpi = view.querySelector('.kpi'); if (kpi) kpi.replaceWith(kpis(both.n, both.d));
