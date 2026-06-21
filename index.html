@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nexmin · Slurry Pump Calc</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><span class="mark"></span> NEXMIN <span class="sub">Slurry Pump Calc</span></div>
+    <div class="spacer"></div>
+    <input id="projName" class="tag-input" placeholder="Project" style="width:160px" />
+    <input id="projClient" class="tag-input" placeholder="Client" style="width:140px" />
+    <input id="projDoc" class="tag-input" placeholder="Doc No" style="width:150px" />
+    <input id="projRev" class="tag-input" placeholder="Rev" style="width:54px" />
+    <button id="resetBtn" class="btn btn-ghost">Reset</button>
+    <button id="exportBtn" class="btn btn-red">⬇ Export to Excel</button>
+  </div>
+
+  <div class="app">
+    <div class="tabs">
+      <div class="tab active" data-tab="calc">Calculator</div>
+      <div class="tab" data-tab="summary">Summary</div>
+      <div class="tab" data-tab="docs">How it works</div>
+      <div class="tab" data-tab="ref">Reference tables</div>
+      <div class="tab" data-tab="settle">Settling velocity</div>
+    </div>
+    <div id="view"></div>
+  </div>
+
+  <script src="vendor/exceljs.min.js"></script>
+  <script src="data.js"></script>
+  <script src="meta.js"></script>
+  <script src="engine.js"></script>
+  <script src="export.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
