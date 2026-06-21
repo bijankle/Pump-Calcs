@@ -68,15 +68,30 @@ output workbook needs no macros:
 ```
 Slurry-Pump-Calc.html   ← the bundled single file to open (generated)
 build.py                bundles the source below into the single file
-index.html     app shell + tab markup
+index.html     app shell + tab markup + Nexmin SVG logo
 styles.css     Nexmin theme (red / black / grey / white, Aptos)
 data.js        reference tables, auto-extracted from the workbook
 meta.js        formula documentation + bibliography (drives ⓘ call-outs)
-engine.js      pure calc engine (mirrors Calc_Template)
+engine.js      calc engine + process-variable solver (mirrors Calc_Template)
 export.js      ExcelJS workbook builder (faithful, macro-free)
 app.js         UI controller / state (save/load .json, autosave)
+pumpcurve.html embedded Pump Curve tool (restyled to Nexmin)
 vendor/        ExcelJS (MIT) — the only third-party dependency
 ```
+
+## Process-variable solver
+
+The Slurry Details inputs are interchangeable: Solids tph, Liquid tph, Solids SG,
+Liquor SG, Mixture SG, Flowrate Q, Cw and Cv. Enter any **4 independent** values
+(at least one must be a flow/mass) and the tool solves the other 4 — blank fields
+show their solved value as a greyed “auto” placeholder. The Excel export writes the
+resolved values as concrete inputs so the sheet reproduces them.
+
+Other behaviour: results are shown to **3 significant figures** with **Nominal &
+Design** columns; the top summary band shows pass/fail status (settling, NPSHa vs
+NPSHr, motor freeboard); the motor size is an **IEC dropdown**; and standard K-value
+inputs carry an ⓘ explaining why they rarely change. The **Pump Curve** tool is
+embedded under the calculator, restyled to match.
 
 ## Notes
 

@@ -61,20 +61,38 @@ button{font-family:inherit}
 .section-title{font-weight:700;color:var(--red);font-size:12px;text-transform:uppercase;
   letter-spacing:.5px;margin:14px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
 
-/* Input rows */
-.row{display:grid;grid-template-columns:1fr 86px 64px;align-items:center;gap:8px;padding:3px 0}
-.row label{color:var(--grey);font-size:13px}
+/* Input rows — fixed-width label keeps every field's left edge aligned,
+   field auto-sizes to its content leaving room on the right */
+.row{display:flex;align-items:center;gap:14px;padding:3px 0}
+.row > label{flex:0 0 210px;color:var(--grey);font-size:13px}
+.row .fieldwrap{display:flex;align-items:center;gap:8px;min-width:0}
 .row .unit{color:#999;font-size:12px}
-.row input,.row select{width:100%;padding:6px 8px;border:1px solid #d4d4d4;border-radius:6px;
-  background:var(--yellow);font-family:inherit;font-size:13px}
-.row select{background:var(--yellow)}
+.row input,.row select{padding:6px 9px;border:1px solid #d4d4d4;border-radius:6px;
+  background:var(--yellow);font-family:inherit;font-size:13px;text-align:left}
+.row input[type=number]{text-align:left}
+.row select{background:var(--yellow);width:auto;max-width:240px}
 .row input:focus,.row select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
 
-/* Output rows */
-.orow{display:grid;grid-template-columns:1fr 110px 56px 22px;align-items:center;gap:8px;
+/* Process-variable (solver) fields */
+.proc{margin-bottom:6px}
+.proc-status{font-size:12px;font-weight:600;border-radius:6px;padding:6px 10px;margin:2px 0 8px}
+.proc-status.ok{background:#e7f5ec;color:var(--ok)}
+.proc-status.warn{background:#fdf0dd;color:var(--warn)}
+.proc-status.bad{background:#fbe3e6;color:var(--bad)}
+.proc-input.known{background:var(--yellow)}
+.proc-input.auto{background:#f3f4f6;color:var(--grey);font-style:italic}
+.proc-input.auto::placeholder{color:var(--grey);opacity:.9;font-style:normal}
+.autobadge{font-size:10px;font-weight:700;color:var(--grey-2);background:#eceef0;border-radius:9px;padding:1px 7px}
+.autobadge.hidden{display:none}
+
+/* Output rows — Parameter | Nominal | Design | Unit | info */
+.orow{display:grid;grid-template-columns:1fr 96px 96px 52px 22px;align-items:center;gap:8px;
   padding:4px 0;border-bottom:1px dashed #eee}
+.orow.ohead{border-bottom:2px solid var(--line);font-weight:700;color:var(--grey)}
+.orow.ohead .oval{color:var(--grey);font-weight:700}
 .orow .olabel{color:var(--black);font-size:13px}
 .orow .oval{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.orow .oval.design{font-weight:600;color:var(--grey)}
 .orow .ounit{color:#999;font-size:12px}
 .orow .sym{color:var(--grey);font-size:11px}
 .info{width:18px;height:18px;border-radius:50%;border:1px solid var(--line);background:#fafafa;
@@ -118,18 +136,38 @@ h1.page{font-size:20px;margin:18px 0 4px}
 .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 16px}
 .tag-input{padding:7px 10px;border:1px solid #d4d4d4;border-radius:6px;font-family:inherit}
-.kpi{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 16px}
-.kpi .box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 16px;box-shadow:var(--shadow);min-width:120px}
+.kpi{display:flex;gap:12px;flex-wrap:wrap;margin:6px 0 16px}
+.kpi .box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 16px;box-shadow:var(--shadow);min-width:150px;flex:1 1 150px}
 .kpi .box .k{color:var(--grey);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-.kpi .box .v{font-size:20px;font-weight:800}
+.kpi .box .v{font-size:20px;font-weight:800;line-height:1.2}
 .kpi .box .v small{font-size:12px;color:var(--grey);font-weight:600}
+.kpi .box .vsub{font-size:11.5px;font-weight:700;margin-top:3px}
+.kpi .box .vsub.muted{color:var(--grey-2);font-weight:600}
+.kpi .box .vsub.ok{color:var(--ok)}
+.kpi .box .vsub.warn{color:var(--warn)}
+.kpi .box .vsub.bad{color:var(--bad)}
+
+/* Pump curve block */
+.curvebody{padding:0}
+.curveframe{width:100%;height:760px;border:0;display:block;background:#fff}
+
+/* Brand logo (SVG) */
+.brand .nexlogo{height:26px;display:block}
 .hidden{display:none}
 
 </style>
 </head>
 <body>
   <div class="topbar">
-    <div class="brand"><span class="mark"></span> NEXMIN <span class="sub">Slurry Pump Calc</span></div>
+    <div class="brand">
+      <svg class="nexlogo" viewBox="0 0 132 30" role="img" aria-label="Nexmin">
+        <polygon points="0,0 7,0 7,30 0,30" fill="#ffffff"/>
+        <polygon points="5,0 12,0 24,30 17,30" fill="#ffffff"/>
+        <polygon points="22,0 29,0 29,30 22,30" fill="#C8102E"/>
+        <text x="38" y="22" font-family="Aptos,Segoe UI,system-ui,sans-serif" font-size="22" font-weight="800" letter-spacing="1" fill="#ffffff">NEXMIN</text>
+      </svg>
+      <span class="sub">Slurry Pump Calc</span>
+    </div>
     <div class="spacer"></div>
     <input id="projName" class="tag-input" placeholder="Project" style="width:160px" />
     <input id="projClient" class="tag-input" placeholder="Client" style="width:140px" />
@@ -2093,16 +2131,20 @@ window.REFDATA = {
     const s = inp.slurry, su = inp.suction, di = inp.discharge,
       pu = inp.pump, np = inp.npsh, pw = inp.power;
 
-    // Slurry details (col F = nominal, col G = design)
-    const df = s.designFactor;                 // G15
-    o.solidsN = s.solidsTPH; o.solidsD = (1 + df) * s.solidsTPH;
-    o.liquidN = s.liquidTPH; o.liquidD = (1 + df) * s.liquidTPH;
-    o.froth = s.frothFactor;
-    o.flowN = ((o.solidsN / s.solidsSG) + (o.liquidN / s.liquorSG)) * o.froth;       // F16
-    o.flowD = ((o.solidsD / s.solidsSG) + (o.liquidD / s.liquorSG)) * o.froth;       // G16
-    o.SM = (s.solidsSG !== 0 ? (o.solidsN + o.liquidN) / o.flowN : s.liquorSG) * o.froth; // F19
-    o.Cw = o.solidsN / (o.solidsN + o.liquidN);                                       // F20
-    o.Cv = o.SM / s.solidsSG * o.Cw;                                                  // F21
+    // Slurry details (col F = nominal, col G = design) — process variables solved
+    const df = s.designFactor || 0;                 // G15
+    const froth = (s.frothFactor != null ? s.frothFactor : 1);
+    const sv = solveProcess(s.proc || legacyProc(s), froth);
+    const SS = sv.v.Ss, SL = sv.v.SL;
+    o.SS = SS; o.SL = SL; o.df = df; o.froth = froth;
+    o.procStatus = sv.status; o.procUnknown = sv.unknown; o.procOk = sv.ok; o.proc = sv.v;
+    o.solidsN = sv.v.ms; o.solidsD = (1 + df) * sv.v.ms;
+    o.liquidN = sv.v.mL; o.liquidD = (1 + df) * sv.v.mL;
+    o.flowN = sv.v.Q;                                                                 // F16 (incl. froth)
+    o.flowD = (1 + df) * sv.v.Q;                                                      // G16
+    o.SM = sv.v.Sm;                                                                   // F19
+    o.Cw = sv.v.Cw;                                                                   // F20
+    o.Cv = sv.v.Cv;                                                                   // F21
     o.muL = waterViscosity(np.temp);                                                 // F22
     o.muM = s.viscOverride > 0 ? s.viscOverride : thomas(o.solidsN, o.Cv * 100, o.muL); // F23
     o.viscSource = s.viscOverride > 0 ? 'User defined' : 'Est. by program';
@@ -2126,7 +2168,7 @@ window.REFDATA = {
     Object.assign(o.dis, dh);
     o.dis.FL = o.FL;                                                                   // F80
     o.dis.Vlim = di.VlimOverride > 0 ? di.VlimOverride
-      : o.FL * Math.sqrt(2 * g * (dg.IDs / 1000) * (s.solidsSG - s.liquorSG) / s.liquorSG); // F81
+      : o.FL * Math.sqrt(2 * g * (dg.IDs / 1000) * (SS - SL) / SL); // F81
     o.dis.ratio = dh.V / o.dis.Vlim;                                                  // F82
     o.dis.Hd = di.Hsd + dh.Hp + dh.Hf + (di.Pd / (g * o.SM));                          // F88
 
@@ -2137,10 +2179,10 @@ window.REFDATA = {
     const Dimp = pu.impellerDia;                                                      // F97
     const maxd = (o.d50 / 1000 < 0.0228) ? 0.0228 : (o.d50 / 1000);
     o.HR = pu.headRatioOverride > 0 ? pu.headRatioOverride
-      : (1 - ((120 / Math.pow(Dimp, 0.8)) * (1 - (1 - (0.000385 * (s.solidsSG - 1) * (1 + 4 / s.solidsSG)) * (o.Cw * 100) * Math.log(maxd / 0.0227))))); // F98
+      : (1 - ((120 / Math.pow(Dimp, 0.8)) * (1 - (1 - (0.000385 * (SS - 1) * (1 + 4 / SS)) * (o.Cw * 100) * Math.log(maxd / 0.0227))))); // F98
     o.HRsource = pu.headRatioOverride > 0 ? 'User defined' : 'Est. by program';
     o.HE = pu.effRatioOverride > 0 ? pu.effRatioOverride
-      : ((1 - 0.00007 * Math.pow(100 / ((100 / (o.Cw * 100)) * (s.solidsSG / (s.solidsSG + 1) + 1)), 2)) * o.HR); // F99
+      : ((1 - 0.00007 * Math.pow(100 / ((100 / (o.Cw * 100)) * (SS / (SS + 1) + 1)), 2)) * o.HR); // F99
     o.HEsource = pu.effRatioOverride > 0 ? 'User defined' : 'Est. by program';
 
     o.Q1 = o.flowN / pu.nParallel;                                                    // F104
@@ -2165,13 +2207,13 @@ window.REFDATA = {
     o.motorReq = (o.P1 > o.P2 ? o.P1 : o.P2) * (1 / pw.driveEff) * (1 + pw.margin);   // F131
     o.motorSel = pw.motorSize;                                                        // F132
     o.pctFL = pw.motorSize > 0 ? o.motorReq / pw.motorSize : NaN;                     // F133
-    o.Pc = o.P2 * (o.SM / s.liquorSG);                                                // F135
+    o.Pc = o.P2 * (o.SM / SL);                                                        // F135
     o.Pcs = o.Pc * (1 + pw.margin) * (1 / pw.driveEff);                               // F136
     return o;
   }
 
   function settlingMethods(s, o, ID) {
-    const SS = s.solidsSG, SL = s.liquorSG, d = o.d50 * 1e-6, IDm = o.dis.ID * 1e-3;
+    const SS = o.SS, SL = o.SL, d = o.d50 * 1e-6, IDm = o.dis.ID * 1e-3;
     const mu = o.muL; // cP
     const durandV = durand(SL, SS, o.Cv, o.d50, o.dis.ID, o.FL);
     // Wilson & Judge (K85)
@@ -2190,8 +2232,94 @@ window.REFDATA = {
     return { durand: durandV, wilson, thomas: thomasV, wasp, sinclair: sinc };
   }
 
+  /* ---- Process-variable solver -----------------------------------------
+   * 8 interchangeable variables, 4 governing equations. Enter any independent
+   * 4, the solver finds the other 4 (Newton-Raphson, numeric Jacobian).
+   *   Vb = ms/Ss + mL/SL           (base volumetric flow, no froth)
+   *   Q  = froth * Vb
+   *   Sm = (ms+mL)/Vb
+   *   Cw = ms/(ms+mL)
+   *   Cv = (ms/Ss)/Vb
+   * --------------------------------------------------------------------- */
+  const PROC_KEYS = ['ms', 'mL', 'Ss', 'SL', 'Sm', 'Q', 'Cw', 'Cv'];
+  function legacyProc(s) {
+    return { ms: numOrNull(s.solidsTPH), mL: numOrNull(s.liquidTPH), Ss: numOrNull(s.solidsSG), SL: numOrNull(s.liquorSG), Sm: null, Q: null, Cw: null, Cv: null };
+  }
+  function numOrNull(x) { return (x === '' || x == null || isNaN(x)) ? null : Number(x); }
+
+  function residuals(v, froth) {
+    const Vb = v.ms / v.Ss + v.mL / v.SL;
+    return [
+      froth * Vb - v.Q,
+      (v.ms + v.mL) - v.Sm * Vb,
+      v.ms - v.Cw * (v.ms + v.mL),
+      (v.ms / v.Ss) - v.Cv * Vb
+    ];
+  }
+  function solve4(A, b) { // Gaussian elimination, 4x4
+    const n = b.length, M = A.map((r, i) => r.concat(b[i]));
+    for (let c = 0; c < n; c++) {
+      let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      if (Math.abs(M[p][c]) < 1e-14) return null;
+      [M[c], M[p]] = [M[p], M[c]];
+      for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
+    }
+    return M.map((r, i) => r[n] / r[i]);
+  }
+  function solveProcess(proc, froth) {
+    proc = proc || {}; froth = froth || 1;
+    const v = {}; PROC_KEYS.forEach(k => v[k] = numOrNull(proc[k]));
+    const unknown = PROC_KEYS.filter(k => v[k] == null);
+    const known = PROC_KEYS.filter(k => v[k] != null);
+    if (unknown.length > 4) return { status: 'under', need: unknown.length - 4, unknown, known, ok: false, v };
+    // need at least one extensive (flow/mass) quantity to fix the absolute scale
+    if (!['ms', 'mL', 'Q'].some(k => v[k] != null)) return { status: 'needflow', unknown, known, ok: false, v };
+    if (unknown.length < 4) { // over-specified: ignore lowest-priority extras, recompute & flag
+      const drop = known.slice().reverse().slice(0, 4 - unknown.length);
+      drop.forEach(k => v[k] = null);
+    }
+    const U = PROC_KEYS.filter(k => v[k] == null);
+    const guess = { ms: 100, mL: 100, Ss: 2.65, SL: 1, Sm: 1.3, Q: 150, Cw: 0.4, Cv: 0.2 };
+    U.forEach(k => v[k] = guess[k]);
+    let conv = false;
+    for (let it = 0; it < 200; it++) {
+      const r = residuals(v, froth);
+      const J = [[], [], [], []];
+      U.forEach((k, j) => {
+        const h = Math.max(1e-7, Math.abs(v[k]) * 1e-7);
+        const v2 = Object.assign({}, v); v2[k] += h;
+        const r2 = residuals(v2, froth);
+        for (let i = 0; i < 4; i++) J[i][j] = (r2[i] - r[i]) / h;
+      });
+      const dx = solve4(J, r.map(x => -x));
+      if (!dx) break;
+      let mx = 0; U.forEach((k, j) => { v[k] += dx[j]; mx = Math.max(mx, Math.abs(dx[j])); });
+      if (mx < 1e-10) { conv = true; break; }
+    }
+    const r = residuals(v, froth);
+    const finite = PROC_KEYS.every(k => isFinite(v[k]));
+    const physical = v.ms >= 0 && v.mL >= 0 && v.Ss > 0 && v.SL > 0 && v.Q > 0 && v.Sm > 0;
+    const ok = conv && finite && physical && r.every(x => Math.abs(x) < 1e-5);
+    return { status: ok ? 'solved' : 'fail', unknown: U, known, ok, v };
+  }
+
+  // Full nominal + design computation (design = flows × (1 + design factor)).
+  function computeBoth(pump) {
+    const n = compute(pump);
+    const dp = JSON.parse(JSON.stringify(pump));
+    dp.slurry.proc = { ms: n.solidsN * (1 + n.df), mL: n.liquidN * (1 + n.df), Ss: n.SS, SL: n.SL, Sm: null, Q: null, Cw: null, Cv: null };
+    dp.slurry.designFactor = 0;
+    const d = compute(dp);
+    return { n, d };
+  }
+
+  // Standard IEC motor ratings (kW)
+  const IEC_MOTORS = [0.37, 0.55, 0.75, 1.1, 1.5, 2.2, 3, 4, 5.5, 7.5, 11, 15, 18.5, 22, 30, 37, 45, 55, 75, 90, 110, 132, 160, 200, 250, 315, 355, 400, 450, 500, 560, 630, 710, 800, 900, 1000];
+  function nextMotor(kw) { for (const m of IEC_MOTORS) if (m >= kw) return m; return IEC_MOTORS[IEC_MOTORS.length - 1]; }
+
   window.ENGINE = {
-    compute, chen, thomas, durand, sinclair,
+    compute, computeBoth, solveProcess, PROC_KEYS, IEC_MOTORS, nextMotor,
+    chen, thomas, durand, sinclair,
     specRoughness, boreID, kBend, waterViscosity, vapourMwater, barometricKPa
   };
 })();
@@ -2234,6 +2362,13 @@ window.REFDATA = {
     cell.font = { name: FONT, size: 10, bold: !!bold, color: { argb: BLACK } };
   }
   const numFmt = { 0: '0', 1: '0.0', 2: '0.00', 3: '0.000', 4: '0.0000' };
+  // round to 3 significant figures (process values may themselves be solved)
+  function round3(v) {
+    if (v == null || !isFinite(v) || v === 0) return v;
+    const d = Math.ceil(Math.log10(Math.abs(v)));
+    const f = Math.pow(10, 3 - d);
+    return Math.round(v * f) / f;
+  }
 
   // ---- reference sheets ----------------------------------------------------
   function buildReference(wb) {
@@ -2370,12 +2505,12 @@ window.REFDATA = {
     const row = (r, b, c, d) => { if (b) label(ws.getCell('B' + r), b); if (c) label(ws.getCell('C' + r), c); if (d) label(ws.getCell('D' + r), d); };
 
     sectionStyle(ws.getCell('B11'), 'SLURRY DETAILS');
-    row(13, 'Solids', "m's", 'tph'); V('F13', s.solidsTPH); F('G13', '(1+$G$15)*F13');
-    row(14, 'Liquid', "m'L", 'tph'); V('F14', s.liquidTPH); F('G14', '(1+$G$15)*F14');
+    row(13, 'Solids', "m's", 'tph'); V('F13', round3(o.solidsN)); F('G13', '(1+$G$15)*F13');
+    row(14, 'Liquid', "m'L", 'tph'); V('F14', round3(o.liquidN)); F('G14', '(1+$G$15)*F14');
     row(15, 'Design Factor %', 'S'); V('G15', s.designFactor);
     row(16, 'Flowrate', 'Q', 'm3/hr'); F('F16', '((F13/F18)+(F14/F17))*F26'); F('G16', '((G13/F18)+(G14/F17))*F26');
-    row(17, 'Liquor s.g.', 'SL'); V('F17', s.liquorSG);
-    row(18, 'Solids s.g.', 'SS'); V('F18', s.solidsSG);
+    row(17, 'Liquor s.g.', 'SL'); V('F17', round3(o.SL));
+    row(18, 'Solids s.g.', 'SS'); V('F18', round3(o.SS));
     row(19, 'Mixture s.g.', 'SM'); F('F19', 'IFERROR(IF(F18<>0,(F13+F14)/F16,F17)*F26,"")');
     row(20, 'Concentration', 'Cw', 'w/w'); F('F20', 'F13/(F13+F14)');
     row(21, 'Concentration', 'Cv', 'v/v'); F('F21', 'IFERROR(F19/F18*F20,"")');
@@ -2602,7 +2737,7 @@ window.REFDATA = {
       const set = (col, val) => { const c = ws.getCell(r, col); c.value = val; c.border = border; c.font = baseFont; };
       const fr = (col, formula, result) => set(col, (result != null && isFinite(result)) ? { formula, result } : { formula });
       set(1, p.tag || ''); set(2, p.name || ''); set(3, p.stream || '');
-      set(4, p.slurry.solidsTPH); set(5, p.slurry.liquidTPH);
+      set(4, round3(o.solidsN)); set(5, round3(o.liquidN));
       fr(6, `${sh}!F19`, o.SM); fr(7, `${sh}!F21*100`, o.Cv * 100);
       fr(8, `${sh}!F16`, o.flowN); fr(9, `${sh}!F30`, p.suction.dn); fr(10, `${sh}!F49`, o.suc.V);
       fr(11, `${sh}!F60`, p.discharge.dn); fr(12, `${sh}!F79`, o.dis.V); fr(13, `${sh}!F105`, o.Hdyn);
@@ -2644,6 +2779,9 @@ window.REFDATA = {
 
 </script>
   <script>
+window.PUMP_CURVE_SRCDOC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Pump Curve Utility<\/title>\n<script src=\"https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js\"><\/script>\n<style>\n  :root{\n    --bg:#ffffff;--surface:#F8F9FB;--panel:#ffffff;\n    --line:#E3E5E8;--line-soft:#F2F3F5;--line-strong:#C7CAD1;--mid:#B5BAC1;\n    --ink:#1E1F22;--text:#2E3035;--text-2:#4E5058;--text-3:#5C5E66;--dim:#80848E;--faint:#9A9DA5;\n    --accent:#C8102E;--accent-deep:#9C0C24;--accent-tint:#FBE3E6;--accent-ring:#F3C7CD;\n    --green:#3BA55C;--green-deep:#2C7A47;--green-tint:#E7F4EC;\n    --yellow:#E0A416;--yellow-deep:#9A6F0C;--yellow-tint:#FBF1D8;\n    --red:#D83C3E;--red-tint:#FCEDED;--red-border:#EDB5B6;\n    --font:'Aptos','Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,sans-serif;\n    --mono:'Aptos Mono','Cascadia Code',ui-monospace,monospace;\n  }\n  *{box-sizing:border-box;}html,body{height:100%;margin:0;}\n  body{font-family:var(--font);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden;}\n  ::selection{background:#D9DDFB;}\n  button{font-family:inherit;cursor:pointer;}\n  @keyframes calloutIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}\n  main{flex:1;display:flex;min-height:0;}\n  aside{flex-shrink:0;background:var(--panel);display:flex;flex-direction:column;overflow-y:auto;}\n  aside.left{width:312px;border-right:1px solid var(--line);}\n  aside.right{width:316px;border-left:1px solid var(--line);}\n  .center{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--surface);}\n  .brand{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--line);}\n  .brand .logo{width:38px;height:38px;flex:none;border-radius:12px;background:var(--accent);color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;letter-spacing:-.5px;}\n  .brand .bt{display:flex;flex-direction:column;line-height:1.15;min-width:0;}\n  .brand b{font-size:15px;font-weight:700;color:var(--ink);}\n  .brand span{font-size:12px;color:var(--dim);}\n  .toolnav{padding:12px 10px;display:flex;flex-direction:column;gap:2px;border-bottom:1px solid var(--line);}\n  .navlabel{font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--faint);text-transform:uppercase;padding:6px 10px;}\n  .tab{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;border:none;border-radius:8px;padding:9px 11px;color:var(--text-2);font:inherit;font-size:15px;font-weight:500;position:relative;}\n  .tab .hash{color:var(--mid);font-weight:700;}\n  .tab:hover{background:var(--line-soft);color:var(--ink);}\n  .tab.active{background:var(--accent-tint);color:var(--accent-deep);font-weight:600;box-shadow:inset 3px 0 0 var(--accent);}\n  .tab.active .hash{color:#A9B0F2;}\n  .panel-head{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 11px;}\n  .panel-head span{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);}\n  .help{width:26px;height:26px;flex:none;border-radius:8px;border:1px solid var(--line-strong);background:#fff;color:var(--text-3);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;}\n  .help:hover{background:var(--line-soft);}\n  .pad{padding:0 16px 18px;}[hidden]{display:none !important;}\n  .btn{padding:9px 14px;border:1px solid var(--line-strong);border-radius:8px;background:#fff;color:var(--text-2);font:inherit;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:7px;transition:.12s;white-space:nowrap;}\n  .btn:hover{background:var(--line-soft);border-color:var(--mid);}\n  .btn:active{transform:translateY(1px);}\n  .btn svg{width:15px;height:15px;}\n  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}\n  .btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);}\n  .btn.ghost{border-color:transparent;background:transparent;color:var(--accent);}\n  .btn.ghost:hover{background:var(--accent-tint);}\n  .btn.mode.active{background:var(--accent);border-color:var(--accent);color:#fff;}\n  .btn.green{background:var(--green);border-color:var(--green);color:#fff;}\n  .btn.green:hover{background:var(--green-deep);border-color:var(--green-deep);}\n  .btn.green.active{background:var(--green-deep);border-color:var(--green-deep);}\n  .btn.green.ghostg{background:transparent;border-color:transparent;color:var(--green-deep);}\n  .btn.green.ghostg:hover{background:var(--green-tint);}\n  .btn.wide{width:100%;justify-content:center;}\n  .btn:disabled{opacity:1;cursor:not-allowed;background:var(--surface);color:var(--mid);border-color:var(--line);}\n  .btn:disabled:hover{background:var(--surface);border-color:var(--line);}\n  .badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:4px 11px;border-radius:999px;}\n  .badge::before{content:\"\";width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block;margin-right:7px;}\n  .badge.ok{background:var(--green-tint);color:var(--green-deep);}\n  .badge.warn{background:var(--yellow-tint);color:var(--yellow-deep);}\n  .refrow{display:flex;gap:10px;margin:13px 0;}\n  .ref{flex:1;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 11px;}\n  .ref .rl{font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;}\n  .ref .dot{width:8px;height:8px;border-radius:50%;background:var(--mid);}\n  .ref.set .dot{background:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);}\n  .ref .rv{font-family:var(--mono);font-size:13px;color:var(--text);}\n  .ref .rv.muted{color:var(--faint);}\n  .fieldrow{display:flex;gap:10px;}.field{flex:1;}\n  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);margin-bottom:7px;}\n  .field input,select{width:100%;height:40px;background:#fff;border:1px solid var(--line-strong);border-radius:8px;color:var(--text);font:inherit;font-size:14px;padding:0 12px;outline:none;}\n  select{cursor:pointer;}\n  .field input.num{font-family:var(--mono);text-align:right;}\n  .field input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);}\n  .card{border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 1px 2px rgba(30,31,34,.04);margin:14px 16px 0;}\n  .card .ch{display:flex;align-items:center;justify-content:space-between;padding:14px 15px 11px;}\n  .card .ch span{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);}\n  .card .cb{padding:0 15px 16px;}\n  .cgroup{border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:14px;background:#fff;}\n  .cglabel{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);margin-bottom:11px;}\n  .swatch{width:11px;height:11px;border-radius:3px;flex:none;}.swatch.rpm{background:var(--accent);}.swatch.eff{background:var(--green);}\n  .curvelist{margin-top:11px;display:flex;flex-direction:column;gap:6px;}\n  .crow{display:flex;align-items:center;gap:8px;padding:6px 7px;border:1px solid var(--line);border-radius:9px;background:#fff;}\n  .crow.sel{border-color:var(--accent);background:var(--accent-tint);}\n  .crow.sel.effrow{border-color:var(--green);background:var(--green-tint);}\n  .crow .cdot{width:9px;height:9px;border-radius:50%;flex:none;}\n  .crow input{flex:1;min-width:0;background:transparent;border:1px solid transparent;border-radius:6px;padding:5px 6px;font-size:13px;color:var(--text);font-family:var(--mono);}\n  .crow input:hover{border-color:var(--line-strong);}\n  .crow input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);background:#fff;}\n  .crow .pts{font-size:11px;color:var(--faint);white-space:nowrap;}\n  .crow .delbtn{border:none;background:transparent;color:var(--mid);padding:4px;border-radius:6px;display:flex;}\n  .crow .delbtn:hover{color:var(--red);background:var(--red-tint);}\n  .fitout{margin-top:12px;background:#fff;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:12px 13px;}\n  .fitout.eff{border-left-color:var(--green);}\n  .fitout .formula{font-family:var(--mono);font-size:12.5px;color:var(--text);line-height:1.55;white-space:pre-wrap;word-break:break-word;}\n  .fitout .fitmeta{font-size:11.5px;color:var(--dim);margin-top:8px;line-height:1.5;}\n  .fitout .btn{margin-top:11px;}\n  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:13px;}\n  thead th{text-align:left;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--faint);font-weight:700;padding:6px 5px;border-bottom:1px solid var(--line);white-space:nowrap;}\n  thead th.r{text-align:right;}\n  tbody td{padding:3px 4px;border-bottom:1px solid var(--line-soft);vertical-align:middle;}\n  tbody tr.sel{background:var(--accent-tint);}\n  .titlecell{display:flex;align-items:center;gap:7px;}\n  .rowdot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;}\n  td input{width:100%;background:transparent;border:1px solid transparent;border-radius:6px;padding:6px;font-size:13px;color:var(--text);font-family:inherit;}\n  td input:hover{border-color:var(--line-strong);}\n  td input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);background:#fff;}\n  td input.numcell{text-align:right;font-family:var(--mono);}\n  td.del{width:26px;}\n  .delbtn{border:none;background:transparent;color:var(--mid);padding:5px;border-radius:6px;}\n  .delbtn:hover{color:var(--red);background:var(--red-tint);}\n  .empty{font-size:13px;color:var(--faint);padding:14px 2px;}\n  .addrow{margin-top:11px;border-style:dashed;color:var(--text-3);}\n  .desc-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px 16px 8px;}\n  .desc-bar label{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);font-weight:700;}\n  .desc-bar input{font-size:18px;font-weight:600;color:var(--ink);background:transparent;border:none;border-bottom:1.5px solid var(--line-strong);padding:5px 4px;outline:none;text-align:center;min-width:90px;}\n  .desc-bar input:focus{border-bottom-color:var(--accent);}\n  .stagewrap{flex:1;min-width:0;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:6px 24px 24px;}\n  .graph-actions{position:absolute;top:12px;right:18px;display:flex;gap:8px;z-index:12;}\n  .graph-actions.hidden{display:none;}\n  #dropzone{width:min(820px,92%);aspect-ratio:1.414/1;border:1.5px dashed var(--line-strong);border-radius:14px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;color:var(--dim);transition:.15s;cursor:pointer;box-shadow:0 1px 2px rgba(30,31,34,.04);}\n  #dropzone.drag{border-color:var(--accent);background:var(--accent-tint);color:var(--text);box-shadow:0 0 0 4px var(--accent-ring);}\n  #dropzone .ico{width:48px;height:48px;color:var(--accent);}\n  #dropzone h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--ink);}\n  #dropzone p{margin:0;font-size:14px;max-width:440px;line-height:1.6;color:var(--text-3);}\n  #dropzone .hint{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);font-weight:700;}\n  #stage{position:absolute;top:0;left:0;display:none;line-height:0;transform-origin:0 0;will-change:transform;box-shadow:0 8px 30px rgba(30,31,34,.12);background:#fff;border-radius:6px;}\n  #curveImg{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none;border-radius:6px;}\n  #overlay{position:absolute;inset:0;width:100%;height:100%;touch-action:none;}\n  #overlay.cross{cursor:crosshair;}#overlay.grab{cursor:grab;}#overlay.grabbing{cursor:grabbing;}\n  .pt{cursor:grab;}.pt:active{cursor:grabbing;}.callout{cursor:move;}.cnode{cursor:grab;}\n  .calibrating .pt,.calibrating .callout,.calibrating .cnode{pointer-events:none;}\n  #tip{position:fixed;z-index:60;pointer-events:none;background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:8px 12px;border-radius:8px;box-shadow:0 4px 14px rgba(30,31,34,.2);display:none;white-space:nowrap;}\n  #tip b{color:#C5CBFF;}\n  #valEntry,#curveVal{position:fixed;z-index:62;display:none;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 12px;box-shadow:0 12px 34px rgba(30,31,34,.18);width:188px;}\n  #valEntry .vl,#curveVal .vl{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--accent-deep);font-weight:700;margin-bottom:6px;}\n  #curveVal.eff .vl{color:var(--green-deep);}\n  #valEntry input,#curveVal input{width:100%;background:#fff;border:1px solid var(--line-strong);border-radius:8px;color:var(--text);font-size:14px;padding:8px 9px;outline:none;font-family:var(--mono);}\n  #valEntry input:focus,#curveVal input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);}\n  #valEntry .vh,#curveVal .vh{font-size:11px;color:var(--dim);margin-top:7px;}\n  kbd{font-family:var(--mono);background:var(--line-soft);border:1px solid var(--line-strong);border-radius:4px;padding:0 5px;font-size:11px;color:var(--text-3);}\n  #popover{position:fixed;z-index:90;width:330px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 44px rgba(30,31,34,.18);padding:16px 18px;display:none;animation:calloutIn .14s ease;}\n  #popover h4{margin:0 0 10px;font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--accent-deep);}\n  #popover ol{margin:0 0 12px;padding-left:19px;font-size:13.5px;color:var(--text);line-height:1.65;}#popover ol li{margin-bottom:4px;}\n  #popover .notes{font-size:12.5px;color:var(--dim);line-height:1.6;border-top:1px solid var(--line);padding-top:10px;}\n  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(30,31,34,.24);opacity:0;pointer-events:none;transition:.2s;z-index:95;max-width:80vw;}\n  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}#toast.bad{background:var(--red);}\n  ::-webkit-scrollbar{width:11px;height:11px;}::-webkit-scrollbar-thumb{background:#D4D7DC;border-radius:7px;border:3px solid var(--panel);}\n  ::-webkit-scrollbar-track{background:transparent;}\n  .dbbar{padding:10px 12px;border-bottom:1px solid var(--line);}\n  .btn.dbload{width:100%;justify-content:center;background:var(--accent-tint);border-color:var(--accent-ring);color:var(--accent-deep);font-weight:700;}\n  .btn.dbload:hover{background:#E4E7FC;}\n  .btn.dbload svg{width:16px;height:16px;}\n  .titlestack{display:flex;flex-direction:column;align-items:center;gap:1px;}\n  .titlestack input{background:transparent;border:none;outline:none;text-align:center;color:var(--ink);padding:2px 4px;border-bottom:1.5px solid transparent;}\n  .titlestack input:hover{border-bottom-color:var(--line);}\n  .titlestack input:focus{border-bottom-color:var(--accent);}\n  #pumpMake{font-size:18px;font-weight:700;min-width:120px;}\n  #pumpModel{font-size:13px;font-weight:500;color:var(--text-3);min-width:120px;}\n  .modal{position:fixed;inset:0;z-index:90;display:none;align-items:flex-start;justify-content:center;background:rgba(30,31,34,.34);padding:60px 16px;}\n  .modalcard{width:560px;max-width:96vw;max-height:80vh;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 60px rgba(30,31,34,.28);overflow:hidden;}\n  .modalhead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);}\n  .modalhead b{font-size:15px;color:var(--ink);}\n  .iconbtn{border:none;background:transparent;font-size:22px;line-height:1;color:var(--dim);cursor:pointer;width:30px;height:30px;border-radius:8px;}\n  .iconbtn:hover{background:var(--surface);color:var(--ink);}\n  .modaltools{padding:12px 16px;border-bottom:1px solid var(--line);}\n  .modaltools input{width:100%;background:#fff;border:1px solid var(--line-strong);border-radius:8px;color:var(--text);font-size:14px;padding:9px 11px;outline:none;}\n  .modaltools input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);}\n  .dbtablewrap{overflow:auto;}\n  .dbtable{width:100%;border-collapse:collapse;font-size:13px;}\n  .dbtable thead th{position:sticky;top:0;background:var(--surface);text-align:left;font-weight:700;color:var(--text-3);font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:9px 14px;border-bottom:1px solid var(--line);white-space:nowrap;}\n  .dbtable th.sortable{cursor:pointer;user-select:none;}\n  .dbtable th.sortable:hover{color:var(--ink);}\n  .dbtable th .arr{font-size:10px;color:var(--accent);}\n  .dbtable tbody td{padding:11px 14px;border-bottom:1px solid var(--line-soft);color:var(--text);vertical-align:middle;}\n  .dbtable tbody tr[data-id]{cursor:pointer;}\n  .dbtable tbody tr[data-id]:hover{background:var(--accent-tint);}\n  .dbtable .dbmake{font-weight:600;color:var(--ink);}\n  .dbtable .dbmodel{color:var(--text-2);}\n  .dbtable .dbdate{color:var(--dim);font-size:12px;white-space:nowrap;}\n  .dbtable .dbdel{text-align:right;width:44px;}\n  .dbtable .dbdel .delbtn{border:none;background:transparent;color:var(--faint);cursor:pointer;padding:4px;border-radius:6px;display:inline-flex;}\n  .dbtable .dbdel .delbtn:hover{color:var(--red);background:var(--red-tint);}\n  .dbempty{text-align:center;color:var(--dim);padding:34px 14px;}\n<\/style>\n<\/head>\n<body>\n<main>\n  <aside class=\"left\">\n    <div class=\"brand\"><div class=\"logo\" style=\"background:#161616;border-radius:8px;padding:0 6px;\"><svg width=\"30\" height=\"26\" viewBox=\"0 0 30 30\" aria-label=\"Nexmin\"><polygon points=\"0,0 7,0 7,30 0,30\" fill=\"#fff\"/><polygon points=\"5,0 12,0 24,30 17,30\" fill=\"#fff\"/><polygon points=\"23,0 30,0 30,30 23,30\" fill=\"#C8102E\"/><\/svg><\/div><div class=\"bt\"><b>NEXMIN<\/b><span>Pump Curve<\/span><\/div><\/div>\n    <div class=\"dbbar\"><button class=\"btn dbload\" id=\"openBtn\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><\/svg>Open pump file<\/button>\n      <input id=\"fileInput\" type=\"file\" accept=\".json,application/json\" style=\"display:none\"><\/div>\n    <div class=\"tabpanel\" id=\"tab-curve\">\n      <div class=\"panel-head\"><span>Curve fit<\/span><button class=\"help\" data-help=\"curve\">?<\/button><\/div>\n      <div class=\"pad\">\n        <div class=\"fieldrow\">\n          <div class=\"field\"><label>Trace style<\/label><div class=\"seg\" id=\"traceModeSeg\" style=\"height:40px;display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden\"><button data-trace=\"poly\" class=\"on\" style=\"border:none;background:var(--accent);color:#fff;font:inherit;font-size:12px;font-weight:600;padding:0 13px\">Polyline<\/button><button data-trace=\"draw\" style=\"border:none;border-left:1px solid var(--line-strong);background:#fff;color:var(--text-3);font:inherit;font-size:12px;font-weight:600;padding:0 13px\">Freehand<\/button><\/div><\/div>\n        <\/div>\n        <div class=\"fieldrow\">\n          <div class=\"field\"><label>Excel cell for X, flow<\/label><input id=\"xref\" type=\"text\" value=\"X\" spellcheck=\"false\" style=\"font-family:var(--mono)\"><\/div>\n          <div class=\"field\"><label>Excel cell for Y, head<\/label><input id=\"yref\" type=\"text\" value=\"Y\" spellcheck=\"false\" style=\"font-family:var(--mono)\"><\/div>\n        <\/div>\n        <div class=\"cgroup\">\n          <div class=\"cglabel\"><span class=\"swatch rpm\"><\/span>Speed (RPM) curves<\/div>\n          <button class=\"btn mode wide\" id=\"rpmTrace\" disabled>Trace new RPM curve<\/button>\n          <div class=\"curvelist\" id=\"rpmList\"><\/div>\n          <div class=\"fitout\" id=\"rpmOut\" style=\"display:none\"><div class=\"formula\" id=\"rpmFormula\"><\/div><div class=\"fitmeta\" id=\"rpmMeta\"><\/div><button class=\"btn ghost wide\" id=\"rpmCopy\">Copy RPM formula<\/button><\/div>\n        <\/div>\n        <div class=\"cgroup\">\n          <div class=\"cglabel\"><span class=\"swatch eff\"><\/span>Efficiency (%) curves<\/div>\n          <button class=\"btn green wide\" id=\"effTrace\" disabled>Trace new efficiency curve<\/button>\n          <div class=\"curvelist\" id=\"effList\"><\/div>\n          <div class=\"fitout eff\" id=\"effOut\" style=\"display:none\"><div class=\"formula\" id=\"effFormula\"><\/div><div class=\"fitmeta\" id=\"effMeta\"><\/div><button class=\"btn green ghostg wide\" id=\"effCopy\">Copy efficiency formula<\/button><\/div>\n        <\/div>\n        <div class=\"cgroup\">\n          <div class=\"cglabel\">Check points<\/div>\n          <button class=\"btn mode wide\" id=\"probeBtn\" disabled>Place check point<\/button>\n          <table id=\"probeTable\" style=\"display:none\"><thead><tr><th>Pt<\/th><th class=\"r\">X<\/th><th class=\"r\">Y<\/th><th class=\"r\">RPM<\/th><th class=\"r\">&eta;%<\/th><th><\/th><\/tr><\/thead><tbody id=\"probeBody\"><\/tbody><\/table>\n        <\/div>\n      <\/div>\n    <\/div>\n  <\/aside>\n  <div class=\"center\">\n    <div class=\"desc-bar\"><div class=\"titlestack\">\n      <input id=\"pumpMake\" type=\"text\" placeholder=\"Pump make\" spellcheck=\"false\" autocomplete=\"off\">\n      <input id=\"pumpModel\" type=\"text\" placeholder=\"Pump model\" spellcheck=\"false\" autocomplete=\"off\">\n    <\/div><\/div>\n    <div class=\"stagewrap\" id=\"stagewrap\">\n      <div class=\"graph-actions hidden\" id=\"graphActions\">\n        <button class=\"btn\" id=\"saveBtn\" title=\"Save this pump to its .json file\">\n          <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z\"/><path d=\"M17 21v-8H7v8M7 3v5h8\"/><\/svg>Save\n        <\/button>\n        <button class=\"btn\" id=\"saveAsBtn\" title=\"Save this pump to a new .json file\">Save As<\/button>\n        <button class=\"btn\" id=\"copyBtn\" title=\"Copy the current view to the clipboard as a flat image\">\n          <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"9\" y=\"9\" width=\"11\" height=\"11\" rx=\"2\"/><path d=\"M5 15V5a2 2 0 0 1 2-2h10\"/><\/svg>Copy Image\n        <\/button>\n        <button class=\"btn primary\" id=\"pdfBtn\" title=\"Export an A3 PDF with editable annotation objects\">\n          <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M14 2v6h6\"/><\/svg>Export PDF\n        <\/button>\n      <\/div>\n      <div id=\"dropzone\">\n        <svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"8.5\" cy=\"8.5\" r=\"1.5\"/><path d=\"M21 15l-5-5L5 21\"/><\/svg>\n        <h2>Drop a pump curve here<\/h2>\n        <p>Click to browse, drag an image in, or paste a screenshot with <b>Ctrl + V<\/b>.<\/p>\n        <span class=\"hint\">PNG &middot; JPG &middot; clipboard image<\/span>\n      <\/div>\n      <div id=\"stage\"><img id=\"curveImg\" alt=\"pump curve\"><svg id=\"overlay\" preserveAspectRatio=\"none\"><\/svg><\/div>\n    <\/div>\n  <\/div>\n  <aside class=\"right\">\n    <div class=\"card\">\n      <div class=\"ch\"><span>Axis calibration<\/span><button class=\"help\" data-help=\"calib\">?<\/button><\/div>\n      <div class=\"cb\">\n        <span class=\"badge warn\" id=\"calBadge\" style=\"margin-bottom:12px\">Not set<\/span>\n        <button class=\"btn mode wide\" id=\"calBtn\" disabled>\n          <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 12h4l3 8 4-16 3 8h4\"/><\/svg>Calibrate axes\n        <\/button>\n        <div class=\"refrow\">\n          <div class=\"ref\" id=\"refOrigin\"><div class=\"rl\">Origin <span class=\"dot\"><\/span><\/div><div class=\"rv muted\">0 , 0<\/div><\/div>\n          <div class=\"ref\" id=\"refScale\"><div class=\"rl\">Scale pt <span class=\"dot\"><\/span><\/div><div class=\"rv muted\">not set<\/div><\/div>\n        <\/div>\n        <div class=\"fieldrow\">\n          <div class=\"field\"><label>Scale X<\/label><input class=\"num\" id=\"sxVal\" type=\"number\" step=\"any\" placeholder=\"\u2014\"><\/div>\n          <div class=\"field\"><label>Scale Y<\/label><input class=\"num\" id=\"syVal\" type=\"number\" step=\"any\" placeholder=\"\u2014\"><\/div>\n        <\/div>\n      <\/div>\n    <\/div>\n  <\/aside>\n<\/main>\n<div id=\"tip\"><\/div>\n<div id=\"valEntry\"><div class=\"vl\" id=\"valLabel\">value<\/div><input id=\"valInput\" type=\"number\" step=\"any\" autocomplete=\"off\"><div class=\"vh\">Type a number, press <kbd>Enter<\/kbd><\/div><\/div>\n<div id=\"popover\"><\/div>\n<div id=\"toast\"><\/div>\n<script>\n\"use strict\";\n(function(){\n  const FONT='Aptos,\"Segoe UI\",system-ui,sans-serif',MONO='Aptos Mono,Cascadia Code,ui-monospace,monospace',\n        CA='#C8102E',CAdeep='#9C0C24',CINK='#1E1F22',CTEXT='#2E3035',CLINE='#E3E5E8',CGREEN='#3BA55C',CGREENd='#2C7A47',CYEL='#E0A416',CYELd='#9A6F0C';\n  const state={imgSrc:null,imgEl:null,imgW:0,imgH:0,make:'',model:'',pumpId:null,pumpCreated:null,\n    calib:{origin:{px:null,py:null},scale:{px:null,py:null,xval:null,yval:null}},\n    points:[],selectedId:null,mode:'idle',calStep:null,tab:'curve',\n    family:'rpm',curves:{rpm:[],eff:[]},tracingId:null,selectedCurveId:null,selectedNode:null,\n    traceMode:'poly',rpmModel:null,effModel:null,probes:[],selectedProbeId:null};\n  let undoStack=[],redoStack=[],calBackup=null,calHistLen=0,lastCursor={x:0,y:0,inside:false};\n  const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);\n  const dropzone=$('#dropzone'),stage=$('#stage'),img=$('#curveImg'),overlay=$('#overlay'),stagewrap=$('#stagewrap'),\n        ptBody=$('#ptBody'),calBadge=$('#calBadge'),calBtn=$('#calBtn'),dutyBtn=$('#dutyBtn'),\n        tip=$('#tip'),valEntry=$('#valEntry'),valInput=$('#valInput'),valLabel=$('#valLabel'),\n        popover=$('#popover'),toastEl=$('#toast'),graphActions=$('#graphActions');\n  const measCtx=document.createElement('canvas').getContext('2d');\n  function measure(txt,font){measCtx.font=font;return measCtx.measureText(txt).width;}\n  const uid=()=>'p'+Math.random().toString(36).slice(2,9);\n  function letterFor(i){let s='',n=i+1;while(n>0){n--;s=String.fromCharCode(65+(n%26))+s;n=Math.floor(n/26);}return s;}\n  function disp(v){if(v==null||!isFinite(v))return '';if(Number.isInteger(v))return String(v);return String(parseFloat(Number(v).toPrecision(12)));}\n  function markerR(){return Math.max(state.imgW,state.imgH)*0.013;}\n  function escXml(s){return String(s).replace(/&/g,'&amp;').replace(/<\/g,'&lt;').replace(/>/g,'&gt;');}\n  function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/<\/g,'&lt;');}\n  let toastTimer;function toast(m,bad){toastEl.textContent=m;toastEl.className='show'+(bad?' bad':'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.className='',2800);}\n  async function copyText(t){if(!t){toast('Nothing to copy yet.',true);return;}try{await navigator.clipboard.writeText(t);toast('Copied to clipboard.');}catch(e){toast('Could not copy.',true);}}\n\n  const view={base:1,zoom:1,tx:0,ty:0,baseW:0,baseH:0};let panDrag=null;\n  function fitView(){if(!state.imgEl)return;const aw=stagewrap.clientWidth,ah=stagewrap.clientHeight,fill=0.94;let b=Math.min(aw/state.imgW,ah/state.imgH)*fill;if(!isFinite(b)||b<=0)b=1;view.base=b;view.baseW=state.imgW*b;view.baseH=state.imgH*b;view.zoom=1;view.tx=(aw-view.baseW)/2;view.ty=(ah-view.baseH)/2;stage.style.width=view.baseW+'px';applyTransform();}\n  function applyTransform(){stage.style.transform='translate('+view.tx+'px,'+view.ty+'px) scale('+view.zoom+')';}\n  function zoomAt(px,py,factor){const wx=(px-view.tx)/view.zoom,wy=(py-view.ty)/view.zoom;view.zoom=Math.max(0.25,Math.min(view.zoom*factor,16));view.tx=px-wx*view.zoom;view.ty=py-wy*view.zoom;applyTransform();}\n  function onPanMove(e){if(!panDrag)return;view.tx=panDrag.tx+(e.clientX-panDrag.sx);view.ty=panDrag.ty+(e.clientY-panDrag.sy);applyTransform();}\n  function onPanUp(){overlay.removeEventListener('pointermove',onPanMove);overlay.removeEventListener('pointerup',onPanUp);panDrag=null;overlay.classList.remove('grabbing');}\n  function startPan(e){e.preventDefault();panDrag={sx:e.clientX,sy:e.clientY,tx:view.tx,ty:view.ty};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.classList.add('grabbing');overlay.addEventListener('pointermove',onPanMove);overlay.addEventListener('pointerup',onPanUp);}\n\n  function calloutBox(p,i){const r=markerR(),fsT=r*0.92,fsC=r*0.82,pad=r*0.6,gap=r*0.1,lines=calloutLines(p,i);\n    const wT=measure(lines[0],'700 '+fsT+'px '+FONT),wC=measure(lines[1],'500 '+fsC+'px '+MONO),lhT=fsT*1.14,lhC=fsC*1.14;\n    return {w:Math.max(wT,wC)+pad*2,h:pad*2+lhT+gap+lhC,fsT,fsC,pad,gap,lhT,lhC,lines};}\n  function boxEdgePoint(mx,my,cx,cy,w,h){const dx=mx-cx,dy=my-cy;if(dx===0&&dy===0)return {x:cx,y:cy};const sx=dx!==0?(w/2)/Math.abs(dx):Infinity,sy=dy!==0?(h/2)/Math.abs(dy):Infinity;let s=Math.min(sx,sy);if(s>1)s=1;return {x:cx+dx*s,y:cy+dy*s};}\n\n  function snapshot(){return JSON.stringify({c:state.calib,p:state.points,s:state.selectedId,pr:state.probes,cu:state.curves,fam:state.family,tb:state.tab});}\n  function applyState(o){state.calib=o.c;state.points=o.p;state.selectedId=o.s;state.probes=o.pr||[];state.curves=o.cu||{rpm:[],eff:[]};state.family=o.fam||'rpm';if(o.tb)setTab(o.tb,true);if(state.mode!=='idle')exitMode(true);state.tracingId=null;state.selectedCurveId=null;state.selectedNode=null;state.selectedProbeId=null;recomputeModels();syncInputs();renderAll();}\n  function pushHistory(){undoStack.push(snapshot());if(undoStack.length>200)undoStack.shift();redoStack=[];}\n  function undo(){if(!undoStack.length)return;redoStack.push(snapshot());applyState(JSON.parse(undoStack.pop()));}\n  function redo(){if(!redoStack.length)return;undoStack.push(snapshot());applyState(JSON.parse(redoStack.pop()));}\n\n  function isCalibrated(){const o=state.calib.origin,s=state.calib.scale;return o.px!=null&&o.py!=null&&s.px!=null&&s.py!=null&&s.xval!=null&&s.yval!=null&&s.px!==o.px&&s.py!==o.py&&s.xval!==0&&s.yval!==0;}\n  function dataToImg(x,y){const o=state.calib.origin,s=state.calib.scale;return {px:o.px+x*(s.px-o.px)/s.xval,py:o.py+y*(s.py-o.py)/s.yval};}\n  function imgToData(px,py){const o=state.calib.origin,s=state.calib.scale;return {x:(px-o.px)*s.xval/(s.px-o.px),y:(py-o.py)*s.yval/(s.py-o.py)};}\n  function clientToImg(cx,cy){const r=overlay.getBoundingClientRect();return {px:(cx-r.left)/r.width*state.imgW,py:(cy-r.top)/r.height*state.imgH};}\n  function imgToClient(px,py){const r=overlay.getBoundingClientRect();return {x:r.left+px/state.imgW*r.width,y:r.top+py/state.imgH*r.height};}\n\n  function loadImage(src){const im=new Image();im.onload=()=>{pushHistory();state.imgSrc=src;state.imgEl=im;state.imgW=im.naturalWidth;state.imgH=im.naturalHeight;\n    state.pumpId=null;state.pumpCreated=null;state.make='';state.model='';if(typeof fileHandle!=='undefined')fileHandle=null;\n    state.calib={origin:{px:null,py:null},scale:{px:null,py:null,xval:null,yval:null}};exitMode(true);\n    img.src=src;overlay.setAttribute('viewBox','0 0 '+state.imgW+' '+state.imgH);dropzone.style.display='none';stage.style.display='block';graphActions.classList.remove('hidden');fitView();\n    syncInputs();renderAll();toast('Curve loaded. Calibrate the axes on the right to begin.');};im.onerror=()=>toast('Could not read that image.',true);im.src=src;}\n  function handleFile(f){if(!f||!f.type.startsWith('image/')){toast('That is not an image file.',true);return;}const r=new FileReader();r.onload=e=>loadImage(e.target.result);r.readAsDataURL(f);}\n\n  // ---- JSON file save / open ----\n  const FILE_FORMAT='pump-curve-utility';let fileHandle=null;\n  const hasFS=(typeof window.showSaveFilePicker==='function'&&typeof window.showOpenFilePicker==='function');\n  function pumpData(){return {format:FILE_FORMAT,version:1,make:state.make||'',model:state.model||'',\n    image:state.imgSrc,imgW:state.imgW,imgH:state.imgH,calib:state.calib,\n    curves:state.curves,probes:state.probes,xref:($('#xref').value||'X'),yref:($('#yref').value||'Y'),\n    savedAt:new Date().toISOString()};}\n  function jsonBlob(){return new Blob([JSON.stringify(pumpData(),null,2)],{type:'application/json'});}\n  function readyToSave(){if(!state.imgEl){toast('Load a pump curve image first.',true);return false;}\n    if(!(state.make||'').trim()&&!(state.model||'').trim()){toast('Enter a pump make and model first.',true);$('#pumpMake').focus();return false;}return true;}\n  async function writeHandle(h){const w=await h.createWritable();await w.write(jsonBlob());await w.close();}\n  function downloadJSON(){const url=URL.createObjectURL(jsonBlob()),a=document.createElement('a');a.href=url;a.download=safeFilename()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('Saved a .json file to your downloads.');}\n  async function doSave(){if(!readyToSave())return;\n    if(hasFS&&fileHandle){try{await writeHandle(fileHandle);toast('Saved '+(fileHandle.name||'file')+'.');return;}catch(e){}}\n    return doSaveAs();}\n  async function doSaveAs(){if(!readyToSave())return;\n    if(hasFS){try{const h=await window.showSaveFilePicker({suggestedName:safeFilename()+'.json',types:[{description:'Pump curve file',accept:{'application/json':['.json']}}]});await writeHandle(h);fileHandle=h;toast('Saved as '+(h.name||'file')+'.');}catch(e){if(e&&e.name!=='AbortError')toast('Could not save the file.',true);}}\n    else downloadJSON();}\n  async function doOpen(){\n    if(hasFS){try{const picked=await window.showOpenFilePicker({types:[{description:'Pump curve file',accept:{'application/json':['.json']}}]});const h=picked[0],f=await h.getFile(),o=JSON.parse(await f.text());fileHandle=h;openParsed(o);}catch(e){if(e&&e.name!=='AbortError')toast('Could not open that file.',true);}}\n    else $('#fileInput').click();}\n  function openParsed(o){if(!o||typeof o!=='object'){toast('That file is not a pump curve file.',true);return;}\n    if(o.format!==FILE_FORMAT&&!confirm('This does not look like a pump curve file. Open it anyway?'))return;\n    applyPumpData(o);}\n  function applyPumpData(o){\n    state.make=o.make||'';state.model=o.model||'';\n    state.curves=o.curves||{rpm:[],eff:[]};state.probes=o.probes||[];\n    state.points=[];state.selectedId=null;state.selectedCurveId=null;state.selectedNode=null;state.selectedProbeId=null;\n    $('#xref').value=o.xref||'X';$('#yref').value=o.yref||'Y';\n    if(!o.image){toast('That file has no curve image.',true);syncInputs();return;}\n    const im=new Image();\n    im.onload=()=>{state.imgSrc=o.image;state.imgEl=im;state.imgW=o.imgW||im.naturalWidth;state.imgH=o.imgH||im.naturalHeight;\n      state.calib=o.calib||{origin:{px:null,py:null},scale:{px:null,py:null,xval:null,yval:null}};\n      exitMode(true);img.src=o.image;overlay.setAttribute('viewBox','0 0 '+state.imgW+' '+state.imgH);\n      dropzone.style.display='none';stage.style.display='block';graphActions.classList.remove('hidden');fitView();\n      undoStack=[];redoStack=[];setTab('curve',true);recomputeModels();syncInputs();renderAll();\n      toast('Opened '+([state.make,state.model].filter(Boolean).join(' ')||'pump')+'.');};\n    im.onerror=()=>toast('Could not load the image in that file.',true);\n    im.src=o.image;}\n\n  function enterCalibrate(){if(!state.imgEl){toast('Load a curve image first.',true);return;}exitMode(true);calBackup=JSON.parse(JSON.stringify(state.calib));calHistLen=undoStack.length;pushHistory();\n    state.calib={origin:{px:null,py:null},scale:{px:null,py:null,xval:null,yval:null}};state.mode='calibrate';state.calStep='origin';state.selectedId=null;renderAll();toast('Calibration on. Click the chart origin, the 0, 0 point.');}\n  function enterDuty(){if(!isCalibrated()){toast('Calibrate the axes first.',true);return;}if(state.mode==='duty'){exitMode();return;}exitMode(true);state.mode='duty';renderAll();toast('Click the curve to place duty points.');}\n  function exitMode(silent){state.mode='idle';state.calStep=null;state.tracingId=null;hideValEntry();hideTip();if(!silent)renderAll();}\n  function cancelCalibrate(){state.calib=calBackup;undoStack.length=calHistLen;exitMode();renderAll();toast('Calibration cancelled.');}\n  function solveLin(A,b){const n=A.length,M=A.map((r,i)=>r.concat(b[i]));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)return null;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let j=c;j<=n;j++)M[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];if(f)for(let j=c;j<=n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r[n]);}\n  function lsq(basis,xs,ys){const k=basis.length,n=xs.length,AtA=Array.from({length:k},()=>new Array(k).fill(0)),Aty=new Array(k).fill(0);for(let i=0;i<n;i++){const phi=basis.map(f=>f(xs[i]));for(let a=0;a<k;a++){Aty[a]+=phi[a]*ys[i];for(let b2=0;b2<k;b2++)AtA[a][b2]+=phi[a]*phi[b2];}}return solveLin(AtA,Aty);}\n  function r2of(xs,ys,pred){const yb=ys.reduce((s,v)=>s+v,0)/ys.length;let sr=0,st=0;for(let i=0;i<xs.length;i++){const e=ys[i]-pred(xs[i]);sr+=e*e;const d=ys[i]-yb;st+=d*d;}return st===0?1:1-sr/st;}\n  function fnum(v){if(!isFinite(v))return '0';return String(parseFloat(Number(v).toPrecision(4)));}\n  function fsigned(v){return (v<0?'\\u2212':'')+fnum(Math.abs(v));}\n  function term(v,suf){return (v>=0?' + ':' \\u2212 ')+fnum(Math.abs(v))+suf;}\n  function pct(r){return (r*100).toFixed(1)+'%';}\n  function polyModel(deg,xs,ys,name){if(xs.length<deg+1)return null;const basis=[];for(let d=0;d<=deg;d++){const dd=d;basis.push(x=>Math.pow(x,dd));}\n    const c=lsq(basis,xs,ys);if(!c||c.some(v=>!isFinite(v)))return null;const predict=x=>c.reduce((s,ci,d)=>s+ci*Math.pow(x,d),0);\n    const pw=['','\\u00B7X','\\u00B7X\\u00B2','\\u00B7X\\u00B3','\\u00B7X\\u2074'];let f='Y = '+fnum(c[0]);for(let d=1;d<=deg;d++)f+=term(c[d],pw[d]);return {name:name||('Order '+deg),predict,formula:f,r2:r2of(xs,ys,predict),params:deg+1,coef:c};}\n  function powerModel(xs,ys){if(xs.some(x=>x<=0)||ys.some(y=>y<=0))return null;const c=lsq([()=>1,x=>x],xs.map(Math.log),ys.map(Math.log));if(!c)return null;const a=Math.exp(c[0]),b=c[1],predict=x=>a*Math.pow(x,b);return {name:'Power',predict,formula:'Y = '+fnum(a)+'\\u00B7X^('+fsigned(b)+')',r2:r2of(xs,ys,predict),params:2};}\n  function logModel(xs,ys){if(xs.some(x=>x<=0))return null;const c=lsq([()=>1,x=>Math.log(x)],xs,ys);if(!c)return null;const predict=x=>c[0]+c[1]*Math.log(x);return {name:'Logarithmic',predict,formula:'Y = '+fnum(c[0])+term(c[1],'\\u00B7ln(X)'),r2:r2of(xs,ys,predict),params:2};}\n  function expModel(xs,ys){if(ys.some(y=>y<=0))return null;const c=lsq([()=>1,x=>x],xs,ys.map(Math.log));if(!c)return null;const a=Math.exp(c[0]),b=c[1],predict=x=>a*Math.exp(b*x);return {name:'Exponential',predict,formula:'Y = '+fnum(a)+'\\u00B7e^('+fsigned(b)+'\\u00B7X)',r2:r2of(xs,ys,predict),params:2};}\n  function autoFitYX(xs,ys){const cands=[polyModel(2,xs,ys),polyModel(3,xs,ys),polyModel(4,xs,ys),powerModel(xs,ys),logModel(xs,ys),expModel(xs,ys),polyModel(1,xs,ys,'Linear')];const n=xs.length;let best=null,score=-Infinity;cands.forEach(m=>{if(!m||!isFinite(m.r2))return;const p=m.params,adj=(n-p-1>0)?1-(1-m.r2)*(n-1)/(n-p-1):m.r2;if(adj>score){score=adj;best=m;}});return best;}\n  function fitSeries(iv,dv){const n=iv.length;if(n<2)return null;let best=null;for(const deg of [1,2,3]){if(n<deg+1)break;const basis=[];for(let d=0;d<=deg;d++){const dd=d;basis.push(x=>Math.pow(x,dd));}const c=lsq(basis,iv,dv);if(!c||c.some(v=>!isFinite(v)))continue;const pr=x=>c.reduce((s,ci,d)=>s+ci*Math.pow(x,d),0);const r2=r2of(iv,dv,pr);if(!best||r2>best.r2+1e-9)best={pr,coef:c,r2,deg};}if(!best)return null;best.imin=Math.min.apply(null,iv);best.imax=Math.max.apply(null,iv);return best;}\n  function fitCurve(c,fam){const tr=c.trace;if(tr.length<2){c.fit=null;return;}const iv=fam==='rpm'?tr.map(p=>p.x):tr.map(p=>p.y),dv=fam==='rpm'?tr.map(p=>p.y):tr.map(p=>p.x);c.fit=fitSeries(iv,dv);}\n  function excelNum(c){return String(parseFloat(Number(c).toPrecision(10))).replace('e','E');}\n  function supr(n){return n===2?'\\u00B2':n===3?'\\u00B3':n===4?'\\u2074':(n>1?'^'+n:'');}\n  function termPretty(i,j){let s='';if(i>0)s+='X'+supr(i);if(j>0)s+=(s?'\\u00B7':'')+'Y'+supr(j);return s;}\n  function fitSurface(pts,terms){const basis=terms.map(t=>(p=>Math.pow(p.x,t.i)*Math.pow(p.y,t.j)));const coef=lsq(basis,pts,pts.map(p=>p.v));if(!coef||coef.some(v=>!isFinite(v)))return null;const predict=(x,y)=>{let s=0;for(let k=0;k<terms.length;k++)s+=coef[k]*Math.pow(x,terms[k].i)*Math.pow(y,terms[k].j);return s;};const vs=pts.map(p=>p.v),mean=vs.reduce((a,b)=>a+b,0)/vs.length;let ss=0,st=0;pts.forEach(p=>{const e=p.v-predict(p.x,p.y);ss+=e*e;const d=p.v-mean;st+=d*d;});return {coef,terms,predict,r2:st===0?1:1-ss/st};}\n  function bestSurface(fam,pts,nC){const dense=3,spread=Math.max(1,Math.min(3,nC-1)),xCap=fam==='rpm'?dense:spread,yCap=fam==='rpm'?spread:dense;let best=null,bestAdj=-Infinity;for(let total=1;total<=xCap+yCap&&total<=4;total++){const terms=[];for(let i=0;i<=xCap;i++)for(let j=0;j<=yCap;j++){if(i+j<=total)terms.push({i,j});}if(terms.length<2||pts.length<terms.length+1)continue;const s=fitSurface(pts,terms);if(!s)continue;const n=pts.length,p=terms.length,adj=(n-p-1>0)?1-(1-s.r2)*(n-1)/(n-p-1):s.r2;if(adj>bestAdj+1e-9){bestAdj=adj;best=s;}}return best;}\n  function surfFormula(fam,s){const L=fam==='rpm'?'RPM':'Efficiency';let out=L+' = ';s.terms.forEach((t,k)=>{const c=s.coef[k],lab=termPretty(t.i,t.j);if(k===0)out+=fnum(c)+(lab?'\\u00B7'+lab:'');else out+=(c>=0?' + ':' \\u2212 ')+fnum(Math.abs(c))+(lab?'\\u00B7'+lab:'');});return out;}\n  function dolFit(xs,ys){let best=null,bestAdj=-Infinity;for(let deg=1;deg<=4;deg++){const m=polyModel(deg,xs,ys);if(!m)continue;const n=xs.length,p=deg+1,adj=(n-p-1>0)?1-(1-m.r2)*(n-1)/(n-p-1):m.r2;if(adj>bestAdj+1e-9){bestAdj=adj;best=m;}}return best;}\n  function buildFamilyModel(fam){const arr=state.curves[fam].filter(c=>c.trace.length>=2);arr.forEach(c=>fitCurve(c,fam));const valued=arr.filter(c=>c.value!=null&&isFinite(c.value)&&c.trace.length>=2);const nC=new Set(valued.map(c=>c.value)).size;\n    if(fam==='rpm'&&nC<2){const pts=[];arr.forEach(c=>c.trace.forEach(p=>pts.push(p)));if(pts.length<3)return {method:'none'};const m=dolFit(pts.map(p=>p.x),pts.map(p=>p.y));if(!m)return {method:'none'};return {method:'dol',r2:m.r2,formula:m.formula,predict:(x,y)=>m.predict(x),ex:{kind:'dol',coef:m.coef}};}\n    if(nC<2)return {method:'need'};\n    const pts=[];valued.forEach(c=>c.trace.forEach(p=>pts.push({x:p.x,y:p.y,v:c.value})));\n    const s=bestSurface(fam,pts,nC);if(!s)return {method:'need'};\n    return {method:'surface',r2:s.r2,formula:surfFormula(fam,s),predict:s.predict,ex:{kind:'surface',terms:s.terms,coef:s.coef}};}\n  function modelExcel(model){if(!model||!model.ex)return '';const xr=(($('#xref').value)||'X').trim()||'X',yr=(($('#yref').value)||'Y').trim()||'Y';\n    if(model.ex.kind==='dol'){const c=model.ex.coef;let out='=';for(let d=0;d<c.length;d++){let lab='';if(d>0)lab='*'+xr+(d>1?'^'+d:'');const num=excelNum(Math.abs(c[d]));out+=(d===0?((c[d]<0?'-':'')+num):((c[d]>=0?'+':'-')+num))+lab;}return out;}\n    const terms=model.ex.terms,c=model.ex.coef;let out='=';terms.forEach((t,k)=>{let lab='';if(t.i>0)lab+='*'+xr+(t.i>1?'^'+t.i:'');if(t.j>0)lab+='*'+yr+(t.j>1?'^'+t.j:'');const num=excelNum(Math.abs(c[k]));out+=(k===0?((c[k]<0?'-':'')+num):((c[k]>=0?'+':'-')+num))+lab;});return out;}\n  function recomputeModels(){state.rpmModel=buildFamilyModel('rpm');state.effModel=buildFamilyModel('eff');}\n  function curvePolyline(c,fam){if(!c.fit){return c.trace.map(p=>dataToImg(p.x,p.y));}const f=c.fit,N=64,out=[];for(let i=0;i<=N;i++){const t=f.imin+(f.imax-f.imin)*i/N;let X,Y;if(fam==='rpm'){X=t;Y=f.pr(t);}else{Y=t;X=f.pr(t);}out.push(dataToImg(X,Y));}return out;}\n  function curveLabelText(c,fam){return c.value!=null?(fam==='rpm'?String(c.value):c.value+'%'):'DOL';}\n  function labelPoint(c,fam){if(!c.fit){if(!c.trace.length)return null;const p=c.trace[c.trace.length-1];return dataToImg(p.x,p.y);}const f=c.fit;let X,Y;if(fam==='rpm'){X=f.imax;Y=f.pr(f.imax);}else{Y=f.imax;X=f.pr(f.imax);}return dataToImg(X,Y);}\n\n  function startNewCurve(fam){if(!isCalibrated()){toast('Calibrate the axes first.',true);return;}pushHistory();state.family=fam;const id=uid();state.curves[fam].push({id,value:null,trace:[]});state.tracingId=id;state.selectedCurveId=id;state.selectedId=null;state.selectedNode=null;state.mode='trace';recomputeModels();renderAll();setTimeout(()=>{const el=document.querySelector('#'+fam+'List .crow[data-id=\"'+id+'\"] input');if(el)el.focus();},20);toast(state.traceMode==='poly'?'Click nodes along the curve. Enter its value in the table on the left.':'Drag along the curve. Enter its value in the table on the left.');}\n  function activeCurve(){return state.curves[state.family].find(c=>c.id===state.tracingId)||null;}\n  let traceStroke=null;\n  function onTracePointerDown(e){const c=activeCurve();if(!c)return;e.preventDefault();\n    if(state.traceMode==='poly'){pushHistory();const o=clientToImg(e.clientX,e.clientY),d=imgToData(o.px,o.py);c.trace.push({x:d.x,y:d.y});recomputeModels();renderOverlay();updateCurvePanels();return;}\n    pushHistory();traceStroke={last:null};try{overlay.setPointerCapture(e.pointerId);}catch(_){}\n    addTracePoint(e.clientX,e.clientY,true);overlay.addEventListener('pointermove',onTraceMove);overlay.addEventListener('pointerup',onTraceUp);}\n  function addTracePoint(cx,cy,force){const c=activeCurve();if(!c)return;const o=clientToImg(cx,cy),minD=Math.max(state.imgW,state.imgH)*0.004;if(!force&&traceStroke&&traceStroke.last){if(Math.hypot(o.px-traceStroke.last.px,o.py-traceStroke.last.py)<minD)return;}const d=imgToData(o.px,o.py);c.trace.push({x:d.x,y:d.y});if(traceStroke)traceStroke.last={px:o.px,py:o.py};recomputeModels();renderOverlay();}\n  function onTraceMove(e){if(traceStroke)addTracePoint(e.clientX,e.clientY,false);}\n  function onTraceUp(){overlay.removeEventListener('pointermove',onTraceMove);overlay.removeEventListener('pointerup',onTraceUp);traceStroke=null;updateCurvePanels();}\n  let cnodeDrag=null;\n  function onCNodeDown(e){if(state.mode==='calibrate')return;e.stopPropagation();const fam=e.currentTarget.getAttribute('data-fam'),cid=e.currentTarget.getAttribute('data-cid'),i=+e.currentTarget.getAttribute('data-i');state.family=fam;state.selectedCurveId=cid;state.selectedId=null;state.selectedNode={fam,cid,i};renderAll();cnodeDrag={fam,cid,i,hist:false};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.addEventListener('pointermove',onCNodeMove);overlay.addEventListener('pointerup',onCNodeUp);}\n  function onCNodeMove(e){if(!cnodeDrag)return;if(!cnodeDrag.hist){pushHistory();cnodeDrag.hist=true;}const c=state.curves[cnodeDrag.fam].find(x=>x.id===cnodeDrag.cid);if(!c)return;const o=clientToImg(e.clientX,e.clientY),d=imgToData(o.px,o.py),n=c.trace[cnodeDrag.i];if(n){n.x=d.x;n.y=d.y;recomputeModels();renderOverlay();updateCurvePanels();}}\n  function onCNodeUp(){overlay.removeEventListener('pointermove',onCNodeMove);overlay.removeEventListener('pointerup',onCNodeUp);cnodeDrag=null;}\n  function calloutLines(p,i){const t=(p.title&&p.title.trim())?p.title.trim():letterFor(i);return [t,'('+disp(p.x)+', '+disp(p.y)+')'];}\n  function overlapArea(a,b){const x=Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)),y=Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y));return x*y;}\n  function outOfBounds(box){let p=0;if(box.x<0)p+=-box.x*box.h;if(box.y<0)p+=-box.y*box.w;if(box.x+box.w>state.imgW)p+=(box.x+box.w-state.imgW)*box.h;if(box.y+box.h>state.imgH)p+=(box.y+box.h-state.imgH)*box.w;return p;}\n  function layoutCallouts(){if(!isCalibrated())return;const r=markerR();const markerBoxes=state.points.map(p=>{const m=dataToImg(p.x,p.y);return {x:m.px-r,y:m.py-r,w:2*r,h:2*r};});const placed=[],dirs=[[1,-1],[1,0],[1,1],[0,-1],[0,1],[-1,-1],[-1,0],[-1,1]];\n    state.points.forEach((p,i)=>{const m=dataToImg(p.x,p.y),cb=calloutBox(p,i);if(p.callout&&p.callout.manual){const cx=m.px+p.callout.dx,cy=m.py+p.callout.dy;placed.push({x:cx-cb.w/2,y:cy-cb.h/2,w:cb.w,h:cb.h});return;}\n      const dist=r*1.7+Math.max(cb.w,cb.h)*0.5;let best=null,bestScore=Infinity;dirs.forEach(d=>{const len=Math.hypot(d[0],d[1])||1,cx=m.px+d[0]/len*dist,cy=m.py+d[1]/len*dist,box={x:cx-cb.w/2,y:cy-cb.h/2,w:cb.w,h:cb.h};let sc=0;placed.forEach(b=>sc+=overlapArea(box,b)*3);markerBoxes.forEach(b=>sc+=overlapArea(box,b)*2);sc+=outOfBounds(box);if(sc<bestScore){bestScore=sc;best={cx,cy,box};}});p.callout={dx:best.cx-m.px,dy:best.cy-m.py,manual:false};placed.push(best.box);});}\n\n  function layoutProbes(){if(!isCalibrated())return;const r=markerR();const markerBoxes=state.probes.map(p=>{const m=dataToImg(p.x,p.y);return {x:m.px-r,y:m.py-r,w:2*r,h:2*r};});const placed=[],dirs=[[1,-1],[1,0],[1,1],[0,-1],[0,1],[-1,-1],[-1,0],[-1,1]];\n    state.probes.forEach((p,i)=>{const m=dataToImg(p.x,p.y),cb=calloutBoxLines(probeLines(p,i));if(p.callout&&p.callout.manual){const cx=m.px+p.callout.dx,cy=m.py+p.callout.dy;placed.push({x:cx-cb.w/2,y:cy-cb.h/2,w:cb.w,h:cb.h});return;}\n      const dist=r*1.9+Math.max(cb.w,cb.h)*0.5;let best=null,bestScore=Infinity;dirs.forEach(d=>{const len=Math.hypot(d[0],d[1])||1,cx=m.px+d[0]/len*dist,cy=m.py+d[1]/len*dist,box={x:cx-cb.w/2,y:cy-cb.h/2,w:cb.w,h:cb.h};let sc=0;placed.forEach(b=>sc+=overlapArea(box,b)*3);markerBoxes.forEach(b=>sc+=overlapArea(box,b)*2);sc+=outOfBounds(box);if(sc<bestScore){bestScore=sc;best={cx,cy,box};}});p.callout={dx:best.cx-m.px,dy:best.cy-m.py,manual:false};placed.push(best.box);});}\n\n  function renderOverlay(){\n    if(!state.imgEl){overlay.innerHTML='';return;}\n    const r=markerR(),o=state.calib.origin,s=state.calib.scale,iw=state.imgW,ih=state.imgH;\n    let svg='<rect id=\"bg\" x=\"0\" y=\"0\" width=\"'+iw+'\" height=\"'+ih+'\" fill=\"transparent\" pointer-events=\"all\"/>';\n    svg+='<g id=\"cross\" pointer-events=\"none\" style=\"display:none\"><line id=\"cv\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"'+ih+'\" stroke=\"'+CA+'\" stroke-width=\"1\" vector-effect=\"non-scaling-stroke\" opacity=\"0.85\"/><line id=\"ch\" x1=\"0\" y1=\"0\" x2=\"'+iw+'\" y2=\"0\" stroke=\"'+CA+'\" stroke-width=\"1\" vector-effect=\"non-scaling-stroke\" opacity=\"0.85\"/><\/g>';\n    const calMark=(px,py,label,pulse)=>{if(px==null||py==null)return '';const dr=r*0.62,tk=r*1.3,col=CYEL;let g='<g pointer-events=\"none\">';\n      if(pulse)g+='<circle cx=\"'+px+'\" cy=\"'+py+'\" r=\"'+dr+'\" fill=\"'+col+'\" opacity=\"0.45\"><animate attributeName=\"r\" values=\"'+dr+';'+(dr*2.9)+'\" dur=\"1.3s\" repeatCount=\"indefinite\"/><animate attributeName=\"opacity\" values=\"0.5;0\" dur=\"1.3s\" repeatCount=\"indefinite\"/><\/circle>';\n      g+='<line x1=\"'+(px-tk)+'\" y1=\"'+py+'\" x2=\"'+(px+tk)+'\" y2=\"'+py+'\" stroke=\"'+col+'\" stroke-width=\"1.4\" vector-effect=\"non-scaling-stroke\" opacity=\"0.7\"/><line x1=\"'+px+'\" y1=\"'+(py-tk)+'\" x2=\"'+px+'\" y2=\"'+(py+tk)+'\" stroke=\"'+col+'\" stroke-width=\"1.4\" vector-effect=\"non-scaling-stroke\" opacity=\"0.7\"/><circle cx=\"'+px+'\" cy=\"'+py+'\" r=\"'+dr+'\" fill=\"'+col+'\" stroke=\"#fff\" stroke-width=\"'+(dr*0.34)+'\"/><text x=\"'+(px+tk*0.7)+'\" y=\"'+(py-tk*0.55)+'\" font-size=\"'+(r*0.95)+'\" fill=\"'+CYELd+'\" font-family=\"'+MONO+'\" font-weight=\"700\" paint-order=\"stroke\" stroke=\"#ffffff\" stroke-width=\"'+(r*0.3)+'\">'+label+'<\/text><\/g>';return g;};\n    if(state.mode==='calibrate'){svg+=calMark(o.px,o.py,'0,0',state.calStep==='scale');svg+=calMark(s.px,s.py,(s.xval!=null&&s.yval!=null)?(disp(s.xval)+', '+disp(s.yval)):'P2',state.calStep==='enterX'||state.calStep==='enterY');}\n\n    if(state.tab==='curve'&&isCalibrated()){\n      ['rpm','eff'].forEach(fam=>{const col=fam==='rpm'?CA:CGREEN;\n        state.curves[fam].forEach(c=>{const isSel=c.id===state.selectedCurveId,isTr=c.id===state.tracingId,pl=curvePolyline(c,fam);\n          if(pl.length>1){const ptsStr=pl.map(ip=>ip.px+','+ip.py).join(' ');\n            svg+='<polyline points=\"'+ptsStr+'\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"'+(r*0.5)+'\" stroke-linejoin=\"round\" stroke-linecap=\"round\" pointer-events=\"none\" opacity=\"0.85\"/>';\n            svg+='<polyline points=\"'+ptsStr+'\" fill=\"none\" stroke=\"'+col+'\" stroke-width=\"'+(r*(isSel?0.34:0.24))+'\" stroke-linejoin=\"round\" stroke-linecap=\"round\" pointer-events=\"none\"/>';}\n          const lp=labelPoint(c,fam);if(lp){const off=r*1.1,lx=lp.px+off,ly=lp.py-off*0.4;svg+='<text x=\"'+lx+'\" y=\"'+ly+'\" font-size=\"'+(r*0.95)+'\" font-family=\"'+MONO+'\" font-weight=\"700\" paint-order=\"stroke\" stroke=\"#ffffff\" stroke-width=\"'+(r*0.34)+'\" stroke-linejoin=\"round\" fill=\"'+(fam==='rpm'?CAdeep:CGREENd)+'\" pointer-events=\"none\">'+escXml(curveLabelText(c,fam))+'<\/text>';}\n          if(isSel||isTr){c.trace.forEach((p,i)=>{const ip=dataToImg(p.x,p.y),selN=state.selectedNode&&state.selectedNode.cid===c.id&&state.selectedNode.i===i;svg+='<g class=\"cnode\" data-fam=\"'+fam+'\" data-cid=\"'+c.id+'\" data-i=\"'+i+'\">';if(selN)svg+='<circle cx=\"'+ip.px+'\" cy=\"'+ip.py+'\" r=\"'+(r*0.74)+'\" fill=\"none\" stroke=\"'+CINK+'\" stroke-width=\"'+(r*0.12)+'\"/>';svg+='<circle cx=\"'+ip.px+'\" cy=\"'+ip.py+'\" r=\"'+(r*0.4)+'\" fill=\"'+col+'\" stroke=\"#ffffff\" stroke-width=\"'+(r*0.14)+'\"/><\/g>';});}\n        });\n      });\n      layoutProbes();const pdotR=r*0.5;\n      state.probes.forEach((p,i)=>{const m=dataToImg(p.x,p.y),cb=calloutBoxLines(probeLines(p,i)),c=p.callout||{dx:r*2.4,dy:-r*2.4},cx=m.px+c.dx,cy=m.py+c.dy,ed=boxEdgePoint(m.px,m.py,cx,cy,cb.w,cb.h);svg+='<line x1=\"'+m.px+'\" y1=\"'+m.py+'\" x2=\"'+ed.x+'\" y2=\"'+ed.y+'\" stroke=\"'+CA+'\" stroke-width=\"1.4\" vector-effect=\"non-scaling-stroke\" opacity=\"0.55\" pointer-events=\"none\"/>';});\n      state.probes.forEach((p,i)=>{const m=dataToImg(p.x,p.y),sel=p.id===state.selectedProbeId;svg+='<g class=\"pdot\" data-id=\"'+p.id+'\">';if(sel)svg+='<circle cx=\"'+m.px+'\" cy=\"'+m.py+'\" r=\"'+(pdotR*2)+'\" fill=\"none\" stroke=\"'+CINK+'\" stroke-width=\"'+(pdotR*0.4)+'\" stroke-dasharray=\"'+(pdotR*0.7)+' '+(pdotR*0.5)+'\"/>';svg+='<circle cx=\"'+m.px+'\" cy=\"'+m.py+'\" r=\"'+pdotR+'\" fill=\"'+CA+'\" stroke=\"#ffffff\" stroke-width=\"'+(pdotR*0.45)+'\"/><\/g>';});\n      state.probes.forEach((p,i)=>{const m=dataToImg(p.x,p.y),lines=probeLines(p,i),cb=calloutBoxLines(lines),c=p.callout||{dx:r*2.4,dy:-r*2.4},cx=m.px+c.dx,cy=m.py+c.dy,bx=cx-cb.w/2,by=cy-cb.h/2;\n        svg+='<g class=\"pcallout\" data-id=\"'+p.id+'\">';\n        svg+='<rect x=\"'+bx+'\" y=\"'+by+'\" width=\"'+cb.w+'\" height=\"'+cb.h+'\" rx=\"'+(cb.pad*0.9)+'\" fill=\"#F8F9FB\" fill-opacity=\"0.96\" stroke=\"#E3E5E8\" stroke-width=\"1\" vector-effect=\"non-scaling-stroke\"/>';\n        lines.forEach((ln,k)=>{const ly=by+cb.cys[k],isT=k===0;svg+='<text x=\"'+cx+'\" y=\"'+ly+'\" font-size=\"'+(isT?cb.fsT:cb.fsC)+'\" text-anchor=\"middle\" dominant-baseline=\"central\" font-family=\"'+(isT?FONT:MONO)+'\" font-weight=\"'+(isT?700:500)+'\" fill=\"'+(isT?'#1E1F22':'#5C5E66')+'\">'+escXml(ln)+'<\/text>';});\n        svg+='<\/g>';});\n    }\n\n    if(state.tab==='duty'&&isCalibrated()){\n      layoutCallouts();const dotR=r*0.5;\n      state.points.forEach((p,i)=>{const m=dataToImg(p.x,p.y),cb=calloutBox(p,i),c=p.callout||{dx:r*2,dy:-r*2},cx=m.px+c.dx,cy=m.py+c.dy,ed=boxEdgePoint(m.px,m.py,cx,cy,cb.w,cb.h);svg+='<line x1=\"'+m.px+'\" y1=\"'+m.py+'\" x2=\"'+ed.x+'\" y2=\"'+ed.y+'\" stroke=\"'+CA+'\" stroke-width=\"1.4\" vector-effect=\"non-scaling-stroke\" opacity=\"0.55\" pointer-events=\"none\"/>';});\n      state.points.forEach((p,i)=>{const m=dataToImg(p.x,p.y),sel=p.id===state.selectedId;svg+='<g class=\"pt\" data-id=\"'+p.id+'\">';if(sel)svg+='<circle cx=\"'+m.px+'\" cy=\"'+m.py+'\" r=\"'+(dotR*2)+'\" fill=\"none\" stroke=\"'+CINK+'\" stroke-width=\"'+(dotR*0.4)+'\" stroke-dasharray=\"'+(dotR*0.7)+' '+(dotR*0.5)+'\"/>';svg+='<circle cx=\"'+m.px+'\" cy=\"'+m.py+'\" r=\"'+dotR+'\" fill=\"'+CA+'\" stroke=\"#ffffff\" stroke-width=\"'+(dotR*0.45)+'\"/><\/g>';});\n      state.points.forEach((p,i)=>{const m=dataToImg(p.x,p.y),c=p.callout||{dx:r*2,dy:-r*2},cx=m.px+c.dx,cy=m.py+c.dy,cb=calloutBox(p,i),bx=cx-cb.w/2,by=cy-cb.h/2,tCY=by+cb.pad+cb.lhT/2,cCY=tCY+cb.lhT/2+cb.gap+cb.lhC/2;\n        svg+='<g class=\"callout\" data-id=\"'+p.id+'\">';\n        svg+='<rect x=\"'+bx+'\" y=\"'+by+'\" width=\"'+cb.w+'\" height=\"'+cb.h+'\" rx=\"'+(cb.pad*0.9)+'\" fill=\"#F8F9FB\" fill-opacity=\"0.96\" stroke=\"#E3E5E8\" stroke-width=\"1\" vector-effect=\"non-scaling-stroke\"/>';\n        svg+='<text x=\"'+cx+'\" y=\"'+tCY+'\" font-size=\"'+cb.fsT+'\" text-anchor=\"middle\" dominant-baseline=\"central\" font-family=\"'+FONT+'\" font-weight=\"700\" fill=\"#1E1F22\">'+escXml(cb.lines[0])+'<\/text>';\n        svg+='<text x=\"'+cx+'\" y=\"'+cCY+'\" font-size=\"'+cb.fsC+'\" text-anchor=\"middle\" dominant-baseline=\"central\" font-family=\"'+MONO+'\" font-weight=\"500\" fill=\"#5C5E66\">'+escXml(cb.lines[1])+'<\/text>';\n        svg+='<\/g>';});\n    }\n\n    overlay.innerHTML=svg;\n    overlay.querySelector('#bg').addEventListener('click',onBgClick);\n    overlay.querySelector('#bg').addEventListener('pointerdown',onBgPointerDown);\n    overlay.querySelectorAll('.pt').forEach(g=>g.addEventListener('pointerdown',onPointDown));\n    overlay.querySelectorAll('.callout').forEach(g=>{g.addEventListener('pointerdown',onCalloutDown);g.addEventListener('contextmenu',onCalloutCtx);});\n    overlay.querySelectorAll('.cnode').forEach(g=>g.addEventListener('pointerdown',onCNodeDown));\n    overlay.querySelectorAll('.pdot').forEach(g=>g.addEventListener('pointerdown',onProbeDown));\n    overlay.querySelectorAll('.pcallout').forEach(g=>g.addEventListener('pointerdown',onPCalloutDown));\n    overlay.classList.toggle('cross',state.mode==='calibrate'||state.mode==='duty'||state.mode==='trace'||state.mode==='probe');\n    overlay.classList.toggle('grab',state.mode==='idle'&&!!state.imgEl);\n    overlay.classList.toggle('calibrating',state.mode==='calibrate');\n    if((state.mode==='calibrate'&&(state.calStep==='origin'||state.calStep==='scale'))||state.mode==='duty'||state.mode==='trace'||state.mode==='probe'){if(lastCursor.inside)updateCross(lastCursor.x,lastCursor.y);}\n  }\n  function updateCross(cx,cy){const cross=overlay.querySelector('#cross');if(!cross)return;const o=clientToImg(cx,cy);overlay.querySelector('#cv').setAttribute('x1',o.px);overlay.querySelector('#cv').setAttribute('x2',o.px);overlay.querySelector('#ch').setAttribute('y1',o.py);overlay.querySelector('#ch').setAttribute('y2',o.py);cross.style.display='';}\n  function tipText(){if(state.mode==='calibrate'){if(state.calStep==='origin')return 'Click the chart origin, the <b>0, 0<\/b> point';if(state.calStep==='scale')return 'Origin set. Now click a <b>second<\/b> known point';}if(state.mode==='duty')return 'Click to place a duty point';if(state.mode==='probe')return 'Click to drop a check point';if(state.mode==='trace')return state.traceMode==='poly'?'Click nodes along the curve':'Drag along the curve to trace it';return '';}\n  function showTip(x,y){const t=tipText();if(!t){hideTip();return;}tip.innerHTML=t;tip.style.display='block';tip.style.left=(x+16)+'px';tip.style.top=(y+16)+'px';}\n  function hideTip(){tip.style.display='none';}\n  function startValEntry(which){valLabel.textContent=which==='X'?'X value':'Y value';valInput.value='';valEntry.style.display='block';const c=imgToClient(state.calib.scale.px,state.calib.scale.py);valEntry.style.left=Math.min(c.x+16,window.innerWidth-200)+'px';valEntry.style.top=Math.max(12,Math.min(c.y-12,window.innerHeight-110))+'px';setTimeout(()=>valInput.focus(),10);}\n  function hideValEntry(){valEntry.style.display='none';}\n  valInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const v=parseFloat(valInput.value);if(isNaN(v)){toast('Enter a number.',true);return;}\n    if(state.calStep==='enterX'){if(v===0){toast('That point sits on the Y axis. Type its X value.',true);return;}state.calib.scale.xval=v;state.calStep='enterY';renderOverlay();startValEntry('Y');}\n    else if(state.calStep==='enterY'){if(v===0){toast('That point sits on the X axis. Type its Y value.',true);return;}state.calib.scale.yval=v;hideValEntry();exitMode();renderAll();syncInputs();toast('Axes calibrated.');}}\n    else if(e.key==='Escape'){e.preventDefault();cancelCalibrate();}});\n\n  let drag=null,calloutDrag=null;\n  function onBgClick(e){const o=clientToImg(e.clientX,e.clientY),px=o.px,py=o.py;\n    if(state.mode==='calibrate'){if(state.calStep==='origin'){state.calib.origin.px=px;state.calib.origin.py=py;state.calStep='scale';renderAll();showTip(e.clientX,e.clientY);}else if(state.calStep==='scale'){state.calib.scale.px=px;state.calib.scale.py=py;state.calStep='enterX';hideTip();renderOverlay();startValEntry('X');}return;}\n    if(state.mode==='duty'){if(!isCalibrated()){toast('Calibrate first.',true);return;}const d=imgToData(px,py);pushHistory();const id=uid();state.points.push({id,title:letterFor(state.points.length),x:Math.round(d.x),y:Math.round(d.y),callout:{dx:null,dy:null,manual:false}});state.selectedId=id;renderAll();return;}\n    if(state.mode==='probe'){if(!isCalibrated()){toast('Calibrate first.',true);return;}const d=imgToData(px,py);pushHistory();const id=uid();state.probes.push({id,x:Math.round(d.x),y:Math.round(d.y),callout:{dx:null,dy:null,manual:false}});state.selectedProbeId=id;renderAll();return;}\n    if(state.tab==='curve'&&state.mode!=='trace'){state.selectedCurveId=null;state.selectedNode=null;state.selectedProbeId=null;renderAll();}}\n  function onBgPointerDown(e){if(e.button===1){startPan(e);return;}if(state.mode==='trace'){onTracePointerDown(e);return;}if(state.mode==='idle'){startPan(e);return;}}\n  function onPointDown(e){if(state.mode==='calibrate')return;e.stopPropagation();const id=e.currentTarget.getAttribute('data-id');state.selectedId=id;state.selectedCurveId=null;renderAll();if(!isCalibrated())return;drag={id,hist:false};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.addEventListener('pointermove',onPointMove);overlay.addEventListener('pointerup',onPointUp);}\n  function onPointMove(e){if(!drag)return;if(!drag.hist){pushHistory();drag.hist=true;}const o=clientToImg(e.clientX,e.clientY),d=imgToData(o.px,o.py),p=state.points.find(p=>p.id===drag.id);if(p){p.x=Math.round(d.x);p.y=Math.round(d.y);renderOverlay();renderTable();}}\n  function onPointUp(){overlay.removeEventListener('pointermove',onPointMove);overlay.removeEventListener('pointerup',onPointUp);drag=null;}\n  function onCalloutDown(e){if(state.mode==='calibrate')return;e.stopPropagation();const id=e.currentTarget.getAttribute('data-id');state.selectedId=id;renderAll();calloutDrag={id,hist:false};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.addEventListener('pointermove',onCalloutMove);overlay.addEventListener('pointerup',onCalloutUp);}\n  function onCalloutMove(e){if(!calloutDrag)return;if(!calloutDrag.hist){pushHistory();calloutDrag.hist=true;}const p=state.points.find(p=>p.id===calloutDrag.id);if(!p)return;const m=dataToImg(p.x,p.y),o=clientToImg(e.clientX,e.clientY);p.callout={dx:o.px-m.px,dy:o.py-m.py,manual:true};renderOverlay();}\n  function onCalloutUp(){overlay.removeEventListener('pointermove',onCalloutMove);overlay.removeEventListener('pointerup',onCalloutUp);calloutDrag=null;}\n  function onCalloutCtx(e){e.preventDefault();e.stopPropagation();const id=e.currentTarget.getAttribute('data-id'),p=state.points.find(p=>p.id===id);if(!p)return;pushHistory();p.callout={dx:null,dy:null,manual:false};renderAll();toast('Callout reset to auto.');}\n  function deleteSelected(){\n    if(state.tab==='curve'&&state.selectedNode){const c=state.curves[state.selectedNode.fam].find(x=>x.id===state.selectedNode.cid);if(c){pushHistory();c.trace.splice(state.selectedNode.i,1);state.selectedNode=null;recomputeModels();renderAll();}return;}\n    if(state.tab==='curve'&&state.selectedProbeId){const i=state.probes.findIndex(p=>p.id===state.selectedProbeId);if(i>=0){pushHistory();state.probes.splice(i,1);state.selectedProbeId=null;renderAll();}return;}\n    if(state.tab==='curve'&&state.selectedCurveId){deleteCurve(state.selectedCurveId);return;}\n    if(state.selectedId){const i=state.points.findIndex(p=>p.id===state.selectedId);if(i<0)return;pushHistory();state.points.splice(i,1);state.selectedId=null;renderAll();}}\n  function deleteCurve(id){for(const fam of ['rpm','eff']){const i=state.curves[fam].findIndex(c=>c.id===id);if(i>=0){pushHistory();state.curves[fam].splice(i,1);if(state.tracingId===id){state.tracingId=null;if(state.mode==='trace')exitMode(true);}if(state.selectedCurveId===id)state.selectedCurveId=null;recomputeModels();renderAll();return;}}}\n  function enterProbe(){if(!isCalibrated()){toast('Calibrate the axes first.',true);return;}if(state.mode==='probe'){exitMode();return;}exitMode(true);state.mode='probe';renderAll();toast('Click the chart to drop check points reading X, Y, RPM and efficiency.');}\n  function probeVal(model,x,y){if(!model||!model.predict||model.method==='need'||model.method==='none')return null;const v=model.predict(x,y);return isFinite(v)?v:null;}\n  function evalAlong(trace,key,target){const other=key==='x'?'y':'x';const pts=trace.slice().sort((a,b)=>a[key]-b[key]);if(pts.length<2)return null;if(target<pts[0][key]-1e-9||target>pts[pts.length-1][key]+1e-9)return null;for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];if(target>=a[key]&&target<=b[key]){const dk=b[key]-a[key];if(Math.abs(dk)<1e-12)return a[other];return a[other]+(b[other]-a[other])*((target-a[key])/dk);}}return null;}\n  function bracketInterp(samples,target,tmin,tmax){if(samples.length<2)return null;samples.sort((a,b)=>a.pos-b.pos);let lo=null,hi=null;for(let i=0;i<samples.length-1;i++){if(target>=samples[i].pos&&target<=samples[i+1].pos){lo=samples[i];hi=samples[i+1];break;}}if(!lo){if(target<samples[0].pos){lo=samples[0];hi=samples[1];}else{lo=samples[samples.length-2];hi=samples[samples.length-1];}}const d=hi.pos-lo.pos;if(Math.abs(d)<1e-12)return lo.v;let t=(target-lo.pos)/d;if(t<tmin)t=tmin;if(t>tmax)t=tmax;return lo.v+(hi.v-lo.v)*t;}\n  function bracketRead(fam,x,y){const curves=state.curves[fam].filter(c=>c.value!=null&&isFinite(c.value)&&c.trace.length>=2);if(curves.length<2)return null;const samples=[];\n    if(fam==='rpm'){curves.forEach(c=>{const h=evalAlong(c.trace,'x',x);if(h!=null)samples.push({v:c.value,pos:h});});return bracketInterp(samples,y,-0.6,1.6);}\n    curves.forEach(c=>{const q=evalAlong(c.trace,'y',y);if(q!=null)samples.push({v:c.value,pos:q});});return bracketInterp(samples,x,-0.5,1.0);}\n  function readRpm(x,y){const v=bracketRead('rpm',x,y);return (v!=null&&isFinite(v))?v:probeVal(state.rpmModel,x,y);}\n  function readEff(x,y){const v=bracketRead('eff',x,y);return (v!=null&&isFinite(v))?v:probeVal(state.effModel,x,y);}\n  function fmtVal(v,dp){return v==null?'\\u2014':String(parseFloat(v.toFixed(dp)));}\n  function probeLines(p,i){const rv=readRpm(p.x,p.y),ev=readEff(p.x,p.y);const lines=[(p.title&&p.title.trim())?p.title.trim():('P'+(i+1)),'('+disp(p.x)+', '+disp(p.y)+')'];if(rv!=null&&isFinite(rv))lines.push('RPM '+fmtVal(rv,0));if(ev!=null&&isFinite(ev))lines.push('\\u03B7 '+fmtVal(ev,1)+'%');return lines;}\n  function calloutBoxLines(lines){const r=markerR(),fsT=r*0.92,fsC=r*0.82,pad=r*0.6,gap=r*0.14,lhT=fsT*1.18,lhC=fsC*1.18;let maxw=measure(lines[0],'700 '+fsT+'px '+FONT);for(let i=1;i<lines.length;i++)maxw=Math.max(maxw,measure(lines[i],'500 '+fsC+'px '+MONO));const cys=[];let y=pad;cys.push(y+lhT/2);y+=lhT;for(let i=1;i<lines.length;i++){y+=gap;cys.push(y+lhC/2);y+=lhC;}return {w:maxw+pad*2,h:y+pad,fsT,fsC,pad,cys,lines};}\n  let pcalloutDrag=null,probeDrag=null;\n  function onProbeDown(e){if(state.mode==='calibrate')return;e.stopPropagation();const id=e.currentTarget.getAttribute('data-id');state.selectedProbeId=id;state.selectedId=null;state.selectedCurveId=null;state.selectedNode=null;renderAll();if(!isCalibrated())return;probeDrag={id,hist:false};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.addEventListener('pointermove',onProbeMove);overlay.addEventListener('pointerup',onProbeUp);}\n  function onProbeMove(e){if(!probeDrag)return;if(!probeDrag.hist){pushHistory();probeDrag.hist=true;}const o=clientToImg(e.clientX,e.clientY),d=imgToData(o.px,o.py),p=state.probes.find(p=>p.id===probeDrag.id);if(p){p.x=Math.round(d.x);p.y=Math.round(d.y);renderOverlay();renderProbeTable();}}\n  function onProbeUp(){overlay.removeEventListener('pointermove',onProbeMove);overlay.removeEventListener('pointerup',onProbeUp);probeDrag=null;}\n  function onPCalloutDown(e){if(state.mode==='calibrate')return;e.stopPropagation();const id=e.currentTarget.getAttribute('data-id');state.selectedProbeId=id;state.selectedId=null;state.selectedCurveId=null;renderAll();pcalloutDrag={id,hist:false};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.addEventListener('pointermove',onPCalloutMove);overlay.addEventListener('pointerup',onPCalloutUp);}\n  function onPCalloutMove(e){if(!pcalloutDrag)return;if(!pcalloutDrag.hist){pushHistory();pcalloutDrag.hist=true;}const p=state.probes.find(p=>p.id===pcalloutDrag.id);if(!p)return;const m=dataToImg(p.x,p.y),o=clientToImg(e.clientX,e.clientY);p.callout={dx:o.px-m.px,dy:o.py-m.py,manual:true};renderOverlay();}\n  function onPCalloutUp(){overlay.removeEventListener('pointermove',onPCalloutMove);overlay.removeEventListener('pointerup',onPCalloutUp);pcalloutDrag=null;}\n  function renderProbeTable(){const tbl=$('#probeTable'),body=$('#probeBody');if(!state.probes.length){tbl.style.display='none';body.innerHTML='';return;}tbl.style.display='';let html='';\n    state.probes.forEach((p,i)=>{const rv=readRpm(p.x,p.y),ev=readEff(p.x,p.y),sel=p.id===state.selectedProbeId?' class=\"sel\"':'';\n      html+='<tr'+sel+' data-id=\"'+p.id+'\"><td><div class=\"titlecell\"><span class=\"rowdot\"><\/span>'+('P'+(i+1))+'<\/div><\/td>'\n        +'<td><input type=\"number\" step=\"any\" class=\"numcell\" data-f=\"x\" value=\"'+disp(p.x)+'\"><\/td>'\n        +'<td><input type=\"number\" step=\"any\" class=\"numcell\" data-f=\"y\" value=\"'+disp(p.y)+'\"><\/td>'\n        +'<td style=\"text-align:right;font-family:var(--mono);color:var(--accent-deep)\">'+fmtVal(rv,0)+'<\/td>'\n        +'<td style=\"text-align:right;font-family:var(--mono);color:var(--green-deep)\">'+(ev==null?'\\u2014':fmtVal(ev,1))+'<\/td>'\n        +'<td class=\"del\"><button class=\"delbtn\" title=\"Delete\"><svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/><\/svg><\/button><\/td><\/tr>';});\n    body.innerHTML=html;\n    body.querySelectorAll('tr').forEach(tr=>{const id=tr.getAttribute('data-id');\n      tr.addEventListener('mousedown',ev=>{if(ev.target.closest('input,button'))return;state.selectedProbeId=id;state.selectedCurveId=null;renderAll();});\n      tr.querySelectorAll('input').forEach(inp=>{inp.addEventListener('focus',()=>{state.selectedProbeId=id;});inp.addEventListener('change',()=>{const p=state.probes.find(p=>p.id===id);if(!p)return;pushHistory();p[inp.getAttribute('data-f')]=parseFloat(inp.value);renderAll();});});\n      tr.querySelector('.delbtn').addEventListener('click',()=>{const i=state.probes.findIndex(p=>p.id===id);if(i<0)return;pushHistory();state.probes.splice(i,1);if(state.selectedProbeId===id)state.selectedProbeId=null;renderAll();});});}\n\n  overlay.addEventListener('pointermove',e=>{lastCursor={x:e.clientX,y:e.clientY,inside:true};if((state.mode==='calibrate'&&(state.calStep==='origin'||state.calStep==='scale'))||state.mode==='duty'||state.mode==='trace'||state.mode==='probe'){updateCross(e.clientX,e.clientY);showTip(e.clientX,e.clientY);}});\n  overlay.addEventListener('pointerleave',()=>{lastCursor.inside=false;hideTip();const c=overlay.querySelector('#cross');if(c)c.style.display='none';});\n\n  function renderTable(){if(!ptBody)return;if(!state.points.length){ptBody.innerHTML='<tr><td colspan=\"4\" class=\"empty\">No duty points yet. Use Place duty point or add a row.<\/td><\/tr>';return;}\n    let html='';state.points.forEach((p,i)=>{const sel=p.id===state.selectedId?' class=\"sel\"':'';\n      html+='<tr'+sel+' data-id=\"'+p.id+'\"><td><div class=\"titlecell\"><span class=\"rowdot\"><\/span><input type=\"text\" data-f=\"title\" value=\"'+escAttr(p.title||'')+'\" placeholder=\"'+letterFor(i)+'\"><\/div><\/td>'\n        +'<td><input type=\"number\" step=\"any\" class=\"numcell\" data-f=\"x\" value=\"'+disp(p.x)+'\"><\/td>'\n        +'<td><input type=\"number\" step=\"any\" class=\"numcell\" data-f=\"y\" value=\"'+disp(p.y)+'\"><\/td>'\n        +'<td class=\"del\"><button class=\"delbtn\" title=\"Delete\"><svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/><\/svg><\/button><\/td><\/tr>';});\n    ptBody.innerHTML=html;\n    ptBody.querySelectorAll('tr').forEach(tr=>{const id=tr.getAttribute('data-id');\n      tr.addEventListener('mousedown',ev=>{if(ev.target.closest('input,button'))return;state.selectedId=id;state.selectedCurveId=null;renderAll();});\n      tr.querySelectorAll('input').forEach(inp=>{inp.addEventListener('focus',()=>{state.selectedId=id;});inp.addEventListener('change',()=>{const p=state.points.find(p=>p.id===id);if(!p)return;const f=inp.getAttribute('data-f');pushHistory();if(f==='title')p.title=inp.value;else p[f]=parseFloat(inp.value);renderAll();});});\n      tr.querySelector('.delbtn').addEventListener('click',()=>{const i=state.points.findIndex(p=>p.id===id);if(i<0)return;pushHistory();state.points.splice(i,1);if(state.selectedId===id)state.selectedId=null;renderAll();});});}\n  function renderCurveList(fam){const host=$('#'+fam+'List'),arr=state.curves[fam],col=fam==='rpm'?CA:CGREEN;\n    const ae=document.activeElement;let keepId=null;if(ae&&ae.tagName==='INPUT'&&host.contains(ae))keepId=ae.getAttribute('data-id');\n    if(!arr.length){host.innerHTML='';return;}\n    let html='';arr.forEach(c=>{const sel=c.id===state.selectedCurveId,ph=fam==='rpm'?'DOL':'%';\n      html+='<div class=\"crow'+(sel?' sel':'')+(fam==='eff'?' effrow':'')+'\" data-id=\"'+c.id+'\"><span class=\"cdot\" style=\"background:'+col+'\"><\/span>'\n        +'<input type=\"number\" step=\"any\" data-id=\"'+c.id+'\" data-fam=\"'+fam+'\" value=\"'+(c.value!=null?c.value:'')+'\" placeholder=\"'+ph+'\">'\n        +'<button class=\"delbtn\" data-id=\"'+c.id+'\" title=\"Delete curve\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/><\/svg><\/button><\/div>';});\n    host.innerHTML=html;\n    host.querySelectorAll('.crow').forEach(row=>{const id=row.getAttribute('data-id');\n      row.addEventListener('mousedown',ev=>{if(ev.target.closest('input,button'))return;state.family=fam;state.selectedCurveId=id;state.selectedId=null;state.selectedNode=null;renderAll();});\n      const inp=row.querySelector('input');\n      inp.addEventListener('focus',()=>{state.family=fam;state.selectedCurveId=id;state.selectedId=null;state.selectedNode=null;document.querySelectorAll('.crow').forEach(rr=>rr.classList.remove('sel'));row.classList.add('sel');renderOverlay();syncStatus();});\n      inp.addEventListener('input',()=>{const c=state.curves[fam].find(x=>x.id===id);if(!c)return;const t=inp.value.trim();c.value=t===''?null:parseFloat(t);recomputeModels();renderOverlay();fillOut('rpm',state.rpmModel);fillOut('eff',state.effModel);renderProbeTable();});\n      inp.addEventListener('change',()=>{pushHistory();});\n      row.querySelector('.delbtn').addEventListener('click',()=>deleteCurve(id));});\n    if(keepId){const el=host.querySelector('.crow[data-id=\"'+keepId+'\"] input');if(el&&document.activeElement!==el){const v=el.value;el.focus();try{el.setSelectionRange(v.length,v.length);}catch(_){}}}}\n  function fillOut(fam,model){const out=$('#'+fam+'Out'),fEl=$('#'+fam+'Formula'),mEl=$('#'+fam+'Meta');\n    if(!model||model.method==='none'){out.style.display='none';return;}\n    if(model.method==='need'){out.style.display='block';fEl.textContent='';mEl.textContent='Trace at least two labelled curves to build the surface.';return;}\n    out.style.display='block';fEl.textContent=model.formula||'';let meta='';\n    if(model.method==='dol')meta='Direct on line, no speed entered. Single Y(X) fit, R\\u00B2 = '+pct(model.r2)+'. Copy gives the Excel formula.';\n    else meta='Single smooth surface in X and Y, R\\u00B2 = '+pct(model.r2)+'. Copy gives the Excel formula using your X and Y cells.';\n    mEl.textContent=meta;}\n  function updateCurvePanels(){renderCurveList('rpm');renderCurveList('eff');fillOut('rpm',state.rpmModel);fillOut('eff',state.effModel);renderProbeTable();\n    const rpmHas=state.curves.rpm.length,effHas=state.curves.eff.length;\n    $('#rpmTrace').textContent=rpmHas?'Add another RPM curve':'Trace new RPM curve';\n    $('#effTrace').textContent=effHas?'Add another efficiency curve':'Trace new efficiency curve';\n    $('#rpmTrace').classList.toggle('active',state.mode==='trace'&&state.family==='rpm');\n    $('#effTrace').classList.toggle('active',state.mode==='trace'&&state.family==='eff');\n    $('#probeBtn').classList.toggle('active',state.mode==='probe');\n    $$('#traceModeSeg button').forEach(b=>{const on=b.getAttribute('data-trace')===state.traceMode;b.classList.toggle('on',on);b.style.background=on?'var(--accent)':'#fff';b.style.color=on?'#fff':'var(--text-3)';});}\n  function sizeDesc(){['#pumpMake','#pumpModel'].forEach(sel=>{const i=$(sel);if(i)i.size=Math.max(((i.value||i.placeholder||'').length+1),10);});}\n  function syncInputs(){$('#pumpMake').value=state.make||'';$('#pumpModel').value=state.model||'';sizeDesc();$('#sxVal').value=state.calib.scale.xval!=null?state.calib.scale.xval:'';$('#syVal').value=state.calib.scale.yval!=null?state.calib.scale.yval:'';}\n  function syncStatus(){const cal=isCalibrated();calBadge.textContent=cal?'Calibrated':'Not set';calBadge.className='badge '+(cal?'ok':'warn');\n    const o=state.calib.origin,s=state.calib.scale,ro=$('#refOrigin'),rs=$('#refScale');ro.classList.toggle('set',o.px!=null);rs.classList.toggle('set',s.px!=null);\n    rs.querySelector('.rv').textContent=(s.xval!=null&&s.yval!=null)?(disp(s.xval)+' , '+disp(s.yval)):'not set';rs.querySelector('.rv').classList.toggle('muted',!(s.xval!=null&&s.yval!=null));\n    calBtn.disabled=!state.imgEl;calBtn.classList.toggle('active',state.mode==='calibrate');\n    $('#rpmTrace').disabled=!cal;$('#effTrace').disabled=!cal;$('#probeBtn').disabled=!cal;}\n  function reflectTitle(){const mk=$('#pumpMake'),md=$('#pumpModel');if(mk&&document.activeElement!==mk&&mk.value!==(state.make||''))mk.value=state.make||'';if(md&&document.activeElement!==md&&md.value!==(state.model||''))md.value=state.model||'';}\n  function renderAll(){renderOverlay();updateCurvePanels();syncStatus();reflectTitle();}\n  function rr(ctx,x,y,w,h,r){if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,w,h,r);return;}ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}\n  function composeBase(){\n    const S=6,W=420*S,H=297*S;const cv=document.createElement('canvas');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');\n    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);\n    const m=15*S,logo=12*S,hx=m,hy=m,midY=hy+logo/2;\n    rr(ctx,hx,hy,logo,logo,4*S);ctx.fillStyle=CA;ctx.fill();\n    ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='800 '+(7*S)+'px '+FONT;ctx.fillText('P',hx+logo/2,midY+0.3*S);\n    ctx.fillStyle=CINK;ctx.textAlign='left';ctx.font='800 '+(8*S)+'px '+FONT;ctx.fillText(pumpTitle(),hx+logo+5*S,midY+0.4*S);\n    const pillTxt=state.tab==='curve'?'CURVE FIT':'DUTY POINTS';ctx.font='700 '+(3*S)+'px '+FONT;\n    const ptw=ctx.measureText(pillTxt).width,pillH=7.4*S,pillW=ptw+8*S,pillX=W-m-pillW,pillY=midY-pillH/2;\n    rr(ctx,pillX,pillY,pillW,pillH,pillH/2);ctx.fillStyle='#EEF0FE';ctx.fill();\n    ctx.fillStyle=CAdeep;ctx.textAlign='center';ctx.fillText(pillTxt,pillX+pillW/2,pillY+pillH/2+0.4*S);\n    ctx.textAlign='left';ctx.textBaseline='alphabetic';\n    const divY=hy+logo+7*S;ctx.strokeStyle=CLINE;ctx.lineWidth=1*S;ctx.beginPath();ctx.moveTo(m,divY);ctx.lineTo(W-m,divY);ctx.stroke();\n    const cardX=m,cardY=divY+9*S,cardW=W-2*m,cardH=H-(divY+9*S)-m,cardR=5*S;\n    ctx.save();ctx.shadowColor='rgba(30,31,34,0.09)';ctx.shadowBlur=5*S;ctx.shadowOffsetY=2*S;rr(ctx,cardX,cardY,cardW,cardH,cardR);ctx.fillStyle='#ffffff';ctx.fill();ctx.restore();\n    let ox=cardX,oy=cardY,dW=cardW,dH=cardH,isc=1;\n    ctx.save();rr(ctx,cardX,cardY,cardW,cardH,cardR);ctx.clip();\n    if(state.imgEl&&state.imgW){const iAR=state.imgW/state.imgH,rAR=cardW/cardH;if(iAR>rAR){dW=cardW;dH=cardW/iAR;}else{dH=cardH;dW=cardH*iAR;}ox=cardX+(cardW-dW)/2;oy=cardY+(cardH-dH)/2;isc=dW/state.imgW;ctx.drawImage(state.imgEl,ox,oy,dW,dH);}\n    ctx.restore();\n    rr(ctx,cardX,cardY,cardW,cardH,cardR);ctx.strokeStyle=CLINE;ctx.lineWidth=1*S;ctx.stroke();\n    return {cv,ctx,ox,oy,isc,cardX,cardY,cardW,cardH,cardR,S};}\n\n  function collectAnnots(b){const out=[],ox=b.ox,oy=b.oy,isc=b.isc;\n    if(state.tab==='duty'&&isCalibrated()){layoutCallouts();const dotR=Math.max(b.cardW,b.cardH)*0.0055;\n      state.points.forEach((p,i)=>{const m=dataToImg(p.x,p.y),cb=calloutBox(p,i),c=p.callout||{dx:0,dy:0},cxn=m.px+c.dx,cyn=m.py+c.dy,ed=boxEdgePoint(m.px,m.py,cxn,cyn,cb.w,cb.h);\n        out.push({k:'line',x1:ox+m.px*isc,y1:oy+m.py*isc,x2:ox+ed.x*isc,y2:oy+ed.y*isc,color:CA,w:dotR*0.3,op:0.55});\n        out.push({k:'dot',cx:ox+m.px*isc,cy:oy+m.py*isc,r:dotR,color:CA});\n        out.push({k:'callout',bx:ox+(cxn-cb.w/2)*isc,by:oy+(cyn-cb.h/2)*isc,bw:cb.w*isc,bh:cb.h*isc,title:cb.lines[0],coords:cb.lines[1],tSize:cb.fsT*isc,cSize:cb.fsC*isc,tipx:ox+m.px*isc,tipy:oy+m.py*isc,joinx:ox+ed.x*isc,joiny:oy+ed.y*isc,lc:CA});});}\n    if(state.tab==='curve'&&isCalibrated()){\n      ['rpm','eff'].forEach(fam=>{const col=fam==='rpm'?CA:CGREEN,cold=fam==='rpm'?CAdeep:CGREENd;\n        state.curves[fam].forEach(c=>{const pl=curvePolyline(c,fam);if(pl.length>1)out.push({k:'poly',pts:pl.map(ip=>[ox+ip.px*isc,oy+ip.py*isc]),color:col,w:Math.max(b.cardW,b.cardH)*0.0028});\n          const lp=labelPoint(c,fam);if(lp)out.push({k:'label',x:ox+lp.px*isc+markerR()*isc*1.0,y:oy+lp.py*isc-markerR()*isc*0.3,text:curveLabelText(c,fam),color:cold,size:markerR()*isc*0.95});});});\n      const boxes=[['rpm',state.rpmModel],['eff',state.effModel]].filter(e=>e[1]&&e[1].formula);\n      let fy=b.cardY+4*b.S;boxes.forEach(([fam,m])=>{const lines=m.formula.split('\\n'),fs=2.9*b.S,bw=Math.min(b.cardW-8*b.S,Math.max.apply(null,lines.map(l=>measure(l,fs+'px '+MONO)))+9*b.S),bh=lines.length*fs*1.45+5*b.S;out.push({k:'formula',bx:b.cardX+4*b.S,by:fy,bw,bh,lines,size:fs,accent:fam==='rpm'?CA:CGREEN,accentd:fam==='rpm'?CAdeep:CGREENd});fy+=bh+3*b.S;});\n      layoutProbes();const pdotR2=Math.max(b.cardW,b.cardH)*0.0055;\n      state.probes.forEach((p,i)=>{const m=dataToImg(p.x,p.y),lines=probeLines(p,i),cb=calloutBoxLines(lines),c=p.callout||{dx:0,dy:0},cxn=m.px+c.dx,cyn=m.py+c.dy,ed=boxEdgePoint(m.px,m.py,cxn,cyn,cb.w,cb.h);\n        out.push({k:'line',x1:ox+m.px*isc,y1:oy+m.py*isc,x2:ox+ed.x*isc,y2:oy+ed.y*isc,color:CA,w:pdotR2*0.3,op:0.55});\n        out.push({k:'dot',cx:ox+m.px*isc,cy:oy+m.py*isc,r:pdotR2,color:CA});\n        out.push({k:'pcallout',bx:ox+(cxn-cb.w/2)*isc,by:oy+(cyn-cb.h/2)*isc,bw:cb.w*isc,bh:cb.h*isc,lines:lines,cys:cb.cys.map(v=>v*isc),tSize:cb.fsT*isc,cSize:cb.fsC*isc,tipx:ox+m.px*isc,tipy:oy+m.py*isc,joinx:ox+ed.x*isc,joiny:oy+ed.y*isc,lc:CA});});}\n    return out;}\n\n  function drawAnnotsCanvas(b,specs){const ctx=b.ctx;ctx.save();rr(ctx,b.cardX,b.cardY,b.cardW,b.cardH,b.cardR);ctx.clip();\n    specs.forEach(s=>{if(s.k==='line'){ctx.strokeStyle='rgba(88,101,242,0.55)';ctx.lineWidth=s.w;ctx.beginPath();ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);ctx.stroke();}\n      else if(s.k==='poly'){ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle='#ffffff';ctx.lineWidth=s.w*1.9;ctx.beginPath();s.pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();ctx.strokeStyle=s.color;ctx.lineWidth=s.w;ctx.beginPath();s.pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();}});\n    specs.forEach(s=>{if(s.k==='dot'){ctx.beginPath();ctx.arc(s.cx,s.cy,s.r,0,Math.PI*2);ctx.fillStyle=s.color;ctx.fill();ctx.lineWidth=s.r*0.45;ctx.strokeStyle='#ffffff';ctx.stroke();}});\n    ctx.textAlign='center';ctx.textBaseline='middle';\n    specs.forEach(s=>{if(s.k==='callout'){rr(ctx,s.bx,s.by,s.bw,s.bh,Math.min(s.bw,s.bh)*0.22);ctx.fillStyle='#F8F9FB';ctx.fill();ctx.lineWidth=Math.max(1,s.tSize*0.05);ctx.strokeStyle='#E3E5E8';ctx.stroke();const cx=s.bx+s.bw/2,pad=s.bh*0.2,tCY=s.by+pad+s.tSize*0.6,cCY=s.by+s.bh-pad-s.cSize*0.6;ctx.font='700 '+s.tSize+'px '+FONT;ctx.fillStyle='#1E1F22';ctx.fillText(s.title,cx,tCY);ctx.font='500 '+s.cSize+'px '+MONO;ctx.fillStyle='#5C5E66';ctx.fillText(s.coords,cx,cCY);}});\n    specs.forEach(s=>{if(s.k==='pcallout'){rr(ctx,s.bx,s.by,s.bw,s.bh,Math.min(s.bw,s.bh)*0.16);ctx.fillStyle='#F8F9FB';ctx.fill();ctx.lineWidth=Math.max(1,s.tSize*0.05);ctx.strokeStyle='#E3E5E8';ctx.stroke();const cx=s.bx+s.bw/2;s.lines.forEach((ln,k)=>{const isT=k===0,ly=s.by+s.cys[k];ctx.font=(isT?'700 ':'500 ')+(isT?s.tSize:s.cSize)+'px '+(isT?FONT:MONO);ctx.fillStyle=isT?'#1E1F22':'#5C5E66';ctx.fillText(ln,cx,ly);});}});\n    ctx.textAlign='left';\n    specs.forEach(s=>{if(s.k==='label'){ctx.font='700 '+s.size+'px '+MONO;ctx.lineWidth=s.size*0.34;ctx.lineJoin='round';ctx.strokeStyle='#ffffff';ctx.strokeText(s.text,s.x,s.y);ctx.fillStyle=s.color;ctx.fillText(s.text,s.x,s.y);}});\n    specs.forEach(s=>{if(s.k==='formula'){rr(ctx,s.bx,s.by,s.bw,s.bh,2.2*b.S);ctx.fillStyle=s.accent===CA?'#EEF0FE':'#E7F4EC';ctx.fill();ctx.fillStyle=s.accent;rr(ctx,s.bx,s.by+s.size*0.5,1.5*b.S,s.bh-s.size,0.7*b.S);ctx.fill();ctx.font='600 '+s.size+'px '+MONO;ctx.fillStyle=s.accentd;ctx.textBaseline='middle';s.lines.forEach((ln,i)=>{ctx.fillText(ln,s.bx+5*b.S,s.by+2.5*b.S+i*s.size*1.45+s.size*0.3);});}});\n    ctx.textBaseline='alphabetic';ctx.restore();}\n  function composeFlat(){const b=composeBase();const specs=collectAnnots(b);drawAnnotsCanvas(b,specs);return b.cv;}\n  function hexRgb01(h){h=String(h).replace('#','');const n=parseInt(h,16);return [((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255];}\n  function dataURLtoBytes(u){const b=atob(u.split(',')[1]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;}\n  function downloadBytes(bytes,name,mime){const blob=new Blob([bytes],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}\n  function pumpTitle(){const t=[state.make,state.model].map(s=>(s||'').trim()).filter(Boolean).join('  \\u00B7  ');return t||'Untitled pump';}\n  function safeFilename(){return ([state.make,state.model].map(s=>(s||'').trim()).filter(Boolean).join('_')||'pump_curve').replace(/[^\\w\\- ]+/g,'').trim().replace(/\\s+/g,'_')||'pump_curve';}\n  async function exportPDF(){if(!state.imgEl){toast('Load a curve image first.',true);return;}if(!window.PDFLib){toast('PDF engine did not load. Check network settings.',true);return;}\n    try{const {PDFDocument,PDFName,PDFString,StandardFonts}=PDFLib;\n      const b=composeBase(),specs=collectAnnots(b),bytes=dataURLtoBytes(b.cv.toDataURL('image/png'));\n      const doc=await PDFDocument.create(),pw=1190.55,ph=841.89,page=doc.addPage([pw,ph]);\n      const helv=await doc.embedFont(StandardFonts.Helvetica),ctx=doc.context;\n      const acro=ctx.obj({Fields:[],DR:ctx.obj({Font:ctx.obj({Helv:helv.ref})}),DA:PDFString.of('/Helv 0 Tf 0 g')});\n      doc.catalog.set(PDFName.of('AcroForm'),ctx.register(acro));\n      const png=await doc.embedPng(bytes);page.drawImage(png,{x:0,y:0,width:pw,height:ph});\n      const sf=pw/b.cv.width,PX=x=>x*sf,PY=y=>ph-y*sf;\n      function add(d){const ref=ctx.register(ctx.obj(d));page.node.addAnnot(ref);}\n      function da(size,hex){const c=hexRgb01(hex);return PDFString.of('/Helv '+Math.max(6,size).toFixed(1)+' Tf '+c[0].toFixed(3)+' '+c[1].toFixed(3)+' '+c[2].toFixed(3)+' rg');}\n      function calloutAnnot(s,text,fontPx,hex){const tbL=PX(s.bx),tbR=PX(s.bx+s.bw),tbTop=PY(s.by),tbBottom=PY(s.by+s.bh),tipX=PX(s.tipx),tipY=PY(s.tipy),joinX=PX(s.joinx),joinY=PY(s.joiny);const rL=Math.min(tbL,tipX),rR=Math.max(tbR,tipX),rB=Math.min(tbBottom,tipY),rT=Math.max(tbTop,tipY);add({Type:'Annot',Subtype:'FreeText',IT:'FreeTextCallout',Rect:[rL,rB,rR,rT],RD:[Math.max(0,tbL-rL),Math.max(0,rT-tbTop),Math.max(0,rR-tbR),Math.max(0,tbBottom-rB)],CL:[tipX,tipY,joinX,joinY],LE:'OpenArrow',Contents:PDFString.of(text),DA:da(fontPx,hex),Q:1,C:hexRgb01(s.lc||'#5865F2'),CA:0.9,BS:ctx.obj({W:1,S:'S'}),F:4});}\n      specs.forEach(s=>{\n        if(s.k==='dot'){const rp=s.r*sf,c=hexRgb01(s.color);add({Type:'Annot',Subtype:'Circle',Rect:[PX(s.cx)-rp,PY(s.cy)-rp,PX(s.cx)+rp,PY(s.cy)+rp],C:c,IC:c,CA:1,BS:ctx.obj({W:Math.max(0.4,rp*0.3),S:'S'}),F:4});}\n        else if(s.k==='line'){/* leader is part of the callout annotation, not a separate object */}\n        else if(s.k==='poly'){const V=[];let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;s.pts.forEach(p=>{const x=PX(p[0]),y=PY(p[1]);V.push(x,y);minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);});add({Type:'Annot',Subtype:'PolyLine',Vertices:V,Rect:[minx,miny,maxx,maxy],C:hexRgb01(s.color),BS:ctx.obj({W:Math.max(0.8,s.w*sf),S:'S'}),F:4});}\n        else if(s.k==='callout'){calloutAnnot(s,s.title+'\\n'+s.coords,s.tSize*sf*0.78,'#1E1F22');}\n        else if(s.k==='pcallout'){calloutAnnot(s,s.lines.join('\\n'),s.cSize*sf*0.8,'#2E3035');}\n        else if(s.k==='label'){const fs=Math.max(6,s.size*sf*0.92),w=fs*String(s.text).length*0.72,h=fs*1.5,x1=PX(s.x),y2=PY(s.y-s.size*0.7),x2=x1+w,y1=y2-h;add({Type:'Annot',Subtype:'FreeText',Rect:[x1,y1,x2,y2],Contents:PDFString.of(String(s.text)),DA:da(fs,s.color),Q:0,F:4});}\n        else if(s.k==='formula'){const x1=PX(s.bx),y1=PY(s.by+s.bh),x2=PX(s.bx+s.bw),y2=PY(s.by);add({Type:'Annot',Subtype:'FreeText',Rect:[x1,y1,x2,y2],Contents:PDFString.of(s.lines.join('\\n')),DA:da(s.size*sf*0.92,s.accentd),Q:0,C:[0.89,0.9,0.93],F:4});}\n      });\n      const outBytes=await doc.save();downloadBytes(outBytes,safeFilename()+'.pdf','application/pdf');toast('Editable A3 PDF exported.');\n    }catch(err){console.error(err);toast('PDF export failed.',true);}}\n  async function copyImage(){if(!state.imgEl){toast('Load a curve image first.',true);return;}try{const cv=composeFlat(),blob=await new Promise(r=>cv.toBlob(r,'image/png'));if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);toast('Flat view copied to clipboard.');}else throw 0;}\n    catch(err){try{const cv=composeFlat(),a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download=safeFilename()+'.png';document.body.appendChild(a);a.click();a.remove();toast('Clipboard blocked here, downloaded a PNG instead.');}catch(e){toast('Could not copy the image.',true);}}}\n  function setTab(t,quiet){state.tab='curve';if(!quiet&&(state.mode==='trace'||state.mode==='probe'))exitMode(true);state.selectedNode=null;if(!quiet)renderAll();}\n\n  const HELP={\n    duty:{title:'Duty points',steps:['Calibrate the axes first, using the panel on the right.','Press Place duty point, then click the curve to drop points. Graph clicks snap to whole numbers.','Edit titles and exact values in the table, or use Add a point for precise figures.','Drag a callout to reposition it, right click to auto place it again. Callout text is driven by the table.','Drag a marker to move it. Select a marker or row and press Delete to remove it.'],notes:'Callout text is set from the table and dot position, it is not retyped on the graph. In the exported PDF each callout is one movable, editable callout object with its leader and arrow built in, and every point marker is its own object.'},\n    curve:{title:'Curve fit, RPM and efficiency',steps:['Calibrate the axes first.','Press Trace new RPM curve, then click or drag along that speed curve. Enter its speed in the table row on the left. Leave it blank for a single DOL curve, giving Y against X.','Press Add another RPM curve for the next speed. The single RPM(X,Y) formula updates live.','Repeat with Trace new efficiency curve for the percent efficiency family. RPM curves stay visible underneath.','Set the Excel cells for X and Y, then Copy to paste a ready formula into your sheet.','Press Place check point and click anywhere to read X, Y, RPM and efficiency at that point, straight from the formula.'],notes:'Each family is fitted as one smooth surface in X and Y by least squares, so RPM and efficiency are each a single closed form you can paste into Excel and verify point by point. Values are entered and edited in the table on the left. Check points evaluate the same formula, so the on screen number matches the spreadsheet. Curves, labels, formulas and check points export as editable PDF objects.'},\n    calib:{title:'Axis calibration',steps:['Press Calibrate axes.','Click the 0, 0 origin on the chart.','Click any second known point on the chart.','Type its X value and press Enter, then its Y value and press Enter.'],notes:'Two clicks set the whole scale. Duty points and both curve families use this same calibration.'}};\n  function openHelp(key,btn){const h=HELP[key];if(!h)return;popover.innerHTML='<h4>'+h.title+'<\/h4><ol>'+h.steps.map(s=>'<li>'+s+'<\/li>').join('')+'<\/ol><div class=\"notes\">'+h.notes+'<\/div>';\n    const r=btn.getBoundingClientRect();let left=Math.min(r.left,window.innerWidth-346),top=r.bottom+8;if(top+300>window.innerHeight)top=Math.max(12,r.top-300);popover.style.left=Math.max(10,left)+'px';popover.style.top=top+'px';popover.style.display='block';}\n  function closeHelp(){popover.style.display='none';}\n\n  dropzone.addEventListener('click',()=>{const f=document.createElement('input');f.type='file';f.accept='image/*';f.onchange=e=>{if(e.target.files[0])handleFile(e.target.files[0]);};f.click();});\n  ['dragenter','dragover'].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.add('drag');}));\n  ['dragleave','drop'].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.remove('drag');}));\n  dropzone.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)handleFile(f);});\n  stagewrap.addEventListener('dragover',e=>e.preventDefault());\n  stagewrap.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f)handleFile(f);});\n  document.addEventListener('paste',e=>{const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type.indexOf('image')===0){handleFile(it.getAsFile());e.preventDefault();return;}}});\n  stagewrap.addEventListener('wheel',e=>{if(!state.imgEl)return;e.preventDefault();const r=stagewrap.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,e.deltaY<0?1.12:1/1.12);},{passive:false});\n  window.addEventListener('resize',()=>{if(state.imgEl)fitView();});\n\n  $$('.help').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();if(popover.style.display==='block')closeHelp();else openHelp(b.getAttribute('data-help'),b);}));\n  document.addEventListener('click',e=>{if(popover.style.display==='block'&&!popover.contains(e.target)&&!e.target.closest('.help'))closeHelp();});\n\n  calBtn.addEventListener('click',enterCalibrate);\n  $('#rpmTrace').addEventListener('click',()=>startNewCurve('rpm'));\n  $('#effTrace').addEventListener('click',()=>startNewCurve('eff'));\n  $('#rpmCopy').addEventListener('click',()=>copyText(modelExcel(state.rpmModel)));\n  $('#effCopy').addEventListener('click',()=>copyText(modelExcel(state.effModel)));\n  $('#probeBtn').addEventListener('click',enterProbe);\n  $('#xref').addEventListener('input',()=>updateCurvePanels());\n  $('#yref').addEventListener('input',()=>updateCurvePanels());\n  $$('#traceModeSeg button').forEach(b=>b.addEventListener('click',()=>{state.traceMode=b.getAttribute('data-trace');updateCurvePanels();if(state.mode==='trace')toast(state.traceMode==='poly'?'Click nodes along the curve.':'Drag along the curve.');}));\n  $('#copyBtn').addEventListener('click',copyImage);\n  $('#pdfBtn').addEventListener('click',exportPDF);\n  $('#openBtn').addEventListener('click',doOpen);\n  $('#saveBtn').addEventListener('click',doSave);\n  $('#saveAsBtn').addEventListener('click',doSaveAs);\n  $('#fileInput').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{openParsed(JSON.parse(ev.target.result));}catch(_){toast('That file is not valid JSON.',true);}};r.readAsText(f);e.target.value='';});\n  $('#sxVal').addEventListener('change',e=>{pushHistory();const v=parseFloat(e.target.value);state.calib.scale.xval=isNaN(v)?null:v;renderAll();});\n  $('#syVal').addEventListener('change',e=>{pushHistory();const v=parseFloat(e.target.value);state.calib.scale.yval=isNaN(v)?null:v;renderAll();});\n  $('#pumpMake').addEventListener('input',e=>{sizeDesc();state.make=e.target.value;});\n  $('#pumpModel').addEventListener('input',e=>{sizeDesc();state.model=e.target.value;});\n\n  document.addEventListener('keydown',e=>{const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);const k=e.key.toLowerCase();\n    if((e.ctrlKey||e.metaKey)&&k==='z'&&!e.shiftKey){e.preventDefault();undo();return;}\n    if((e.ctrlKey||e.metaKey)&&(k==='y'||(k==='z'&&e.shiftKey))){e.preventDefault();redo();return;}\n    if(e.key==='Escape'){if(state.mode==='calibrate')cancelCalibrate();else if(state.mode==='duty'||state.mode==='trace'||state.mode==='probe')exitMode();closeHelp();return;}\n    if(!typing&&(e.key==='Delete'||e.key==='Backspace')){e.preventDefault();deleteSelected();}});\n\n  setTab('curve',true);recomputeModels();syncInputs();renderAll();\n})();\n<\/script>\n<\/body>\n<\/html>\n";
+</script>
+<script>
 /* ============================================================================
  * app.js — UI controller for the Nexmin Slurry Pump Calc.
  * Tabs: Calculator · Summary · How it works · Reference tables · Settling velocity
@@ -2661,15 +2799,26 @@ window.REFDATA = {
     if (html != null) e.innerHTML = html;
     return e;
   };
-  const fmt = (v, d = 2) => (v == null || !isFinite(v)) ? '—' :
-    (Math.abs(v) >= 1e5 ? v.toExponential(2) : Number(v).toFixed(d));
+  // 3 significant figures, fixed (non-exponential) notation
+  function sig(v, n = 3) {
+    if (v == null || !isFinite(v)) return '—';
+    if (v === 0) return '0';
+    const d = Math.ceil(Math.log10(Math.abs(v)));
+    const power = n - d, f = Math.pow(10, power);
+    const r = Math.round(v * f) / f;
+    return r.toFixed(Math.max(0, Math.min(power, 20)));
+  }
+  const num = (x) => (x === '' || x == null || isNaN(x)) ? null : Number(x);
 
   // -------- default pump ----------------------------------------------------
   let pumpSeq = 1;
   function defaultPump(tag) {
     return {
       tag: tag || ('PP' + String(pumpSeq).padStart(3, '0')), name: 'Slurry Pump', stream: '0100',
-      slurry: { solidsTPH: 285, liquidTPH: 153, designFactor: 0.20, solidsSG: 2.81, liquorSG: 1, viscOverride: 30, d50: 55.2, frothFactor: 1 },
+      slurry: {
+        proc: { ms: 285, mL: 153, Ss: 2.81, SL: 1, Sm: null, Q: null, Cw: null, Cv: null },
+        designFactor: 0.20, viscOverride: 30, d50: 55.2, frothFactor: 1
+      },
       suction: { material: 'Steel', spec: 'Std_Wt_6mm_RL', dn: 250, scale: 0, length: 2, k1: 1.5, k2: 0.3, k3: 0.1, q90: 1, q45: 0, qRun: 0, qBranch: 0, k8: 0, Hss: 0.5, Ps: 0 },
       discharge: { material: 'Poly', spec: 'PE100_PN10', dn: 280, scale: 0, length: 120, k1: 0.5, k2: 1, k3: 0.3, q90: 2, q45: 0, qRun: 0, qBranch: 0, k8: 0, Pd: 0, Hsd: 25 },
       pump: { make: '', model: '', frame: '', drive: '', seal: '', impellerType: '', impellerDia: 365, headRatioOverride: 0, effRatioOverride: 0, nSeries: 1, nParallel: 1, effWater: 0.70, speed: 1450 },
@@ -2677,9 +2826,17 @@ window.REFDATA = {
       power: { driveEff: 0.95, margin: 0.20, motorSize: 200 }
     };
   }
+  // migrate older saved pumps (flat slurry -> proc model)
+  function normalizePump(p) {
+    if (p.slurry && !p.slurry.proc) {
+      p.slurry.proc = { ms: num(p.slurry.solidsTPH), mL: num(p.slurry.liquidTPH), Ss: num(p.slurry.solidsSG), SL: num(p.slurry.liquorSG), Sm: null, Q: null, Cw: null, Cv: null };
+    }
+    return p;
+  }
 
   // -------- state -----------------------------------------------------------
   let STATE = load() || { name: 'New Project', client: '', docNo: 'Slurry_Pump_Calcs', rev: 'A', pumps: [defaultPump()], active: 0 };
+  STATE.pumps.forEach(normalizePump);
   if (STATE.pumps.length) pumpSeq = STATE.pumps.length + 1;
   function save() { try { localStorage.setItem('nexmin_pumpcalc', JSON.stringify(STATE)); } catch (e) {} }
   function load() { try { const s = localStorage.getItem('nexmin_pumpcalc'); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
@@ -2687,16 +2844,39 @@ window.REFDATA = {
   function getPath(o, p) { return p.split('.').reduce((a, k) => a && a[k], o); }
   function setPath(o, p, v) { const ks = p.split('.'); const last = ks.pop(); let t = o; ks.forEach(k => t = t[k]); t[last] = v; }
 
-  // -------- calculator schema ----------------------------------------------
+  // -------- process variables (solver) -------------------------------------
+  const PROC = [
+    { k: 'ms', l: 'Solids mass flow', u: 'tph', dec: 1 },
+    { k: 'mL', l: 'Liquid mass flow', u: 'tph', dec: 1 },
+    { k: 'Ss', l: 'Solids s.g.', u: '', dec: 3 },
+    { k: 'SL', l: 'Liquor s.g.', u: '', dec: 3 },
+    { k: 'Sm', l: 'Mixture s.g.', u: '', dec: 3 },
+    { k: 'Q', l: 'Flowrate', u: 'm³/hr', dec: 1 },
+    { k: 'Cw', l: 'Conc. by weight', u: '%', dec: 1, pct: true },
+    { k: 'Cv', l: 'Conc. by volume', u: '%', dec: 1, pct: true }
+  ];
+
+  // -------- standard-input info call-outs -----------------------------------
+  const INPUT_INFO = {
+    'slurry.designFactor': ['Design (process) factor', 'Margin added to the mass flows to produce the “Design” column. <b>0.20 (20%)</b> is the usual house standard — it rarely changes between calcs unless the process group specifies a different basis.'],
+    'slurry.frothFactor': ['Froth volume factor', 'Multiplier on volumetric flow to allow for entrained air in flotation / froth streams. <b>1.0 = no froth</b>. Only differs from 1 on froth-handling duties.'],
+    'suction.k1': ['Inlet coefficient K1', 'Entrance loss at the pump suction. <b>≈1.5</b> for a sharp/projecting inlet typical of slurry pumps. This is a geometry constant, not duty-dependent, so it is the same on almost every calc.'],
+    'suction.k2': ['Suction valve K2', 'Loss across the suction isolation valve. <b>≈0.3</b> for a full-bore knife-gate. Usually the same valve type plant-wide, so it seldom changes.'],
+    'suction.k3': ['Reducer K3', 'Eccentric reducer at the suction. <b>≈0.1</b>. A standard fitting on most pumps — typically constant across calcs.'],
+    'discharge.k1': ['Discharge coefficient K1', 'Connection/exit coefficient at the pump discharge. <b>≈0.5</b>. Geometry-based and rarely duty-specific.'],
+    'discharge.k2': ['Outlet valves K2', 'Combined loss for the discharge valves (e.g. knife-gate + check). <b>≈1.0</b>. The same valve set is normally used across similar duties.'],
+    'discharge.k3': ['Reducer K3', 'Discharge reducer/expander. <b>≈0.3</b>. Standard fitting; usually constant.'],
+    'power.driveEff': ['Drive efficiency', 'Transmission efficiency (V-belt or gearbox). <b>0.95</b> is typical for belt drives and is constant across most installations.'],
+    'power.margin': ['Power-draw margin', 'Margin applied when sizing the motor. <b>0.20 (20%)</b> is the common standard.'],
+    'npsh.altitude': ['Site elevation', 'Sets the atmospheric pressure used for NPSH via the barometric formula. Constant for a given site.']
+  };
+
+  // -------- input schema ----------------------------------------------------
   const INPUTS = [
     { title: 'Identification', fields: [
       { p: 'tag', l: 'Pump Tag', t: 'text' }, { p: 'name', l: 'Pump Name', t: 'text' }, { p: 'stream', l: 'Stream No', t: 'text' } ] },
-    { title: 'Slurry Details', fields: [
-      { p: 'slurry.solidsTPH', l: 'Solids mass flow', u: 'tph' },
-      { p: 'slurry.liquidTPH', l: 'Liquid mass flow', u: 'tph' },
+    { title: 'Slurry Details', proc: true, fields: [
       { p: 'slurry.designFactor', l: 'Design factor', u: 'frac', step: 0.05 },
-      { p: 'slurry.solidsSG', l: 'Solids s.g.', u: '' },
-      { p: 'slurry.liquorSG', l: 'Liquor s.g.', u: '' },
       { p: 'slurry.viscOverride', l: 'Slurry viscosity override (0=auto)', u: 'cP' },
       { p: 'slurry.d50', l: 'Particle size d50', u: 'µm' },
       { p: 'slurry.frothFactor', l: 'Froth volume factor', u: '' } ] },
@@ -2709,7 +2889,7 @@ window.REFDATA = {
       { p: 'pump.effRatioOverride', l: 'Efficiency ratio override (0=auto)', u: '' },
       { p: 'pump.nSeries', l: 'Pumps in series', u: '' },
       { p: 'pump.nParallel', l: 'Pumps in parallel', u: '' },
-      { p: 'pump.effWater', l: 'Water efficiency ηw (duty pt 2)', u: 'frac' },
+      { p: 'pump.effWater', l: 'Water efficiency ηw (duty pt 2)', u: '%', t: 'pct' },
       { p: 'pump.speed', l: 'Pump speed N', u: 'rpm' } ] },
     { title: 'NPSH', fields: [
       { p: 'npsh.altitude', l: 'Height above sea level', u: 'm' },
@@ -2718,7 +2898,7 @@ window.REFDATA = {
     { title: 'Power', fields: [
       { p: 'power.driveEff', l: 'Drive efficiency', u: 'frac' },
       { p: 'power.margin', l: 'Power draw margin', u: 'frac', step: 0.05 },
-      { p: 'power.motorSize', l: 'Selected motor size', u: 'kW' } ] }
+      { p: 'power.motorSize', l: 'Selected motor size', u: 'kW', t: 'motor' } ] }
   ];
   function legFields(leg) {
     return [
@@ -2735,16 +2915,12 @@ window.REFDATA = {
       { p: leg + '.qRun', l: 'Run tees (qty)', u: '#' },
       { p: leg + '.qBranch', l: 'Branch tees (qty)', u: '#' },
       { p: leg + '.k8', l: 'Other K8', u: '' },
-      leg === 'suction'
-        ? { p: 'suction.Hss', l: 'Suction static head', u: 'm' }
-        : { p: 'discharge.Hsd', l: 'Static discharge head', u: 'm' },
-      leg === 'suction'
-        ? { p: 'suction.Ps', l: 'Suction surface pressure', u: 'kPa' }
-        : { p: 'discharge.Pd', l: 'Delivery pressure (e.g. cyclone)', u: 'kPa' }
+      leg === 'suction' ? { p: 'suction.Hss', l: 'Suction static head', u: 'm' } : { p: 'discharge.Hsd', l: 'Static discharge head', u: 'm' },
+      leg === 'suction' ? { p: 'suction.Ps', l: 'Suction surface pressure', u: 'kPa' } : { p: 'discharge.Pd', l: 'Delivery pressure (e.g. cyclone)', u: 'kPa' }
     ];
   }
 
-  // -------- output schema ---------------------------------------------------
+  // -------- output schema (value getter applied to both nominal & design) --
   const OUTPUTS = [
     { title: 'Slurry', rows: [
       ['flow', 'Flowrate Q', o => o.flowN, 'm³/hr', 'Q'],
@@ -2790,17 +2966,24 @@ window.REFDATA = {
       ['NPSHa', 'NPSHa (eq. water)', o => o.NPSHa_water, 'm', '', o => pillNPSH(o)] ] }
   ];
   function pillRatio(r) { if (!isFinite(r)) return null; return r >= 1.15 ? { cls: 'ok', t: 'OK' } : r >= 1 ? { cls: 'warn', t: 'low' } : { cls: 'bad', t: 'settling' }; }
-  function pillFL(f) { if (!isFinite(f)) return null; const p = f * 100; return p <= 100 ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'over' }; }
+  function pillFL(f) { if (!isFinite(f)) return null; return f * 100 <= 100 ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'over' }; }
   function pillNPSH(o) { if (o.npshOK == null) return { cls: 'warn', t: 'enter NPSHr' }; return o.npshOK ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'cavitation' }; }
 
+  // -------- dynamic input sizing -------------------------------------------
+  function sizeInput(inp) {
+    const len = (inp.value || inp.placeholder || '').length;
+    inp.style.width = Math.max(4.5, Math.min(20, len + 2.5)) + 'ch';
+  }
+
   // -------- render: calculator ---------------------------------------------
+  let procInputs = {}, slurryStatusEl = null;
   function renderCalc() {
-    const root = $('#view'); root.innerHTML = '';
+    const root = $('#view'); root.innerHTML = ''; procInputs = {};
     const p = activePump();
     root.appendChild(pumpBar());
 
-    const o = ENGINE.compute(p);
-    root.appendChild(kpis(o));
+    const both = ENGINE.computeBoth(p);
+    root.appendChild(kpis(both.n, both.d));
 
     const grid = el('div', { class: 'grid' });
     // inputs card
@@ -2809,37 +2992,97 @@ window.REFDATA = {
     const inBody = el('div', { class: 'body' });
     INPUTS.forEach(sec => {
       inBody.appendChild(el('div', { class: 'section-title' }, sec.title));
+      if (sec.proc) inBody.appendChild(procBlock(p, both.n));
       sec.fields.forEach(f => inBody.appendChild(inputRow(f, p)));
     });
     inCard.appendChild(inBody);
 
-    // outputs card
+    // outputs card (Nominal + Design)
     const outCard = el('div', { class: 'card' });
     outCard.appendChild(el('h2', {}, '<span class="accent"></span> Calculated Results'));
     const outBody = el('div', { class: 'body' });
+    outBody.appendChild(outHeader());
     OUTPUTS.forEach(sec => {
       outBody.appendChild(el('div', { class: 'section-title' }, sec.title));
-      sec.rows.forEach(r => outBody.appendChild(outputRow(r, o)));
+      sec.rows.forEach(r => outBody.appendChild(outputRow(r, both.n, both.d)));
     });
     outCard.appendChild(outBody);
 
     grid.appendChild(inCard); grid.appendChild(outCard);
     root.appendChild(grid);
+
+    // pump-curve block (full width)
+    root.appendChild(pumpCurveBlock());
+
+    document.querySelectorAll('#view .row input, #view .proc-input').forEach(sizeInput);
+  }
+
+  // process-variable block: each field can be entered (known) or solved (auto)
+  function procBlock(p, o) {
+    const wrap = el('div', { class: 'proc' });
+    slurryStatusEl = el('div', { class: 'proc-status' });
+    wrap.appendChild(slurryStatusEl);
+    PROC.forEach(f => {
+      const row = el('div', { class: 'row' });
+      row.appendChild(el('label', {}, f.l));
+      const fieldwrap = el('div', { class: 'fieldwrap' });
+      const raw = p.slurry.proc[f.k];
+      const known = raw != null;
+      const disp = known ? (f.pct ? raw * 100 : raw) : '';
+      const inp = el('input', { class: 'proc-input' + (known ? ' known' : ' auto'), type: 'number', step: 'any', value: disp });
+      inp.dataset.key = f.k; inp.dataset.pct = f.pct ? '1' : '';
+      inp.addEventListener('input', () => {
+        const v = num(inp.value);
+        p.slurry.proc[f.k] = (v == null) ? null : (f.pct ? v / 100 : v);
+        inp.classList.toggle('known', v != null); inp.classList.toggle('auto', v == null);
+        sizeInput(inp); commit(false);
+      });
+      procInputs[f.k] = inp;
+      fieldwrap.appendChild(inp);
+      fieldwrap.appendChild(el('span', { class: 'unit' }, f.u));
+      const badge = el('span', { class: 'autobadge' + (known ? ' hidden' : '') }, 'auto');
+      fieldwrap.appendChild(badge);
+      row.appendChild(fieldwrap);
+      wrap.appendChild(row);
+    });
+    updateProcPlaceholders(o);
+    return wrap;
+  }
+  function updateProcPlaceholders(o) {
+    PROC.forEach(f => {
+      const inp = procInputs[f.k]; if (!inp) return;
+      const solved = o.proc ? o.proc[f.k] : null;
+      const showSolved = (o.procStatus === 'solved');
+      if (inp.value === '') {
+        inp.placeholder = (showSolved && solved != null) ? sig(f.pct ? solved * 100 : solved) : '?';
+        sizeInput(inp);
+      }
+    });
+    if (slurryStatusEl) {
+      let msg = '', cls = 'ok';
+      if (o.procStatus === 'solved') { msg = '✓ Solved — auto fields filled from your inputs'; cls = 'ok'; }
+      else if (o.procStatus === 'under') { msg = `Enter ${o.procUnknown.length - 4} more value(s) — need 4 independent knowns`; cls = 'warn'; }
+      else if (o.procStatus === 'over') { msg = 'Over-specified — extra inputs ignored (lowest priority)'; cls = 'warn'; }
+      else if (o.procStatus === 'needflow') { msg = 'Enter at least one flow/mass value (Solids tph, Liquid tph or Flowrate)'; cls = 'warn'; }
+      else { msg = 'No consistent solution for this combination — check your inputs'; cls = 'bad'; }
+      slurryStatusEl.className = 'proc-status ' + cls; slurryStatusEl.textContent = msg;
+    }
   }
 
   function inputRow(f, p) {
     const r = el('div', { class: 'row' });
-    r.appendChild(el('label', {}, f.l));
+    const lab = el('label', {}, f.l);
+    r.appendChild(lab);
+    const fieldwrap = el('div', { class: 'fieldwrap' });
     let inp;
     if (f.t === 'text') {
       inp = el('input', { type: 'text', value: getPath(p, f.p) ?? '' });
-      inp.addEventListener('input', () => { setPath(p, f.p, inp.value); commit(false); });
+      inp.addEventListener('input', () => { setPath(p, f.p, inp.value); sizeInput(inp); commit(false); });
     } else if (f.t === 'mat') {
       inp = el('select');
       REFDATA.materials.forEach(m => inp.appendChild(el('option', { value: m, selected: getPath(p, f.p) === m ? '' : null }, m)));
       inp.addEventListener('change', () => {
         setPath(p, f.p, inp.value);
-        // reset spec & dn to first valid for the material
         const specs = specsFor(inp.value); setPath(p, f.leg + '.spec', specs[0]);
         const sizes = sizesFor(inp.value); if (!sizes.includes(getPath(p, f.leg + '.dn'))) setPath(p, f.leg + '.dn', sizes[Math.min(8, sizes.length - 1)]);
         commit(true);
@@ -2852,49 +3095,106 @@ window.REFDATA = {
       inp = el('select');
       sizesFor(getPath(p, f.leg + '.material')).forEach(sz => inp.appendChild(el('option', { value: sz, selected: getPath(p, f.p) === sz ? '' : null }, sz)));
       inp.addEventListener('change', () => { setPath(p, f.p, Number(inp.value)); commit(false); });
+    } else if (f.t === 'motor') {
+      inp = el('select');
+      const cur = getPath(p, f.p);
+      const list = ENGINE.IEC_MOTORS.slice();
+      if (cur && !list.includes(cur)) list.push(cur), list.sort((a, b) => a - b);
+      list.forEach(m => inp.appendChild(el('option', { value: m, selected: cur === m ? '' : null }, m + ' kW')));
+      inp.addEventListener('change', () => { setPath(p, f.p, Number(inp.value)); commit(false); });
+    } else if (f.t === 'pct') {
+      const v = getPath(p, f.p);
+      inp = el('input', { type: 'number', step: 'any', value: v == null ? '' : v * 100 });
+      inp.addEventListener('input', () => { const x = parseFloat(inp.value); setPath(p, f.p, isNaN(x) ? 0 : x / 100); sizeInput(inp); commit(false); });
     } else {
       inp = el('input', { type: 'number', step: f.step || 'any', value: getPath(p, f.p) });
-      inp.addEventListener('input', () => { const v = parseFloat(inp.value); setPath(p, f.p, isNaN(v) ? 0 : v); commit(false); });
+      inp.addEventListener('input', () => { const v = parseFloat(inp.value); setPath(p, f.p, isNaN(v) ? 0 : v); sizeInput(inp); commit(false); });
     }
-    r.appendChild(inp);
-    r.appendChild(el('span', { class: 'unit' }, unitLabel(f.u)));
+    fieldwrap.appendChild(inp);
+    fieldwrap.appendChild(el('span', { class: 'unit' }, unitLabel(f.u)));
+    const info = INPUT_INFO[f.p];
+    if (info) {
+      const b = el('button', { class: 'info', title: info[0] }, 'i');
+      b.addEventListener('click', () => openInfo(info[0], info[1]));
+      fieldwrap.appendChild(b);
+    }
+    r.appendChild(fieldwrap);
     return r;
   }
   function unitLabel(u) { return u === 'frac' ? 'frac' : (u || ''); }
   function specsFor(mat) { return (mat === 'Poly' ? REFDATA.polySpecs : REFDATA.steelSpecs).map(s => s.spec); }
   function sizesFor(mat) { return mat === 'Poly' ? REFDATA.polySizes.slice() : REFDATA.steelSizes.slice(); }
 
-  function outputRow(r, o) {
+  function outHeader() {
+    const r = el('div', { class: 'orow ohead' });
+    r.appendChild(el('div', { class: 'olabel' }, 'Parameter'));
+    r.appendChild(el('div', { class: 'oval' }, 'Nominal'));
+    r.appendChild(el('div', { class: 'oval' }, 'Design'));
+    r.appendChild(el('div', { class: 'ounit' }, ''));
+    r.appendChild(el('div', {}, ''));
+    return r;
+  }
+  function outputRow(r, oN, oD) {
     const [key, label, getter, unit, sym, pillFn] = r;
     const row = el('div', { class: 'orow' });
     row.appendChild(el('div', { class: 'olabel' }, label + (sym ? ` <span class="sym">${sym}</span>` : '')));
-    let val = '—'; try { val = fmt(getter(o), unit === '' && key === 'ratio' ? 2 : decimals(key, unit)); } catch (e) {}
-    const valCell = el('div', { class: 'oval' }, val);
-    if (pillFn) { const pl = pillFn(o); if (pl) valCell.innerHTML = val + ` <span class="pill ${pl.cls}">${pl.t}</span>`; }
+    let vN = '—', vD = '—'; try { vN = sig(getter(oN)); } catch (e) {} try { vD = sig(getter(oD)); } catch (e) {}
+    const valCell = el('div', { class: 'oval' }, vN);
+    if (pillFn) { const pl = pillFn(oN); if (pl) valCell.innerHTML = vN + ` <span class="pill ${pl.cls}">${pl.t}</span>`; }
     row.appendChild(valCell);
+    row.appendChild(el('div', { class: 'oval design' }, vD));
     row.appendChild(el('div', { class: 'ounit' }, unit));
     const info = el('button', { class: 'info', title: 'How this is calculated' }, 'i');
     info.addEventListener('click', () => openDoc(key));
     row.appendChild(info);
     return row;
   }
-  function decimals(key, unit) {
-    if (['Re'].includes(key)) return 0;
-    if (['ID', 'IDs', 'flow'].includes(key)) return 1;
-    if (['f', 'eD'].includes(key)) return 4;
-    if (unit === '%' || unit === 'kW') return 1;
-    return 2;
+
+  // -------- status KPI band -------------------------------------------------
+  function kpis(o, oD) {
+    const wrap = el('div', { class: 'kpi' });
+    const box = (k, mainHtml, subHtml, subCls) => {
+      const b = el('div', { class: 'box' });
+      b.appendChild(el('div', { class: 'k' }, k));
+      b.appendChild(el('div', { class: 'v' }, mainHtml));
+      if (subHtml != null) b.appendChild(el('div', { class: 'vsub ' + (subCls || '') }, subHtml));
+      return b;
+    };
+    // Flowrate (nominal / design)
+    wrap.appendChild(box('Flowrate', `${sig(o.flowN)} <small>m³/h</small>`, `design ${sig(oD.flowN)} m³/h`, 'muted'));
+    // TDH — m slurry + m water
+    wrap.appendChild(box('Total Dynamic Head', `${sig(o.Hdyn)} <small>m slurry</small>`, `${sig(o.Hw)} m water (equiv.)`, 'muted'));
+    // Discharge velocity + settling status
+    const settles = isFinite(o.dis.ratio) && o.dis.V < o.dis.Vlim;
+    wrap.appendChild(box('Discharge velocity', `${sig(o.dis.V)} <small>m/s</small>`,
+      isFinite(o.dis.Vlim) ? (settles ? `⚠ settles — Vlim ${sig(o.dis.Vlim)} m/s` : `✓ above settling (${sig(o.dis.Vlim)} m/s)`) : '—',
+      settles ? 'bad' : 'ok'));
+    // Slurry efficiency (%)
+    wrap.appendChild(box('Slurry efficiency', `${sig(o.etaS * 100)} <small>%</small>`, `water ηw ${sig(o.etaW * 100)} %`, 'muted'));
+    // Motor selection + freeboard
+    const fb = (o.motorSel > 0) ? (o.motorSel - o.motorReq) / o.motorSel * 100 : NaN;
+    let fbCls = 'bad', fbTxt = '—';
+    if (isFinite(fb)) { fbTxt = `${sig(fb)} % freeboard`; fbCls = fb < 10 ? 'bad' : (fb <= 30 ? 'ok' : 'warn'); if (fb > 30) fbTxt += ' (oversized)'; }
+    wrap.appendChild(box('Motor selected', `${sig(o.motorSel)} <small>kW</small>`, fbTxt, fbCls));
+    // NPSH check
+    wrap.appendChild(box('NPSHa', `${sig(o.NPSHa_water)} <small>m</small>`,
+      o.npshOK == null ? 'enter NPSHr' : (o.npshOK ? `✓ OK (NPSHr ${sig(o.NPSHr)})` : `✗ NPSHa < NPSHr (${sig(o.NPSHr)})`),
+      o.npshOK == null ? 'warn' : (o.npshOK ? 'ok' : 'bad')));
+    return wrap;
   }
 
-  function kpis(o) {
-    const wrap = el('div', { class: 'kpi' });
-    const box = (k, v, s) => { const b = el('div', { class: 'box' }); b.appendChild(el('div', { class: 'k' }, k)); b.appendChild(el('div', { class: 'v' }, v + (s ? ` <small>${s}</small>` : ''))); return b; };
-    wrap.appendChild(box('Flowrate', fmt(o.flowN, 1), 'm³/h'));
-    wrap.appendChild(box('Total Dyn. Head', fmt(o.Hdyn, 1), 'm'));
-    wrap.appendChild(box('Disch. velocity', fmt(o.dis.V, 2), 'm/s'));
-    wrap.appendChild(box('Motor required', fmt(o.motorReq, 1), 'kW'));
-    wrap.appendChild(box('NPSHa', fmt(o.NPSHa_water, 2), 'm'));
-    return wrap;
+  // -------- pump curve block ------------------------------------------------
+  function pumpCurveBlock() {
+    const card = el('div', { class: 'card', style: 'margin-top:18px' });
+    card.appendChild(el('h2', {}, '<span class="accent"></span> Pump Curve'));
+    const body = el('div', { class: 'curvebody' });
+    const frame = el('iframe', { class: 'curveframe', title: 'Pump Curve', loading: 'lazy' });
+    // PUMP_CURVE_SRCDOC is injected by the single-file build; otherwise load the file
+    if (window.PUMP_CURVE_SRCDOC) frame.srcdoc = window.PUMP_CURVE_SRCDOC;
+    else frame.src = 'pumpcurve.html';
+    body.appendChild(frame);
+    card.appendChild(body);
+    return card;
   }
 
   function pumpBar() {
@@ -2925,33 +3225,38 @@ window.REFDATA = {
     STATE.pumps.push(np); STATE.active = STATE.pumps.length - 1; commit(true);
   }
 
-  // -------- doc popover -----------------------------------------------------
-  function openDoc(key) {
-    const d = META.DOC[key]; if (!d) return;
+  // -------- popovers --------------------------------------------------------
+  function popover(title, bodyBuild) {
     const back = el('div', { class: 'pop-backdrop' });
     back.addEventListener('click', e => { if (e.target === back) back.remove(); });
     const pop = el('div', { class: 'pop' });
-    const head = el('header', {}); head.appendChild(el('h3', {}, d.title));
+    const head = el('header', {}); head.appendChild(el('h3', {}, title));
     const cl = el('button', { class: 'pclose' }, '×'); cl.addEventListener('click', () => back.remove()); head.appendChild(cl);
     pop.appendChild(head);
-    const body = el('div', { class: 'pbody' });
-    body.appendChild(el('p', {}, d.what));
-    body.appendChild(el('div', { class: 'formula' }, d.formula));
-    if (d.refs && d.refs.length) {
-      const refs = el('div', { class: 'refs' });
-      refs.appendChild(el('div', { class: 'olabel', style: 'font-weight:700;margin-bottom:4px' }, 'References'));
-      d.refs.forEach(id => { const R = META.REFERENCES[id]; if (R) refs.appendChild(el('div', { class: 'ref' }, `<span class="reftag">${R.tag}</span>${R.cite}`)); });
-      body.appendChild(refs);
-    }
+    const body = el('div', { class: 'pbody' }); bodyBuild(body);
     pop.appendChild(body); back.appendChild(pop); document.body.appendChild(back);
+  }
+  function openInfo(title, html) { popover(title, body => body.appendChild(el('p', {}, html))); }
+  function openDoc(key) {
+    const d = META.DOC[key]; if (!d) return;
+    popover(d.title, body => {
+      body.appendChild(el('p', {}, d.what));
+      body.appendChild(el('div', { class: 'formula' }, d.formula));
+      if (d.refs && d.refs.length) {
+        const refs = el('div', { class: 'refs' });
+        refs.appendChild(el('div', { class: 'olabel', style: 'font-weight:700;margin-bottom:4px' }, 'References'));
+        d.refs.forEach(id => { const R = META.REFERENCES[id]; if (R) refs.appendChild(el('div', { class: 'ref' }, `<span class="reftag">${R.tag}</span>${R.cite}`)); });
+        body.appendChild(refs);
+      }
+    });
   }
 
   // -------- render: summary -------------------------------------------------
   function renderSummary() {
     const root = $('#view'); root.innerHTML = '';
     root.appendChild(el('h1', { class: 'page' }, 'Project Summary'));
-    root.appendChild(el('p', { class: 'sub' }, 'Live roll-up across all pumps in this project. Export to Excel reproduces every pump as a Calc_Template-style sheet.'));
-    const cols = ['Tag', 'Name', 'Stream', 'Solids tph', 'Liquid tph', 'Slurry SG', 'Cv %', 'Flow m³/h', 'Suct DN', 'Suct V', 'Disch DN', 'Disch V', 'TDH m', 'Model', 'Drawn kW', 'Motor kW', '% Load', 'NPSHa m'];
+    root.appendChild(el('p', { class: 'sub' }, 'Live roll-up across all pumps. Pass/fail and settling status mirror the calculator. Export to Excel reproduces every pump as a Calc_Template-style sheet.'));
+    const cols = ['Tag', 'Name', 'Stream', 'Solids tph', 'Liquid tph', 'Slurry SG', 'Cv %', 'Flow m³/h', 'Disch V', 'Settling', 'TDH m', 'Motor kW', 'Freeboard', 'NPSH'];
     const wrap = el('div', { class: 'tablewrap' });
     const t = el('table', { class: 'ref zebra' });
     const thead = el('thead'); const htr = el('tr'); cols.forEach(c => htr.appendChild(el('th', {}, c))); thead.appendChild(htr); t.appendChild(thead);
@@ -2960,22 +3265,30 @@ window.REFDATA = {
       const o = ENGINE.compute(p);
       const tr = el('tr', { style: 'cursor:pointer' });
       tr.addEventListener('click', () => { STATE.active = i; switchTab('calc'); });
-      const cells = [p.tag, p.name, p.stream, fmt(p.slurry.solidsTPH, 0), fmt(p.slurry.liquidTPH, 0),
-        fmt(o.SM, 2), fmt(o.Cv * 100, 1), fmt(o.flowN, 1), o.suc.IDs ? p.suction.dn : '—', fmt(o.suc.V, 2),
-        p.discharge.dn, fmt(o.dis.V, 2), fmt(o.Hdyn, 1), p.pump.model || '—',
-        fmt(o.motorReq, 1), fmt(p.power.motorSize, 0), fmt(o.pctFL * 100, 0), fmt(o.NPSHa_water, 2)];
-      cells.forEach(c => tr.appendChild(el('td', {}, String(c))));
+      const settles = isFinite(o.dis.ratio) && o.dis.V < o.dis.Vlim;
+      const fb = (p.power.motorSize > 0) ? (p.power.motorSize - o.motorReq) / p.power.motorSize * 100 : NaN;
+      const cells = [
+        td(p.tag), td(p.name), td(p.stream), td(sig(o.solidsN)), td(sig(o.liquidN)),
+        td(sig(o.SM)), td(sig(o.Cv * 100)), td(sig(o.flowN)), td(sig(o.dis.V)),
+        pillTd(settles ? 'bad' : 'ok', settles ? `settles ${sig(o.dis.Vlim)}` : `OK ${sig(o.dis.Vlim)}`),
+        td(sig(o.Hdyn)), td(sig(p.power.motorSize)),
+        pillTd(!isFinite(fb) ? 'warn' : (fb < 10 ? 'bad' : fb <= 30 ? 'ok' : 'warn'), isFinite(fb) ? sig(fb) + '%' : '—'),
+        pillTd(o.npshOK == null ? 'warn' : (o.npshOK ? 'ok' : 'bad'), o.npshOK == null ? 'n/a' : (o.npshOK ? 'OK' : 'low'))
+      ];
+      cells.forEach(c => tr.appendChild(c));
       tb.appendChild(tr);
     });
     t.appendChild(tb); wrap.appendChild(t); root.appendChild(wrap);
     root.appendChild(el('p', { class: 'hint' }, 'Tip: click any row to open that pump in the Calculator.'));
+    function td(v) { return el('td', {}, String(v)); }
+    function pillTd(cls, txt) { const c = el('td', {}); c.innerHTML = `<span class="pill ${cls}">${txt}</span>`; return c; }
   }
 
   // -------- render: how it works -------------------------------------------
   function renderDocs() {
     const root = $('#view'); root.innerHTML = '';
     root.appendChild(el('h1', { class: 'page' }, 'How it works — the guts'));
-    root.appendChild(el('p', { class: 'sub' }, 'Every calculated row in this tool, the exact formula behind it, and where it comes from. This mirrors the engine in the original Calc_Template sheet (custom Excel functions re-expressed in plain maths).'));
+    root.appendChild(el('p', { class: 'sub' }, 'Every calculated row, the exact formula behind it, and where it comes from. Mirrors the engine in the original Calc_Template sheet (custom Excel functions re-expressed in plain maths).'));
     root.appendChild(el('div', { class: 'note' }, 'Velocity guidance: slurry pipelines are typically run at 1.5–2.0 m/s and at least 15% above the limiting (settling) velocity. The Durand method built into the discharge calc is conservative; see the Settling Velocity tab for alternatives when fines dominate.'));
     Object.keys(META.DOC).forEach(key => {
       const d = META.DOC[key];
@@ -3003,7 +3316,6 @@ window.REFDATA = {
     const root = $('#view'); root.innerHTML = '';
     root.appendChild(el('h1', { class: 'page' }, 'Reference Tables'));
     root.appendChild(el('p', { class: 'sub' }, 'The validation lists and lookup tables used throughout the calc — exactly as embedded in the workbook.'));
-
     section('Pipe Roughness (mm)', () => {
       const t = tbl(['Material / lining', 'Absolute roughness e (mm)']);
       REFDATA.roughnessNamed.forEach(p => addRow(t, [p[0], p[1]]));
@@ -3032,10 +3344,9 @@ window.REFDATA = {
     });
     section('Absolute Vapour Pressure of Water', () => {
       const t = tbl(['Temp °C', 'Vapour press. kPa', 'm water']);
-      REFDATA.vapour.forEach(v => addRow(t, [v.T, fmt(v.kPa, 3), fmt(v.m, 4)]));
+      REFDATA.vapour.forEach(v => addRow(t, [v.T, sig(v.kPa, 3), sig(v.m, 3)]));
       return t;
     });
-
     function section(title, build) {
       root.appendChild(el('div', { class: 'section-title', style: 'margin-top:22px' }, title));
       const wrap = el('div', { class: 'tablewrap' }); wrap.appendChild(build()); root.appendChild(wrap);
@@ -3049,15 +3360,14 @@ window.REFDATA = {
     const root = $('#view'); root.innerHTML = '';
     const p = activePump(); const o = ENGINE.compute(p); const s = o.settle;
     root.appendChild(el('h1', { class: 'page' }, 'Settling Velocity Comparison'));
-    root.appendChild(el('p', { class: 'sub' }, `For the active pump <b>${p.tag}</b> (discharge DN ${p.discharge.dn}, d50 ${p.slurry.d50} µm, Cv ${fmt(o.Cv * 100, 1)} %). The Durand method is built into the duty calc; the others are provided for comparison where it is too conservative (e.g. fines present).`));
+    root.appendChild(el('p', { class: 'sub' }, `For the active pump <b>${p.tag}</b> (discharge DN ${p.discharge.dn}, d50 ${p.slurry.d50} µm, Cv ${sig(o.Cv * 100)} %). The Durand method is built into the duty calc; the others are for comparison where it is too conservative (e.g. fines present).`));
     const designV = o.dis.V;
-    root.appendChild(el('div', { class: 'kpi' }, ''));
     const methods = [
-      ['Durand & Condolios (1952)', s.durand, 'durand', 'Standard method (Warman). Closely-graded particles, 2% < Cv < 15%. Conservative for mixed sizes.'],
-      ['Wilson', s.wilson, 'wilson', 'Large pipes/particles near "Murphian" size. Gives the maximum limiting velocity (worst case). Conservative.'],
-      ['Thomas', s.thomas, 'thomas', 'For particles < 0.15 mm. Turbulent flow, minimum settling velocity — indicates behaviour of fines.'],
-      ['Wasp', s.wasp, 'wasp', 'Improved Durand for dilute concentrations; accounts for fines flowing over a moving bed of coarse solids.'],
-      ['Sinclair', s.sinclair, 'sinclair', 'For d85/ID < 0.001 or particle diameter 30–2000 µm.']
+      ['Durand & Condolios (1952)', s.durand, 'Standard method (Warman). Closely-graded particles, 2% < Cv < 15%. Conservative for mixed sizes.'],
+      ['Wilson', s.wilson, 'Large pipes/particles near “Murphian” size. Gives the maximum limiting velocity (worst case). Conservative.'],
+      ['Thomas', s.thomas, 'For particles < 0.15 mm. Turbulent flow, minimum settling velocity — indicates behaviour of fines.'],
+      ['Wasp', s.wasp, 'Improved Durand for dilute concentrations; accounts for fines flowing over a moving bed of coarse solids.'],
+      ['Sinclair', s.sinclair, 'For d85/ID < 0.001 or particle diameter 30–2000 µm.']
     ];
     const wrap = el('div', { class: 'tablewrap' });
     const t = el('table', { class: 'ref zebra' });
@@ -3066,11 +3376,11 @@ window.REFDATA = {
     methods.forEach(m => {
       const tr = el('tr');
       tr.appendChild(el('td', {}, m[0]));
-      tr.appendChild(el('td', {}, fmt(m[1], 2)));
-      tr.appendChild(el('td', {}, fmt(designV, 2)));
+      tr.appendChild(el('td', {}, sig(m[1])));
+      tr.appendChild(el('td', {}, sig(designV)));
       const ok = designV >= m[1];
       const td = el('td', {}); td.innerHTML = `<span class="pill ${ok ? 'ok' : 'bad'}">${ok ? 'above settling' : 'below settling'}</span>`; tr.appendChild(td);
-      const info = el('td', { style: 'text-align:left;white-space:normal;max-width:380px;color:#555' }, m[3]); tr.appendChild(info);
+      tr.appendChild(el('td', { style: 'text-align:left;white-space:normal;max-width:380px;color:#555' }, m[2]));
       tb.appendChild(tr);
     });
     t.appendChild(tb); wrap.appendChild(t); root.appendChild(wrap);
@@ -3081,17 +3391,18 @@ window.REFDATA = {
   const TABS = { calc: renderCalc, summary: renderSummary, docs: renderDocs, ref: renderRef, settle: renderSettle };
   let current = 'calc';
   function switchTab(t) { current = t; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t)); TABS[t](); }
-  function commit(rerender) { save(); if (rerender) TABS[current](); else { /* live recalc without losing focus: only refresh outputs+kpi */ refreshOutputs(); } }
+  function commit(rerender) { save(); if (rerender) TABS[current](); else refreshOutputs(); }
   function refreshOutputs() {
     if (current !== 'calc') { TABS[current](); return; }
-    const o = ENGINE.compute(activePump());
-    // re-render kpi + outputs in place
+    const both = ENGINE.computeBoth(activePump());
     const view = $('#view');
-    const kpi = view.querySelector('.kpi'); if (kpi) kpi.replaceWith(kpis(o));
-    const cards = view.querySelectorAll('.card');
+    const kpi = view.querySelector('.kpi'); if (kpi) kpi.replaceWith(kpis(both.n, both.d));
+    updateProcPlaceholders(both.n);
+    const cards = view.querySelectorAll('.grid .card');
     if (cards[1]) {
       const outBody = cards[1].querySelector('.body'); outBody.innerHTML = '';
-      OUTPUTS.forEach(sec => { outBody.appendChild(el('div', { class: 'section-title' }, sec.title)); sec.rows.forEach(r => outBody.appendChild(outputRow(r, o))); });
+      outBody.appendChild(outHeader());
+      OUTPUTS.forEach(sec => { outBody.appendChild(el('div', { class: 'section-title' }, sec.title)); sec.rows.forEach(r => outBody.appendChild(outputRow(r, both.n, both.d))); });
     }
   }
 
@@ -3109,18 +3420,12 @@ window.REFDATA = {
       btn.textContent = old; btn.disabled = false;
     });
     $('#resetBtn').addEventListener('click', () => { if (confirm('Reset to a fresh project? This clears saved data.')) { localStorage.removeItem('nexmin_pumpcalc'); location.reload(); } });
-
-    // Save current project to a .json file
     $('#saveBtn').addEventListener('click', () => {
-      const data = JSON.stringify(STATE, null, 2);
-      const blob = new Blob([data], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(STATE, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = (STATE.docNo || 'pump_calc') + '.json';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      const a = document.createElement('a'); a.href = url; a.download = (STATE.docNo || 'pump_calc') + '.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 2000);
     });
-    // Load a project from a .json file
     $('#loadBtn').addEventListener('click', () => $('#loadFile').click());
     $('#loadFile').addEventListener('change', (e) => {
       const file = e.target.files[0]; if (!file) return;
@@ -3129,9 +3434,9 @@ window.REFDATA = {
         try {
           const obj = JSON.parse(reader.result);
           if (!obj || !Array.isArray(obj.pumps) || !obj.pumps.length) throw new Error('Not a valid pump-calc file (no pumps).');
+          obj.pumps.forEach(normalizePump);
           STATE = obj; if (STATE.active == null || STATE.active >= STATE.pumps.length) STATE.active = 0;
-          pumpSeq = STATE.pumps.length + 1;
-          save();
+          pumpSeq = STATE.pumps.length + 1; save();
           $('#projName').value = STATE.name || ''; $('#projClient').value = STATE.client || '';
           $('#projDoc').value = STATE.docNo || ''; $('#projRev').value = STATE.rev || '';
           switchTab('calc');

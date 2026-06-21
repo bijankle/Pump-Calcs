@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pump Curve Utility</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+  :root{
+    --bg:#ffffff;--surface:#F8F9FB;--panel:#ffffff;
+    --line:#E3E5E8;--line-soft:#F2F3F5;--line-strong:#C7CAD1;--mid:#B5BAC1;
+    --ink:#1E1F22;--text:#2E3035;--text-2:#4E5058;--text-3:#5C5E66;--dim:#80848E;--faint:#9A9DA5;
+    --accent:#C8102E;--accent-deep:#9C0C24;--accent-tint:#FBE3E6;--accent-ring:#F3C7CD;
+    --green:#3BA55C;--green-deep:#2C7A47;--green-tint:#E7F4EC;
+    --yellow:#E0A416;--yellow-deep:#9A6F0C;--yellow-tint:#FBF1D8;
+    --red:#D83C3E;--red-tint:#FCEDED;--red-border:#EDB5B6;
+    --font:'Aptos','Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,sans-serif;
+    --mono:'Aptos Mono','Cascadia Code',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;}html,body{height:100%;margin:0;}
+  body{font-family:var(--font);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden;}
+  ::selection{background:#D9DDFB;}
+  button{font-family:inherit;cursor:pointer;}
+  @keyframes calloutIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  main{flex:1;display:flex;min-height:0;}
+  aside{flex-shrink:0;background:var(--panel);display:flex;flex-direction:column;overflow-y:auto;}
+  aside.left{width:312px;border-right:1px solid var(--line);}
+  aside.right{width:316px;border-left:1px solid var(--line);}
+  .center{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--surface);}
+  .brand{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--line);}
+  .brand .logo{width:38px;height:38px;flex:none;border-radius:12px;background:var(--accent);color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;letter-spacing:-.5px;}
+  .brand .bt{display:flex;flex-direction:column;line-height:1.15;min-width:0;}
+  .brand b{font-size:15px;font-weight:700;color:var(--ink);}
+  .brand span{font-size:12px;color:var(--dim);}
+  .toolnav{padding:12px 10px;display:flex;flex-direction:column;gap:2px;border-bottom:1px solid var(--line);}
+  .navlabel{font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--faint);text-transform:uppercase;padding:6px 10px;}
+  .tab{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;border:none;border-radius:8px;padding:9px 11px;color:var(--text-2);font:inherit;font-size:15px;font-weight:500;position:relative;}
+  .tab .hash{color:var(--mid);font-weight:700;}
+  .tab:hover{background:var(--line-soft);color:var(--ink);}
+  .tab.active{background:var(--accent-tint);color:var(--accent-deep);font-weight:600;box-shadow:inset 3px 0 0 var(--accent);}
+  .tab.active .hash{color:#A9B0F2;}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 11px;}
+  .panel-head span{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);}
+  .help{width:26px;height:26px;flex:none;border-radius:8px;border:1px solid var(--line-strong);background:#fff;color:var(--text-3);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .help:hover{background:var(--line-soft);}
+  .pad{padding:0 16px 18px;}[hidden]{display:none !important;}
+  .btn{padding:9px 14px;border:1px solid var(--line-strong);border-radius:8px;background:#fff;color:var(--text-2);font:inherit;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:7px;transition:.12s;white-space:nowrap;}
+  .btn:hover{background:var(--line-soft);border-color:var(--mid);}
+  .btn:active{transform:translateY(1px);}
+  .btn svg{width:15px;height:15px;}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);}
+  .btn.ghost{border-color:transparent;background:transparent;color:var(--accent);}
+  .btn.ghost:hover{background:var(--accent-tint);}
+  .btn.mode.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .btn.green{background:var(--green);border-color:var(--green);color:#fff;}
+  .btn.green:hover{background:var(--green-deep);border-color:var(--green-deep);}
+  .btn.green.active{background:var(--green-deep);border-color:var(--green-deep);}
+  .btn.green.ghostg{background:transparent;border-color:transparent;color:var(--green-deep);}
+  .btn.green.ghostg:hover{background:var(--green-tint);}
+  .btn.wide{width:100%;justify-content:center;}
+  .btn:disabled{opacity:1;cursor:not-allowed;background:var(--surface);color:var(--mid);border-color:var(--line);}
+  .btn:disabled:hover{background:var(--surface);border-color:var(--line);}
+  .badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:4px 11px;border-radius:999px;}
+  .badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block;margin-right:7px;}
+  .badge.ok{background:var(--green-tint);color:var(--green-deep);}
+  .badge.warn{background:var(--yellow-tint);color:var(--yellow-deep);}
+  .refrow{display:flex;gap:10px;margin:13px 0;}
+  .ref{flex:1;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 11px;}
+  .ref .rl{font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;}
+  .ref .dot{width:8px;height:8px;border-radius:50%;background:var(--mid);}
+  .ref.set .dot{background:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);}
+  .ref .rv{font-family:var(--mono);font-size:13px;color:var(--text);}
+  .ref .rv.muted{color:var(--faint);}
+  .fieldrow{display:flex;gap:10px;}.field{flex:1;}
+  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);margin-bottom:7px;}
+  .field input,select{width:100%;height:40px;background:#fff;border:1px solid var(--line-strong);border-radius:8px;color:var(--text);font:inherit;font-size:14px;padding:0 12px;outline:none;}
+  select{cursor:pointer;}
+  .field input.num{font-family:var(--mono);text-align:right;}
+  .field input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);}
+  .card{border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 1px 2px rgba(30,31,34,.04);margin:14px 16px 0;}
+  .card .ch{display:flex;align-items:center;justify-content:space-between;padding:14px 15px 11px;}
+  .card .ch span{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);}
+  .card .cb{padding:0 15px 16px;}
+  .cgroup{border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:14px;background:#fff;}
+  .cglabel{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);margin-bottom:11px;}
+  .swatch{width:11px;height:11px;border-radius:3px;flex:none;}.swatch.rpm{background:var(--accent);}.swatch.eff{background:var(--green);}
+  .curvelist{margin-top:11px;display:flex;flex-direction:column;gap:6px;}
+  .crow{display:flex;align-items:center;gap:8px;padding:6px 7px;border:1px solid var(--line);border-radius:9px;background:#fff;}
+  .crow.sel{border-color:var(--accent);background:var(--accent-tint);}
+  .crow.sel.effrow{border-color:var(--green);background:var(--green-tint);}
+  .crow .cdot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .crow input{flex:1;min-width:0;background:transparent;border:1px solid transparent;border-radius:6px;padding:5px 6px;font-size:13px;color:var(--text);font-family:var(--mono);}
+  .crow input:hover{border-color:var(--line-strong);}
+  .crow input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);background:#fff;}
+  .crow .pts{font-size:11px;color:var(--faint);white-space:nowrap;}
+  .crow .delbtn{border:none;background:transparent;color:var(--mid);padding:4px;border-radius:6px;display:flex;}
+  .crow .delbtn:hover{color:var(--red);background:var(--red-tint);}
+  .fitout{margin-top:12px;background:#fff;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:12px 13px;}
+  .fitout.eff{border-left-color:var(--green);}
+  .fitout .formula{font-family:var(--mono);font-size:12.5px;color:var(--text);line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+  .fitout .fitmeta{font-size:11.5px;color:var(--dim);margin-top:8px;line-height:1.5;}
+  .fitout .btn{margin-top:11px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:13px;}
+  thead th{text-align:left;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--faint);font-weight:700;padding:6px 5px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  thead th.r{text-align:right;}
+  tbody td{padding:3px 4px;border-bottom:1px solid var(--line-soft);vertical-align:middle;}
+  tbody tr.sel{background:var(--accent-tint);}
+  .titlecell{display:flex;align-items:center;gap:7px;}
+  .rowdot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;}
+  td input{width:100%;background:transparent;border:1px solid transparent;border-radius:6px;padding:6px;font-size:13px;color:var(--text);font-family:inherit;}
+  td input:hover{border-color:var(--line-strong);}
+  td input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);background:#fff;}
+  td input.numcell{text-align:right;font-family:var(--mono);}
+  td.del{width:26px;}
+  .delbtn{border:none;background:transparent;color:var(--mid);padding:5px;border-radius:6px;}
+  .delbtn:hover{color:var(--red);background:var(--red-tint);}
+  .empty{font-size:13px;color:var(--faint);padding:14px 2px;}
+  .addrow{margin-top:11px;border-style:dashed;color:var(--text-3);}
+  .desc-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px 16px 8px;}
+  .desc-bar label{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);font-weight:700;}
+  .desc-bar input{font-size:18px;font-weight:600;color:var(--ink);background:transparent;border:none;border-bottom:1.5px solid var(--line-strong);padding:5px 4px;outline:none;text-align:center;min-width:90px;}
+  .desc-bar input:focus{border-bottom-color:var(--accent);}
+  .stagewrap{flex:1;min-width:0;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:6px 24px 24px;}
+  .graph-actions{position:absolute;top:12px;right:18px;display:flex;gap:8px;z-index:12;}
+  .graph-actions.hidden{display:none;}
+  #dropzone{width:min(820px,92%);aspect-ratio:1.414/1;border:1.5px dashed var(--line-strong);border-radius:14px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;color:var(--dim);transition:.15s;cursor:pointer;box-shadow:0 1px 2px rgba(30,31,34,.04);}
+  #dropzone.drag{border-color:var(--accent);background:var(--accent-tint);color:var(--text);box-shadow:0 0 0 4px var(--accent-ring);}
+  #dropzone .ico{width:48px;height:48px;color:var(--accent);}
+  #dropzone h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--ink);}
+  #dropzone p{margin:0;font-size:14px;max-width:440px;line-height:1.6;color:var(--text-3);}
+  #dropzone .hint{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);font-weight:700;}
+  #stage{position:absolute;top:0;left:0;display:none;line-height:0;transform-origin:0 0;will-change:transform;box-shadow:0 8px 30px rgba(30,31,34,.12);background:#fff;border-radius:6px;}
+  #curveImg{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none;border-radius:6px;}
+  #overlay{position:absolute;inset:0;width:100%;height:100%;touch-action:none;}
+  #overlay.cross{cursor:crosshair;}#overlay.grab{cursor:grab;}#overlay.grabbing{cursor:grabbing;}
+  .pt{cursor:grab;}.pt:active{cursor:grabbing;}.callout{cursor:move;}.cnode{cursor:grab;}
+  .calibrating .pt,.calibrating .callout,.calibrating .cnode{pointer-events:none;}
+  #tip{position:fixed;z-index:60;pointer-events:none;background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:8px 12px;border-radius:8px;box-shadow:0 4px 14px rgba(30,31,34,.2);display:none;white-space:nowrap;}
+  #tip b{color:#C5CBFF;}
+  #valEntry,#curveVal{position:fixed;z-index:62;display:none;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 12px;box-shadow:0 12px 34px rgba(30,31,34,.18);width:188px;}
+  #valEntry .vl,#curveVal .vl{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--accent-deep);font-weight:700;margin-bottom:6px;}
+  #curveVal.eff .vl{color:var(--green-deep);}
+  #valEntry input,#curveVal input{width:100%;background:#fff;border:1px solid var(--line-strong);border-radius:8px;color:var(--text);font-size:14px;padding:8px 9px;outline:none;font-family:var(--mono);}
+  #valEntry input:focus,#curveVal input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);}
+  #valEntry .vh,#curveVal .vh{font-size:11px;color:var(--dim);margin-top:7px;}
+  kbd{font-family:var(--mono);background:var(--line-soft);border:1px solid var(--line-strong);border-radius:4px;padding:0 5px;font-size:11px;color:var(--text-3);}
+  #popover{position:fixed;z-index:90;width:330px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 44px rgba(30,31,34,.18);padding:16px 18px;display:none;animation:calloutIn .14s ease;}
+  #popover h4{margin:0 0 10px;font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--accent-deep);}
+  #popover ol{margin:0 0 12px;padding-left:19px;font-size:13.5px;color:var(--text);line-height:1.65;}#popover ol li{margin-bottom:4px;}
+  #popover .notes{font-size:12.5px;color:var(--dim);line-height:1.6;border-top:1px solid var(--line);padding-top:10px;}
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(30,31,34,.24);opacity:0;pointer-events:none;transition:.2s;z-index:95;max-width:80vw;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}#toast.bad{background:var(--red);}
+  ::-webkit-scrollbar{width:11px;height:11px;}::-webkit-scrollbar-thumb{background:#D4D7DC;border-radius:7px;border:3px solid var(--panel);}
+  ::-webkit-scrollbar-track{background:transparent;}
+  .dbbar{padding:10px 12px;border-bottom:1px solid var(--line);}
+  .btn.dbload{width:100%;justify-content:center;background:var(--accent-tint);border-color:var(--accent-ring);color:var(--accent-deep);font-weight:700;}
+  .btn.dbload:hover{background:#E4E7FC;}
+  .btn.dbload svg{width:16px;height:16px;}
+  .titlestack{display:flex;flex-direction:column;align-items:center;gap:1px;}
+  .titlestack input{background:transparent;border:none;outline:none;text-align:center;color:var(--ink);padding:2px 4px;border-bottom:1.5px solid transparent;}
+  .titlestack input:hover{border-bottom-color:var(--line);}
+  .titlestack input:focus{border-bottom-color:var(--accent);}
+  #pumpMake{font-size:18px;font-weight:700;min-width:120px;}
+  #pumpModel{font-size:13px;font-weight:500;color:var(--text-3);min-width:120px;}
+  .modal{position:fixed;inset:0;z-index:90;display:none;align-items:flex-start;justify-content:center;background:rgba(30,31,34,.34);padding:60px 16px;}
+  .modalcard{width:560px;max-width:96vw;max-height:80vh;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 60px rgba(30,31,34,.28);overflow:hidden;}
+  .modalhead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);}
+  .modalhead b{font-size:15px;color:var(--ink);}
+  .iconbtn{border:none;background:transparent;font-size:22px;line-height:1;color:var(--dim);cursor:pointer;width:30px;height:30px;border-radius:8px;}
+  .iconbtn:hover{background:var(--surface);color:var(--ink);}
+  .modaltools{padding:12px 16px;border-bottom:1px solid var(--line);}
+  .modaltools input{width:100%;background:#fff;border:1px solid var(--line-strong);border-radius:8px;color:var(--text);font-size:14px;padding:9px 11px;outline:none;}
+  .modaltools input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);}
+  .dbtablewrap{overflow:auto;}
+  .dbtable{width:100%;border-collapse:collapse;font-size:13px;}
+  .dbtable thead th{position:sticky;top:0;background:var(--surface);text-align:left;font-weight:700;color:var(--text-3);font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:9px 14px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  .dbtable th.sortable{cursor:pointer;user-select:none;}
+  .dbtable th.sortable:hover{color:var(--ink);}
+  .dbtable th .arr{font-size:10px;color:var(--accent);}
+  .dbtable tbody td{padding:11px 14px;border-bottom:1px solid var(--line-soft);color:var(--text);vertical-align:middle;}
+  .dbtable tbody tr[data-id]{cursor:pointer;}
+  .dbtable tbody tr[data-id]:hover{background:var(--accent-tint);}
+  .dbtable .dbmake{font-weight:600;color:var(--ink);}
+  .dbtable .dbmodel{color:var(--text-2);}
+  .dbtable .dbdate{color:var(--dim);font-size:12px;white-space:nowrap;}
+  .dbtable .dbdel{text-align:right;width:44px;}
+  .dbtable .dbdel .delbtn{border:none;background:transparent;color:var(--faint);cursor:pointer;padding:4px;border-radius:6px;display:inline-flex;}
+  .dbtable .dbdel .delbtn:hover{color:var(--red);background:var(--red-tint);}
+  .dbempty{text-align:center;color:var(--dim);padding:34px 14px;}
+</style>
+</head>
+<body>
+<main>
+  <aside class="left">
+    <div class="brand"><div class="logo" style="background:#161616;border-radius:8px;padding:0 6px;"><svg width="30" height="26" viewBox="0 0 30 30" aria-label="Nexmin"><polygon points="0,0 7,0 7,30 0,30" fill="#fff"/><polygon points="5,0 12,0 24,30 17,30" fill="#fff"/><polygon points="23,0 30,0 30,30 23,30" fill="#C8102E"/></svg></div><div class="bt"><b>NEXMIN</b><span>Pump Curve</span></div></div>
+    <div class="dbbar"><button class="btn dbload" id="openBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Open pump file</button>
+      <input id="fileInput" type="file" accept=".json,application/json" style="display:none"></div>
+    <div class="tabpanel" id="tab-curve">
+      <div class="panel-head"><span>Curve fit</span><button class="help" data-help="curve">?</button></div>
+      <div class="pad">
+        <div class="fieldrow">
+          <div class="field"><label>Trace style</label><div class="seg" id="traceModeSeg" style="height:40px;display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden"><button data-trace="poly" class="on" style="border:none;background:var(--accent);color:#fff;font:inherit;font-size:12px;font-weight:600;padding:0 13px">Polyline</button><button data-trace="draw" style="border:none;border-left:1px solid var(--line-strong);background:#fff;color:var(--text-3);font:inherit;font-size:12px;font-weight:600;padding:0 13px">Freehand</button></div></div>
+        </div>
+        <div class="fieldrow">
+          <div class="field"><label>Excel cell for X, flow</label><input id="xref" type="text" value="X" spellcheck="false" style="font-family:var(--mono)"></div>
+          <div class="field"><label>Excel cell for Y, head</label><input id="yref" type="text" value="Y" spellcheck="false" style="font-family:var(--mono)"></div>
+        </div>
+        <div class="cgroup">
+          <div class="cglabel"><span class="swatch rpm"></span>Speed (RPM) curves</div>
+          <button class="btn mode wide" id="rpmTrace" disabled>Trace new RPM curve</button>
+          <div class="curvelist" id="rpmList"></div>
+          <div class="fitout" id="rpmOut" style="display:none"><div class="formula" id="rpmFormula"></div><div class="fitmeta" id="rpmMeta"></div><button class="btn ghost wide" id="rpmCopy">Copy RPM formula</button></div>
+        </div>
+        <div class="cgroup">
+          <div class="cglabel"><span class="swatch eff"></span>Efficiency (%) curves</div>
+          <button class="btn green wide" id="effTrace" disabled>Trace new efficiency curve</button>
+          <div class="curvelist" id="effList"></div>
+          <div class="fitout eff" id="effOut" style="display:none"><div class="formula" id="effFormula"></div><div class="fitmeta" id="effMeta"></div><button class="btn green ghostg wide" id="effCopy">Copy efficiency formula</button></div>
+        </div>
+        <div class="cgroup">
+          <div class="cglabel">Check points</div>
+          <button class="btn mode wide" id="probeBtn" disabled>Place check point</button>
+          <table id="probeTable" style="display:none"><thead><tr><th>Pt</th><th class="r">X</th><th class="r">Y</th><th class="r">RPM</th><th class="r">&eta;%</th><th></th></tr></thead><tbody id="probeBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="center">
+    <div class="desc-bar"><div class="titlestack">
+      <input id="pumpMake" type="text" placeholder="Pump make" spellcheck="false" autocomplete="off">
+      <input id="pumpModel" type="text" placeholder="Pump model" spellcheck="false" autocomplete="off">
+    </div></div>
+    <div class="stagewrap" id="stagewrap">
+      <div class="graph-actions hidden" id="graphActions">
+        <button class="btn" id="saveBtn" title="Save this pump to its .json file">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save
+        </button>
+        <button class="btn" id="saveAsBtn" title="Save this pump to a new .json file">Save As</button>
+        <button class="btn" id="copyBtn" title="Copy the current view to the clipboard as a flat image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy Image
+        </button>
+        <button class="btn primary" id="pdfBtn" title="Export an A3 PDF with editable annotation objects">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Export PDF
+        </button>
+      </div>
+      <div id="dropzone">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <h2>Drop a pump curve here</h2>
+        <p>Click to browse, drag an image in, or paste a screenshot with <b>Ctrl + V</b>.</p>
+        <span class="hint">PNG &middot; JPG &middot; clipboard image</span>
+      </div>
+      <div id="stage"><img id="curveImg" alt="pump curve"><svg id="overlay" preserveAspectRatio="none"></svg></div>
+    </div>
+  </div>
+  <aside class="right">
+    <div class="card">
+      <div class="ch"><span>Axis calibration</span><button class="help" data-help="calib">?</button></div>
+      <div class="cb">
+        <span class="badge warn" id="calBadge" style="margin-bottom:12px">Not set</span>
+        <button class="btn mode wide" id="calBtn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>Calibrate axes
+        </button>
+        <div class="refrow">
+          <div class="ref" id="refOrigin"><div class="rl">Origin <span class="dot"></span></div><div class="rv muted">0 , 0</div></div>
+          <div class="ref" id="refScale"><div class="rl">Scale pt <span class="dot"></span></div><div class="rv muted">not set</div></div>
+        </div>
+        <div class="fieldrow">
+          <div class="field"><label>Scale X</label><input class="num" id="sxVal" type="number" step="any" placeholder="—"></div>
+          <div class="field"><label>Scale Y</label><input class="num" id="syVal" type="number" step="any" placeholder="—"></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+<div id="tip"></div>
+<div id="valEntry"><div class="vl" id="valLabel">value</div><input id="valInput" type="number" step="any" autocomplete="off"><div class="vh">Type a number, press <kbd>Enter</kbd></div></div>
+<div id="popover"></div>
+<div id="toast"></div>
+<script>
+"use strict";
+(function(){
+  const FONT='Aptos,"Segoe UI",system-ui,sans-serif',MONO='Aptos Mono,Cascadia Code,ui-monospace,monospace',
+        CA='#C8102E',CAdeep='#9C0C24',CINK='#1E1F22',CTEXT='#2E3035',CLINE='#E3E5E8',CGREEN='#3BA55C',CGREENd='#2C7A47',CYEL='#E0A416',CYELd='#9A6F0C';
+  const state={imgSrc:null,imgEl:null,imgW:0,imgH:0,make:'',model:'',pumpId:null,pumpCreated:null,
+    calib:{origin:{px:null,py:null},scale:{px:null,py:null,xval:null,yval:null}},
+    points:[],selectedId:null,mode:'idle',calStep:null,tab:'curve',
+    family:'rpm',curves:{rpm:[],eff:[]},tracingId:null,selectedCurveId:null,selectedNode:null,
+    traceMode:'poly',rpmModel:null,effModel:null,probes:[],selectedProbeId:null};
+  let undoStack=[],redoStack=[],calBackup=null,calHistLen=0,lastCursor={x:0,y:0,inside:false};
+  const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+  const dropzone=$('#dropzone'),stage=$('#stage'),img=$('#curveImg'),overlay=$('#overlay'),stagewrap=$('#stagewrap'),
+        ptBody=$('#ptBody'),calBadge=$('#calBadge'),calBtn=$('#calBtn'),dutyBtn=$('#dutyBtn'),
+        tip=$('#tip'),valEntry=$('#valEntry'),valInput=$('#valInput'),valLabel=$('#valLabel'),
+        popover=$('#popover'),toastEl=$('#toast'),graphActions=$('#graphActions');
+  const measCtx=document.createElement('canvas').getContext('2d');
+  function measure(txt,font){measCtx.font=font;return measCtx.measureText(txt).width;}
+  const uid=()=>'p'+Math.random().toString(36).slice(2,9);
+  function letterFor(i){let s='',n=i+1;while(n>0){n--;s=String.fromCharCode(65+(n%26))+s;n=Math.floor(n/26);}return s;}
+  function disp(v){if(v==null||!isFinite(v))return '';if(Number.isInteger(v))return String(v);return String(parseFloat(Number(v).toPrecision(12)));}
+  function markerR(){return Math.max(state.imgW,state.imgH)*0.013;}
+  function escXml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+  let toastTimer;function toast(m,bad){toastEl.textContent=m;toastEl.className='show'+(bad?' bad':'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.className='',2800);}
+  async function copyText(t){if(!t){toast('Nothing to copy yet.',true);return;}try{await navigator.clipboard.writeText(t);toast('Copied to clipboard.');}catch(e){toast('Could not copy.',true);}}
+
+  const view={base:1,zoom:1,tx:0,ty:0,baseW:0,baseH:0};let panDrag=null;
+  function fitView(){if(!state.imgEl)return;const aw=stagewrap.clientWidth,ah=stagewrap.clientHeight,fill=0.94;let b=Math.min(aw/state.imgW,ah/state.imgH)*fill;if(!isFinite(b)||b<=0)b=1;view.base=b;view.baseW=state.imgW*b;view.baseH=state.imgH*b;view.zoom=1;view.tx=(aw-view.baseW)/2;view.ty=(ah-view.baseH)/2;stage.style.width=view.baseW+'px';applyTransform();}
+  function applyTransform(){stage.style.transform='translate('+view.tx+'px,'+view.ty+'px) scale('+view.zoom+')';}
+  function zoomAt(px,py,factor){const wx=(px-view.tx)/view.zoom,wy=(py-view.ty)/view.zoom;view.zoom=Math.max(0.25,Math.min(view.zoom*factor,16));view.tx=px-wx*view.zoom;view.ty=py-wy*view.zoom;applyTransform();}
+  function onPanMove(e){if(!panDrag)return;view.tx=panDrag.tx+(e.clientX-panDrag.sx);view.ty=panDrag.ty+(e.clientY-panDrag.sy);applyTransform();}
+  function onPanUp(){overlay.removeEventListener('pointermove',onPanMove);overlay.removeEventListener('pointerup',onPanUp);panDrag=null;overlay.classList.remove('grabbing');}
+  function startPan(e){e.preventDefault();panDrag={sx:e.clientX,sy:e.clientY,tx:view.tx,ty:view.ty};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.classList.add('grabbing');overlay.addEventListener('pointermove',onPanMove);overlay.addEventListener('pointerup',onPanUp);}
+
+  function calloutBox(p,i){const r=markerR(),fsT=r*0.92,fsC=r*0.82,pad=r*0.6,gap=r*0.1,lines=calloutLines(p,i);
+    const wT=measure(lines[0],'700 '+fsT+'px '+FONT),wC=measure(lines[1],'500 '+fsC+'px '+MONO),lhT=fsT*1.14,lhC=fsC*1.14;
+    return {w:Math.max(wT,wC)+pad*2,h:pad*2+lhT+gap+lhC,fsT,fsC,pad,gap,lhT,lhC,lines};}
+  function boxEdgePoint(mx,my,cx,cy,w,h){const dx=mx-cx,dy=my-cy;if(dx===0&&dy===0)return {x:cx,y:cy};const sx=dx!==0?(w/2)/Math.abs(dx):Infinity,sy=dy!==0?(h/2)/Math.abs(dy):Infinity;let s=Math.min(sx,sy);if(s>1)s=1;return {x:cx+dx*s,y:cy+dy*s};}
+
+  function snapshot(){return JSON.stringify({c:state.calib,p:state.points,s:state.selectedId,pr:state.probes,cu:state.curves,fam:state.family,tb:state.tab});}
+  function applyState(o){state.calib=o.c;state.points=o.p;state.selectedId=o.s;state.probes=o.pr||[];state.curves=o.cu||{rpm:[],eff:[]};state.family=o.fam||'rpm';if(o.tb)setTab(o.tb,true);if(state.mode!=='idle')exitMode(true);state.tracingId=null;state.selectedCurveId=null;state.selectedNode=null;state.selectedProbeId=null;recomputeModels();syncInputs();renderAll();}
+  function pushHistory(){undoStack.push(snapshot());if(undoStack.length>200)undoStack.shift();redoStack=[];}
+  function undo(){if(!undoStack.length)return;redoStack.push(snapshot());applyState(JSON.parse(undoStack.pop()));}
+  function redo(){if(!redoStack.length)return;undoStack.push(snapshot());applyState(JSON.parse(redoStack.pop()));}
+
+  function isCalibrated(){const o=state.calib.origin,s=state.calib.scale;return o.px!=null&&o.py!=null&&s.px!=null&&s.py!=null&&s.xval!=null&&s.yval!=null&&s.px!==o.px&&s.py!==o.py&&s.xval!==0&&s.yval!==0;}
+  function dataToImg(x,y){const o=state.calib.origin,s=state.calib.scale;return {px:o.px+x*(s.px-o.px)/s.xval,py:o.py+y*(s.py-o.py)/s.yval};}
+  function imgToData(px,py){const o=state.calib.origin,s=state.calib.scale;return {x:(px-o.px)*s.xval/(s.px-o.px),y:(py-o.py)*s.yval/(s.py-o.py)};}
+  function clientToImg(cx,cy){const r=overlay.getBoundingClientRect();return {px:(cx-r.left)/r.width*state.imgW,py:(cy-r.top)/r.height*state.imgH};}
+  function imgToClient(px,py){const r=overlay.getBoundingClientRect();return {x:r.left+px/state.imgW*r.width,y:r.top+py/state.imgH*r.height};}
+
+  function loadImage(src){const im=new Image();im.onload=()=>{pushHistory();state.imgSrc=src;state.imgEl=im;state.imgW=im.naturalWidth;state.imgH=im.naturalHeight;
+    state.pumpId=null;state.pumpCreated=null;state.make='';state.model='';if(typeof fileHandle!=='undefined')fileHandle=null;
+    state.calib={origin:{px:null,py:null},scale:{px:null,py:null,xval:null,yval:null}};exitMode(true);
+    img.src=src;overlay.setAttribute('viewBox','0 0 '+state.imgW+' '+state.imgH);dropzone.style.display='none';stage.style.display='block';graphActions.classList.remove('hidden');fitView();
+    syncInputs();renderAll();toast('Curve loaded. Calibrate the axes on the right to begin.');};im.onerror=()=>toast('Could not read that image.',true);im.src=src;}
+  function handleFile(f){if(!f||!f.type.startsWith('image/')){toast('That is not an image file.',true);return;}const r=new FileReader();r.onload=e=>loadImage(e.target.result);r.readAsDataURL(f);}
+
+  // ---- JSON file save / open ----
+  const FILE_FORMAT='pump-curve-utility';let fileHandle=null;
+  const hasFS=(typeof window.showSaveFilePicker==='function'&&typeof window.showOpenFilePicker==='function');
+  function pumpData(){return {format:FILE_FORMAT,version:1,make:state.make||'',model:state.model||'',
+    image:state.imgSrc,imgW:state.imgW,imgH:state.imgH,calib:state.calib,
+    curves:state.curves,probes:state.probes,xref:($('#xref').value||'X'),yref:($('#yref').value||'Y'),
+    savedAt:new Date().toISOString()};}
+  function jsonBlob(){return new Blob([JSON.stringify(pumpData(),null,2)],{type:'application/json'});}
+  function readyToSave(){if(!state.imgEl){toast('Load a pump curve image first.',true);return false;}
+    if(!(state.make||'').trim()&&!(state.model||'').trim()){toast('Enter a pump make and model first.',true);$('#pumpMake').focus();return false;}return true;}
+  async function writeHandle(h){const w=await h.createWritable();await w.write(jsonBlob());await w.close();}
+  function downloadJSON(){const url=URL.createObjectURL(jsonBlob()),a=document.createElement('a');a.href=url;a.download=safeFilename()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('Saved a .json file to your downloads.');}
+  async function doSave(){if(!readyToSave())return;
+    if(hasFS&&fileHandle){try{await writeHandle(fileHandle);toast('Saved '+(fileHandle.name||'file')+'.');return;}catch(e){}}
+    return doSaveAs();}
+  async function doSaveAs(){if(!readyToSave())return;
+    if(hasFS){try{const h=await window.showSaveFilePicker({suggestedName:safeFilename()+'.json',types:[{description:'Pump curve file',accept:{'application/json':['.json']}}]});await writeHandle(h);fileHandle=h;toast('Saved as '+(h.name||'file')+'.');}catch(e){if(e&&e.name!=='AbortError')toast('Could not save the file.',true);}}
+    else downloadJSON();}
+  async function doOpen(){
+    if(hasFS){try{const picked=await window.showOpenFilePicker({types:[{description:'Pump curve file',accept:{'application/json':['.json']}}]});const h=picked[0],f=await h.getFile(),o=JSON.parse(await f.text());fileHandle=h;openParsed(o);}catch(e){if(e&&e.name!=='AbortError')toast('Could not open that file.',true);}}
+    else $('#fileInput').click();}
+  function openParsed(o){if(!o||typeof o!=='object'){toast('That file is not a pump curve file.',true);return;}
+    if(o.format!==FILE_FORMAT&&!confirm('This does not look like a pump curve file. Open it anyway?'))return;
+    applyPumpData(o);}
+  function applyPumpData(o){
+    state.make=o.make||'';state.model=o.model||'';
+    state.curves=o.curves||{rpm:[],eff:[]};state.probes=o.probes||[];
+    state.points=[];state.selectedId=null;state.selectedCurveId=null;state.selectedNode=null;state.selectedProbeId=null;
+    $('#xref').value=o.xref||'X';$('#yref').value=o.yref||'Y';
+    if(!o.image){toast('That file has no curve image.',true);syncInputs();return;}
+    const im=new Image();
+    im.onload=()=>{state.imgSrc=o.image;state.imgEl=im;state.imgW=o.imgW||im.naturalWidth;state.imgH=o.imgH||im.naturalHeight;
+      state.calib=o.calib||{origin:{px:null,py:null},scale:{px:null,py:null,xval:null,yval:null}};
+      exitMode(true);img.src=o.image;overlay.setAttribute('viewBox','0 0 '+state.imgW+' '+state.imgH);
+      dropzone.style.display='none';stage.style.display='block';graphActions.classList.remove('hidden');fitView();
+      undoStack=[];redoStack=[];setTab('curve',true);recomputeModels();syncInputs();renderAll();
+      toast('Opened '+([state.make,state.model].filter(Boolean).join(' ')||'pump')+'.');};
+    im.onerror=()=>toast('Could not load the image in that file.',true);
+    im.src=o.image;}
+
+  function enterCalibrate(){if(!state.imgEl){toast('Load a curve image first.',true);return;}exitMode(true);calBackup=JSON.parse(JSON.stringify(state.calib));calHistLen=undoStack.length;pushHistory();
+    state.calib={origin:{px:null,py:null},scale:{px:null,py:null,xval:null,yval:null}};state.mode='calibrate';state.calStep='origin';state.selectedId=null;renderAll();toast('Calibration on. Click the chart origin, the 0, 0 point.');}
+  function enterDuty(){if(!isCalibrated()){toast('Calibrate the axes first.',true);return;}if(state.mode==='duty'){exitMode();return;}exitMode(true);state.mode='duty';renderAll();toast('Click the curve to place duty points.');}
+  function exitMode(silent){state.mode='idle';state.calStep=null;state.tracingId=null;hideValEntry();hideTip();if(!silent)renderAll();}
+  function cancelCalibrate(){state.calib=calBackup;undoStack.length=calHistLen;exitMode();renderAll();toast('Calibration cancelled.');}
+  function solveLin(A,b){const n=A.length,M=A.map((r,i)=>r.concat(b[i]));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)return null;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let j=c;j<=n;j++)M[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];if(f)for(let j=c;j<=n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r[n]);}
+  function lsq(basis,xs,ys){const k=basis.length,n=xs.length,AtA=Array.from({length:k},()=>new Array(k).fill(0)),Aty=new Array(k).fill(0);for(let i=0;i<n;i++){const phi=basis.map(f=>f(xs[i]));for(let a=0;a<k;a++){Aty[a]+=phi[a]*ys[i];for(let b2=0;b2<k;b2++)AtA[a][b2]+=phi[a]*phi[b2];}}return solveLin(AtA,Aty);}
+  function r2of(xs,ys,pred){const yb=ys.reduce((s,v)=>s+v,0)/ys.length;let sr=0,st=0;for(let i=0;i<xs.length;i++){const e=ys[i]-pred(xs[i]);sr+=e*e;const d=ys[i]-yb;st+=d*d;}return st===0?1:1-sr/st;}
+  function fnum(v){if(!isFinite(v))return '0';return String(parseFloat(Number(v).toPrecision(4)));}
+  function fsigned(v){return (v<0?'\u2212':'')+fnum(Math.abs(v));}
+  function term(v,suf){return (v>=0?' + ':' \u2212 ')+fnum(Math.abs(v))+suf;}
+  function pct(r){return (r*100).toFixed(1)+'%';}
+  function polyModel(deg,xs,ys,name){if(xs.length<deg+1)return null;const basis=[];for(let d=0;d<=deg;d++){const dd=d;basis.push(x=>Math.pow(x,dd));}
+    const c=lsq(basis,xs,ys);if(!c||c.some(v=>!isFinite(v)))return null;const predict=x=>c.reduce((s,ci,d)=>s+ci*Math.pow(x,d),0);
+    const pw=['','\u00B7X','\u00B7X\u00B2','\u00B7X\u00B3','\u00B7X\u2074'];let f='Y = '+fnum(c[0]);for(let d=1;d<=deg;d++)f+=term(c[d],pw[d]);return {name:name||('Order '+deg),predict,formula:f,r2:r2of(xs,ys,predict),params:deg+1,coef:c};}
+  function powerModel(xs,ys){if(xs.some(x=>x<=0)||ys.some(y=>y<=0))return null;const c=lsq([()=>1,x=>x],xs.map(Math.log),ys.map(Math.log));if(!c)return null;const a=Math.exp(c[0]),b=c[1],predict=x=>a*Math.pow(x,b);return {name:'Power',predict,formula:'Y = '+fnum(a)+'\u00B7X^('+fsigned(b)+')',r2:r2of(xs,ys,predict),params:2};}
+  function logModel(xs,ys){if(xs.some(x=>x<=0))return null;const c=lsq([()=>1,x=>Math.log(x)],xs,ys);if(!c)return null;const predict=x=>c[0]+c[1]*Math.log(x);return {name:'Logarithmic',predict,formula:'Y = '+fnum(c[0])+term(c[1],'\u00B7ln(X)'),r2:r2of(xs,ys,predict),params:2};}
+  function expModel(xs,ys){if(ys.some(y=>y<=0))return null;const c=lsq([()=>1,x=>x],xs,ys.map(Math.log));if(!c)return null;const a=Math.exp(c[0]),b=c[1],predict=x=>a*Math.exp(b*x);return {name:'Exponential',predict,formula:'Y = '+fnum(a)+'\u00B7e^('+fsigned(b)+'\u00B7X)',r2:r2of(xs,ys,predict),params:2};}
+  function autoFitYX(xs,ys){const cands=[polyModel(2,xs,ys),polyModel(3,xs,ys),polyModel(4,xs,ys),powerModel(xs,ys),logModel(xs,ys),expModel(xs,ys),polyModel(1,xs,ys,'Linear')];const n=xs.length;let best=null,score=-Infinity;cands.forEach(m=>{if(!m||!isFinite(m.r2))return;const p=m.params,adj=(n-p-1>0)?1-(1-m.r2)*(n-1)/(n-p-1):m.r2;if(adj>score){score=adj;best=m;}});return best;}
+  function fitSeries(iv,dv){const n=iv.length;if(n<2)return null;let best=null;for(const deg of [1,2,3]){if(n<deg+1)break;const basis=[];for(let d=0;d<=deg;d++){const dd=d;basis.push(x=>Math.pow(x,dd));}const c=lsq(basis,iv,dv);if(!c||c.some(v=>!isFinite(v)))continue;const pr=x=>c.reduce((s,ci,d)=>s+ci*Math.pow(x,d),0);const r2=r2of(iv,dv,pr);if(!best||r2>best.r2+1e-9)best={pr,coef:c,r2,deg};}if(!best)return null;best.imin=Math.min.apply(null,iv);best.imax=Math.max.apply(null,iv);return best;}
+  function fitCurve(c,fam){const tr=c.trace;if(tr.length<2){c.fit=null;return;}const iv=fam==='rpm'?tr.map(p=>p.x):tr.map(p=>p.y),dv=fam==='rpm'?tr.map(p=>p.y):tr.map(p=>p.x);c.fit=fitSeries(iv,dv);}
+  function excelNum(c){return String(parseFloat(Number(c).toPrecision(10))).replace('e','E');}
+  function supr(n){return n===2?'\u00B2':n===3?'\u00B3':n===4?'\u2074':(n>1?'^'+n:'');}
+  function termPretty(i,j){let s='';if(i>0)s+='X'+supr(i);if(j>0)s+=(s?'\u00B7':'')+'Y'+supr(j);return s;}
+  function fitSurface(pts,terms){const basis=terms.map(t=>(p=>Math.pow(p.x,t.i)*Math.pow(p.y,t.j)));const coef=lsq(basis,pts,pts.map(p=>p.v));if(!coef||coef.some(v=>!isFinite(v)))return null;const predict=(x,y)=>{let s=0;for(let k=0;k<terms.length;k++)s+=coef[k]*Math.pow(x,terms[k].i)*Math.pow(y,terms[k].j);return s;};const vs=pts.map(p=>p.v),mean=vs.reduce((a,b)=>a+b,0)/vs.length;let ss=0,st=0;pts.forEach(p=>{const e=p.v-predict(p.x,p.y);ss+=e*e;const d=p.v-mean;st+=d*d;});return {coef,terms,predict,r2:st===0?1:1-ss/st};}
+  function bestSurface(fam,pts,nC){const dense=3,spread=Math.max(1,Math.min(3,nC-1)),xCap=fam==='rpm'?dense:spread,yCap=fam==='rpm'?spread:dense;let best=null,bestAdj=-Infinity;for(let total=1;total<=xCap+yCap&&total<=4;total++){const terms=[];for(let i=0;i<=xCap;i++)for(let j=0;j<=yCap;j++){if(i+j<=total)terms.push({i,j});}if(terms.length<2||pts.length<terms.length+1)continue;const s=fitSurface(pts,terms);if(!s)continue;const n=pts.length,p=terms.length,adj=(n-p-1>0)?1-(1-s.r2)*(n-1)/(n-p-1):s.r2;if(adj>bestAdj+1e-9){bestAdj=adj;best=s;}}return best;}
+  function surfFormula(fam,s){const L=fam==='rpm'?'RPM':'Efficiency';let out=L+' = ';s.terms.forEach((t,k)=>{const c=s.coef[k],lab=termPretty(t.i,t.j);if(k===0)out+=fnum(c)+(lab?'\u00B7'+lab:'');else out+=(c>=0?' + ':' \u2212 ')+fnum(Math.abs(c))+(lab?'\u00B7'+lab:'');});return out;}
+  function dolFit(xs,ys){let best=null,bestAdj=-Infinity;for(let deg=1;deg<=4;deg++){const m=polyModel(deg,xs,ys);if(!m)continue;const n=xs.length,p=deg+1,adj=(n-p-1>0)?1-(1-m.r2)*(n-1)/(n-p-1):m.r2;if(adj>bestAdj+1e-9){bestAdj=adj;best=m;}}return best;}
+  function buildFamilyModel(fam){const arr=state.curves[fam].filter(c=>c.trace.length>=2);arr.forEach(c=>fitCurve(c,fam));const valued=arr.filter(c=>c.value!=null&&isFinite(c.value)&&c.trace.length>=2);const nC=new Set(valued.map(c=>c.value)).size;
+    if(fam==='rpm'&&nC<2){const pts=[];arr.forEach(c=>c.trace.forEach(p=>pts.push(p)));if(pts.length<3)return {method:'none'};const m=dolFit(pts.map(p=>p.x),pts.map(p=>p.y));if(!m)return {method:'none'};return {method:'dol',r2:m.r2,formula:m.formula,predict:(x,y)=>m.predict(x),ex:{kind:'dol',coef:m.coef}};}
+    if(nC<2)return {method:'need'};
+    const pts=[];valued.forEach(c=>c.trace.forEach(p=>pts.push({x:p.x,y:p.y,v:c.value})));
+    const s=bestSurface(fam,pts,nC);if(!s)return {method:'need'};
+    return {method:'surface',r2:s.r2,formula:surfFormula(fam,s),predict:s.predict,ex:{kind:'surface',terms:s.terms,coef:s.coef}};}
+  function modelExcel(model){if(!model||!model.ex)return '';const xr=(($('#xref').value)||'X').trim()||'X',yr=(($('#yref').value)||'Y').trim()||'Y';
+    if(model.ex.kind==='dol'){const c=model.ex.coef;let out='=';for(let d=0;d<c.length;d++){let lab='';if(d>0)lab='*'+xr+(d>1?'^'+d:'');const num=excelNum(Math.abs(c[d]));out+=(d===0?((c[d]<0?'-':'')+num):((c[d]>=0?'+':'-')+num))+lab;}return out;}
+    const terms=model.ex.terms,c=model.ex.coef;let out='=';terms.forEach((t,k)=>{let lab='';if(t.i>0)lab+='*'+xr+(t.i>1?'^'+t.i:'');if(t.j>0)lab+='*'+yr+(t.j>1?'^'+t.j:'');const num=excelNum(Math.abs(c[k]));out+=(k===0?((c[k]<0?'-':'')+num):((c[k]>=0?'+':'-')+num))+lab;});return out;}
+  function recomputeModels(){state.rpmModel=buildFamilyModel('rpm');state.effModel=buildFamilyModel('eff');}
+  function curvePolyline(c,fam){if(!c.fit){return c.trace.map(p=>dataToImg(p.x,p.y));}const f=c.fit,N=64,out=[];for(let i=0;i<=N;i++){const t=f.imin+(f.imax-f.imin)*i/N;let X,Y;if(fam==='rpm'){X=t;Y=f.pr(t);}else{Y=t;X=f.pr(t);}out.push(dataToImg(X,Y));}return out;}
+  function curveLabelText(c,fam){return c.value!=null?(fam==='rpm'?String(c.value):c.value+'%'):'DOL';}
+  function labelPoint(c,fam){if(!c.fit){if(!c.trace.length)return null;const p=c.trace[c.trace.length-1];return dataToImg(p.x,p.y);}const f=c.fit;let X,Y;if(fam==='rpm'){X=f.imax;Y=f.pr(f.imax);}else{Y=f.imax;X=f.pr(f.imax);}return dataToImg(X,Y);}
+
+  function startNewCurve(fam){if(!isCalibrated()){toast('Calibrate the axes first.',true);return;}pushHistory();state.family=fam;const id=uid();state.curves[fam].push({id,value:null,trace:[]});state.tracingId=id;state.selectedCurveId=id;state.selectedId=null;state.selectedNode=null;state.mode='trace';recomputeModels();renderAll();setTimeout(()=>{const el=document.querySelector('#'+fam+'List .crow[data-id="'+id+'"] input');if(el)el.focus();},20);toast(state.traceMode==='poly'?'Click nodes along the curve. Enter its value in the table on the left.':'Drag along the curve. Enter its value in the table on the left.');}
+  function activeCurve(){return state.curves[state.family].find(c=>c.id===state.tracingId)||null;}
+  let traceStroke=null;
+  function onTracePointerDown(e){const c=activeCurve();if(!c)return;e.preventDefault();
+    if(state.traceMode==='poly'){pushHistory();const o=clientToImg(e.clientX,e.clientY),d=imgToData(o.px,o.py);c.trace.push({x:d.x,y:d.y});recomputeModels();renderOverlay();updateCurvePanels();return;}
+    pushHistory();traceStroke={last:null};try{overlay.setPointerCapture(e.pointerId);}catch(_){}
+    addTracePoint(e.clientX,e.clientY,true);overlay.addEventListener('pointermove',onTraceMove);overlay.addEventListener('pointerup',onTraceUp);}
+  function addTracePoint(cx,cy,force){const c=activeCurve();if(!c)return;const o=clientToImg(cx,cy),minD=Math.max(state.imgW,state.imgH)*0.004;if(!force&&traceStroke&&traceStroke.last){if(Math.hypot(o.px-traceStroke.last.px,o.py-traceStroke.last.py)<minD)return;}const d=imgToData(o.px,o.py);c.trace.push({x:d.x,y:d.y});if(traceStroke)traceStroke.last={px:o.px,py:o.py};recomputeModels();renderOverlay();}
+  function onTraceMove(e){if(traceStroke)addTracePoint(e.clientX,e.clientY,false);}
+  function onTraceUp(){overlay.removeEventListener('pointermove',onTraceMove);overlay.removeEventListener('pointerup',onTraceUp);traceStroke=null;updateCurvePanels();}
+  let cnodeDrag=null;
+  function onCNodeDown(e){if(state.mode==='calibrate')return;e.stopPropagation();const fam=e.currentTarget.getAttribute('data-fam'),cid=e.currentTarget.getAttribute('data-cid'),i=+e.currentTarget.getAttribute('data-i');state.family=fam;state.selectedCurveId=cid;state.selectedId=null;state.selectedNode={fam,cid,i};renderAll();cnodeDrag={fam,cid,i,hist:false};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.addEventListener('pointermove',onCNodeMove);overlay.addEventListener('pointerup',onCNodeUp);}
+  function onCNodeMove(e){if(!cnodeDrag)return;if(!cnodeDrag.hist){pushHistory();cnodeDrag.hist=true;}const c=state.curves[cnodeDrag.fam].find(x=>x.id===cnodeDrag.cid);if(!c)return;const o=clientToImg(e.clientX,e.clientY),d=imgToData(o.px,o.py),n=c.trace[cnodeDrag.i];if(n){n.x=d.x;n.y=d.y;recomputeModels();renderOverlay();updateCurvePanels();}}
+  function onCNodeUp(){overlay.removeEventListener('pointermove',onCNodeMove);overlay.removeEventListener('pointerup',onCNodeUp);cnodeDrag=null;}
+  function calloutLines(p,i){const t=(p.title&&p.title.trim())?p.title.trim():letterFor(i);return [t,'('+disp(p.x)+', '+disp(p.y)+')'];}
+  function overlapArea(a,b){const x=Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)),y=Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y));return x*y;}
+  function outOfBounds(box){let p=0;if(box.x<0)p+=-box.x*box.h;if(box.y<0)p+=-box.y*box.w;if(box.x+box.w>state.imgW)p+=(box.x+box.w-state.imgW)*box.h;if(box.y+box.h>state.imgH)p+=(box.y+box.h-state.imgH)*box.w;return p;}
+  function layoutCallouts(){if(!isCalibrated())return;const r=markerR();const markerBoxes=state.points.map(p=>{const m=dataToImg(p.x,p.y);return {x:m.px-r,y:m.py-r,w:2*r,h:2*r};});const placed=[],dirs=[[1,-1],[1,0],[1,1],[0,-1],[0,1],[-1,-1],[-1,0],[-1,1]];
+    state.points.forEach((p,i)=>{const m=dataToImg(p.x,p.y),cb=calloutBox(p,i);if(p.callout&&p.callout.manual){const cx=m.px+p.callout.dx,cy=m.py+p.callout.dy;placed.push({x:cx-cb.w/2,y:cy-cb.h/2,w:cb.w,h:cb.h});return;}
+      const dist=r*1.7+Math.max(cb.w,cb.h)*0.5;let best=null,bestScore=Infinity;dirs.forEach(d=>{const len=Math.hypot(d[0],d[1])||1,cx=m.px+d[0]/len*dist,cy=m.py+d[1]/len*dist,box={x:cx-cb.w/2,y:cy-cb.h/2,w:cb.w,h:cb.h};let sc=0;placed.forEach(b=>sc+=overlapArea(box,b)*3);markerBoxes.forEach(b=>sc+=overlapArea(box,b)*2);sc+=outOfBounds(box);if(sc<bestScore){bestScore=sc;best={cx,cy,box};}});p.callout={dx:best.cx-m.px,dy:best.cy-m.py,manual:false};placed.push(best.box);});}
+
+  function layoutProbes(){if(!isCalibrated())return;const r=markerR();const markerBoxes=state.probes.map(p=>{const m=dataToImg(p.x,p.y);return {x:m.px-r,y:m.py-r,w:2*r,h:2*r};});const placed=[],dirs=[[1,-1],[1,0],[1,1],[0,-1],[0,1],[-1,-1],[-1,0],[-1,1]];
+    state.probes.forEach((p,i)=>{const m=dataToImg(p.x,p.y),cb=calloutBoxLines(probeLines(p,i));if(p.callout&&p.callout.manual){const cx=m.px+p.callout.dx,cy=m.py+p.callout.dy;placed.push({x:cx-cb.w/2,y:cy-cb.h/2,w:cb.w,h:cb.h});return;}
+      const dist=r*1.9+Math.max(cb.w,cb.h)*0.5;let best=null,bestScore=Infinity;dirs.forEach(d=>{const len=Math.hypot(d[0],d[1])||1,cx=m.px+d[0]/len*dist,cy=m.py+d[1]/len*dist,box={x:cx-cb.w/2,y:cy-cb.h/2,w:cb.w,h:cb.h};let sc=0;placed.forEach(b=>sc+=overlapArea(box,b)*3);markerBoxes.forEach(b=>sc+=overlapArea(box,b)*2);sc+=outOfBounds(box);if(sc<bestScore){bestScore=sc;best={cx,cy,box};}});p.callout={dx:best.cx-m.px,dy:best.cy-m.py,manual:false};placed.push(best.box);});}
+
+  function renderOverlay(){
+    if(!state.imgEl){overlay.innerHTML='';return;}
+    const r=markerR(),o=state.calib.origin,s=state.calib.scale,iw=state.imgW,ih=state.imgH;
+    let svg='<rect id="bg" x="0" y="0" width="'+iw+'" height="'+ih+'" fill="transparent" pointer-events="all"/>';
+    svg+='<g id="cross" pointer-events="none" style="display:none"><line id="cv" x1="0" y1="0" x2="0" y2="'+ih+'" stroke="'+CA+'" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0.85"/><line id="ch" x1="0" y1="0" x2="'+iw+'" y2="0" stroke="'+CA+'" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0.85"/></g>';
+    const calMark=(px,py,label,pulse)=>{if(px==null||py==null)return '';const dr=r*0.62,tk=r*1.3,col=CYEL;let g='<g pointer-events="none">';
+      if(pulse)g+='<circle cx="'+px+'" cy="'+py+'" r="'+dr+'" fill="'+col+'" opacity="0.45"><animate attributeName="r" values="'+dr+';'+(dr*2.9)+'" dur="1.3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.5;0" dur="1.3s" repeatCount="indefinite"/></circle>';
+      g+='<line x1="'+(px-tk)+'" y1="'+py+'" x2="'+(px+tk)+'" y2="'+py+'" stroke="'+col+'" stroke-width="1.4" vector-effect="non-scaling-stroke" opacity="0.7"/><line x1="'+px+'" y1="'+(py-tk)+'" x2="'+px+'" y2="'+(py+tk)+'" stroke="'+col+'" stroke-width="1.4" vector-effect="non-scaling-stroke" opacity="0.7"/><circle cx="'+px+'" cy="'+py+'" r="'+dr+'" fill="'+col+'" stroke="#fff" stroke-width="'+(dr*0.34)+'"/><text x="'+(px+tk*0.7)+'" y="'+(py-tk*0.55)+'" font-size="'+(r*0.95)+'" fill="'+CYELd+'" font-family="'+MONO+'" font-weight="700" paint-order="stroke" stroke="#ffffff" stroke-width="'+(r*0.3)+'">'+label+'</text></g>';return g;};
+    if(state.mode==='calibrate'){svg+=calMark(o.px,o.py,'0,0',state.calStep==='scale');svg+=calMark(s.px,s.py,(s.xval!=null&&s.yval!=null)?(disp(s.xval)+', '+disp(s.yval)):'P2',state.calStep==='enterX'||state.calStep==='enterY');}
+
+    if(state.tab==='curve'&&isCalibrated()){
+      ['rpm','eff'].forEach(fam=>{const col=fam==='rpm'?CA:CGREEN;
+        state.curves[fam].forEach(c=>{const isSel=c.id===state.selectedCurveId,isTr=c.id===state.tracingId,pl=curvePolyline(c,fam);
+          if(pl.length>1){const ptsStr=pl.map(ip=>ip.px+','+ip.py).join(' ');
+            svg+='<polyline points="'+ptsStr+'" fill="none" stroke="#ffffff" stroke-width="'+(r*0.5)+'" stroke-linejoin="round" stroke-linecap="round" pointer-events="none" opacity="0.85"/>';
+            svg+='<polyline points="'+ptsStr+'" fill="none" stroke="'+col+'" stroke-width="'+(r*(isSel?0.34:0.24))+'" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>';}
+          const lp=labelPoint(c,fam);if(lp){const off=r*1.1,lx=lp.px+off,ly=lp.py-off*0.4;svg+='<text x="'+lx+'" y="'+ly+'" font-size="'+(r*0.95)+'" font-family="'+MONO+'" font-weight="700" paint-order="stroke" stroke="#ffffff" stroke-width="'+(r*0.34)+'" stroke-linejoin="round" fill="'+(fam==='rpm'?CAdeep:CGREENd)+'" pointer-events="none">'+escXml(curveLabelText(c,fam))+'</text>';}
+          if(isSel||isTr){c.trace.forEach((p,i)=>{const ip=dataToImg(p.x,p.y),selN=state.selectedNode&&state.selectedNode.cid===c.id&&state.selectedNode.i===i;svg+='<g class="cnode" data-fam="'+fam+'" data-cid="'+c.id+'" data-i="'+i+'">';if(selN)svg+='<circle cx="'+ip.px+'" cy="'+ip.py+'" r="'+(r*0.74)+'" fill="none" stroke="'+CINK+'" stroke-width="'+(r*0.12)+'"/>';svg+='<circle cx="'+ip.px+'" cy="'+ip.py+'" r="'+(r*0.4)+'" fill="'+col+'" stroke="#ffffff" stroke-width="'+(r*0.14)+'"/></g>';});}
+        });
+      });
+      layoutProbes();const pdotR=r*0.5;
+      state.probes.forEach((p,i)=>{const m=dataToImg(p.x,p.y),cb=calloutBoxLines(probeLines(p,i)),c=p.callout||{dx:r*2.4,dy:-r*2.4},cx=m.px+c.dx,cy=m.py+c.dy,ed=boxEdgePoint(m.px,m.py,cx,cy,cb.w,cb.h);svg+='<line x1="'+m.px+'" y1="'+m.py+'" x2="'+ed.x+'" y2="'+ed.y+'" stroke="'+CA+'" stroke-width="1.4" vector-effect="non-scaling-stroke" opacity="0.55" pointer-events="none"/>';});
+      state.probes.forEach((p,i)=>{const m=dataToImg(p.x,p.y),sel=p.id===state.selectedProbeId;svg+='<g class="pdot" data-id="'+p.id+'">';if(sel)svg+='<circle cx="'+m.px+'" cy="'+m.py+'" r="'+(pdotR*2)+'" fill="none" stroke="'+CINK+'" stroke-width="'+(pdotR*0.4)+'" stroke-dasharray="'+(pdotR*0.7)+' '+(pdotR*0.5)+'"/>';svg+='<circle cx="'+m.px+'" cy="'+m.py+'" r="'+pdotR+'" fill="'+CA+'" stroke="#ffffff" stroke-width="'+(pdotR*0.45)+'"/></g>';});
+      state.probes.forEach((p,i)=>{const m=dataToImg(p.x,p.y),lines=probeLines(p,i),cb=calloutBoxLines(lines),c=p.callout||{dx:r*2.4,dy:-r*2.4},cx=m.px+c.dx,cy=m.py+c.dy,bx=cx-cb.w/2,by=cy-cb.h/2;
+        svg+='<g class="pcallout" data-id="'+p.id+'">';
+        svg+='<rect x="'+bx+'" y="'+by+'" width="'+cb.w+'" height="'+cb.h+'" rx="'+(cb.pad*0.9)+'" fill="#F8F9FB" fill-opacity="0.96" stroke="#E3E5E8" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+        lines.forEach((ln,k)=>{const ly=by+cb.cys[k],isT=k===0;svg+='<text x="'+cx+'" y="'+ly+'" font-size="'+(isT?cb.fsT:cb.fsC)+'" text-anchor="middle" dominant-baseline="central" font-family="'+(isT?FONT:MONO)+'" font-weight="'+(isT?700:500)+'" fill="'+(isT?'#1E1F22':'#5C5E66')+'">'+escXml(ln)+'</text>';});
+        svg+='</g>';});
+    }
+
+    if(state.tab==='duty'&&isCalibrated()){
+      layoutCallouts();const dotR=r*0.5;
+      state.points.forEach((p,i)=>{const m=dataToImg(p.x,p.y),cb=calloutBox(p,i),c=p.callout||{dx:r*2,dy:-r*2},cx=m.px+c.dx,cy=m.py+c.dy,ed=boxEdgePoint(m.px,m.py,cx,cy,cb.w,cb.h);svg+='<line x1="'+m.px+'" y1="'+m.py+'" x2="'+ed.x+'" y2="'+ed.y+'" stroke="'+CA+'" stroke-width="1.4" vector-effect="non-scaling-stroke" opacity="0.55" pointer-events="none"/>';});
+      state.points.forEach((p,i)=>{const m=dataToImg(p.x,p.y),sel=p.id===state.selectedId;svg+='<g class="pt" data-id="'+p.id+'">';if(sel)svg+='<circle cx="'+m.px+'" cy="'+m.py+'" r="'+(dotR*2)+'" fill="none" stroke="'+CINK+'" stroke-width="'+(dotR*0.4)+'" stroke-dasharray="'+(dotR*0.7)+' '+(dotR*0.5)+'"/>';svg+='<circle cx="'+m.px+'" cy="'+m.py+'" r="'+dotR+'" fill="'+CA+'" stroke="#ffffff" stroke-width="'+(dotR*0.45)+'"/></g>';});
+      state.points.forEach((p,i)=>{const m=dataToImg(p.x,p.y),c=p.callout||{dx:r*2,dy:-r*2},cx=m.px+c.dx,cy=m.py+c.dy,cb=calloutBox(p,i),bx=cx-cb.w/2,by=cy-cb.h/2,tCY=by+cb.pad+cb.lhT/2,cCY=tCY+cb.lhT/2+cb.gap+cb.lhC/2;
+        svg+='<g class="callout" data-id="'+p.id+'">';
+        svg+='<rect x="'+bx+'" y="'+by+'" width="'+cb.w+'" height="'+cb.h+'" rx="'+(cb.pad*0.9)+'" fill="#F8F9FB" fill-opacity="0.96" stroke="#E3E5E8" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+        svg+='<text x="'+cx+'" y="'+tCY+'" font-size="'+cb.fsT+'" text-anchor="middle" dominant-baseline="central" font-family="'+FONT+'" font-weight="700" fill="#1E1F22">'+escXml(cb.lines[0])+'</text>';
+        svg+='<text x="'+cx+'" y="'+cCY+'" font-size="'+cb.fsC+'" text-anchor="middle" dominant-baseline="central" font-family="'+MONO+'" font-weight="500" fill="#5C5E66">'+escXml(cb.lines[1])+'</text>';
+        svg+='</g>';});
+    }
+
+    overlay.innerHTML=svg;
+    overlay.querySelector('#bg').addEventListener('click',onBgClick);
+    overlay.querySelector('#bg').addEventListener('pointerdown',onBgPointerDown);
+    overlay.querySelectorAll('.pt').forEach(g=>g.addEventListener('pointerdown',onPointDown));
+    overlay.querySelectorAll('.callout').forEach(g=>{g.addEventListener('pointerdown',onCalloutDown);g.addEventListener('contextmenu',onCalloutCtx);});
+    overlay.querySelectorAll('.cnode').forEach(g=>g.addEventListener('pointerdown',onCNodeDown));
+    overlay.querySelectorAll('.pdot').forEach(g=>g.addEventListener('pointerdown',onProbeDown));
+    overlay.querySelectorAll('.pcallout').forEach(g=>g.addEventListener('pointerdown',onPCalloutDown));
+    overlay.classList.toggle('cross',state.mode==='calibrate'||state.mode==='duty'||state.mode==='trace'||state.mode==='probe');
+    overlay.classList.toggle('grab',state.mode==='idle'&&!!state.imgEl);
+    overlay.classList.toggle('calibrating',state.mode==='calibrate');
+    if((state.mode==='calibrate'&&(state.calStep==='origin'||state.calStep==='scale'))||state.mode==='duty'||state.mode==='trace'||state.mode==='probe'){if(lastCursor.inside)updateCross(lastCursor.x,lastCursor.y);}
+  }
+  function updateCross(cx,cy){const cross=overlay.querySelector('#cross');if(!cross)return;const o=clientToImg(cx,cy);overlay.querySelector('#cv').setAttribute('x1',o.px);overlay.querySelector('#cv').setAttribute('x2',o.px);overlay.querySelector('#ch').setAttribute('y1',o.py);overlay.querySelector('#ch').setAttribute('y2',o.py);cross.style.display='';}
+  function tipText(){if(state.mode==='calibrate'){if(state.calStep==='origin')return 'Click the chart origin, the <b>0, 0</b> point';if(state.calStep==='scale')return 'Origin set. Now click a <b>second</b> known point';}if(state.mode==='duty')return 'Click to place a duty point';if(state.mode==='probe')return 'Click to drop a check point';if(state.mode==='trace')return state.traceMode==='poly'?'Click nodes along the curve':'Drag along the curve to trace it';return '';}
+  function showTip(x,y){const t=tipText();if(!t){hideTip();return;}tip.innerHTML=t;tip.style.display='block';tip.style.left=(x+16)+'px';tip.style.top=(y+16)+'px';}
+  function hideTip(){tip.style.display='none';}
+  function startValEntry(which){valLabel.textContent=which==='X'?'X value':'Y value';valInput.value='';valEntry.style.display='block';const c=imgToClient(state.calib.scale.px,state.calib.scale.py);valEntry.style.left=Math.min(c.x+16,window.innerWidth-200)+'px';valEntry.style.top=Math.max(12,Math.min(c.y-12,window.innerHeight-110))+'px';setTimeout(()=>valInput.focus(),10);}
+  function hideValEntry(){valEntry.style.display='none';}
+  valInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const v=parseFloat(valInput.value);if(isNaN(v)){toast('Enter a number.',true);return;}
+    if(state.calStep==='enterX'){if(v===0){toast('That point sits on the Y axis. Type its X value.',true);return;}state.calib.scale.xval=v;state.calStep='enterY';renderOverlay();startValEntry('Y');}
+    else if(state.calStep==='enterY'){if(v===0){toast('That point sits on the X axis. Type its Y value.',true);return;}state.calib.scale.yval=v;hideValEntry();exitMode();renderAll();syncInputs();toast('Axes calibrated.');}}
+    else if(e.key==='Escape'){e.preventDefault();cancelCalibrate();}});
+
+  let drag=null,calloutDrag=null;
+  function onBgClick(e){const o=clientToImg(e.clientX,e.clientY),px=o.px,py=o.py;
+    if(state.mode==='calibrate'){if(state.calStep==='origin'){state.calib.origin.px=px;state.calib.origin.py=py;state.calStep='scale';renderAll();showTip(e.clientX,e.clientY);}else if(state.calStep==='scale'){state.calib.scale.px=px;state.calib.scale.py=py;state.calStep='enterX';hideTip();renderOverlay();startValEntry('X');}return;}
+    if(state.mode==='duty'){if(!isCalibrated()){toast('Calibrate first.',true);return;}const d=imgToData(px,py);pushHistory();const id=uid();state.points.push({id,title:letterFor(state.points.length),x:Math.round(d.x),y:Math.round(d.y),callout:{dx:null,dy:null,manual:false}});state.selectedId=id;renderAll();return;}
+    if(state.mode==='probe'){if(!isCalibrated()){toast('Calibrate first.',true);return;}const d=imgToData(px,py);pushHistory();const id=uid();state.probes.push({id,x:Math.round(d.x),y:Math.round(d.y),callout:{dx:null,dy:null,manual:false}});state.selectedProbeId=id;renderAll();return;}
+    if(state.tab==='curve'&&state.mode!=='trace'){state.selectedCurveId=null;state.selectedNode=null;state.selectedProbeId=null;renderAll();}}
+  function onBgPointerDown(e){if(e.button===1){startPan(e);return;}if(state.mode==='trace'){onTracePointerDown(e);return;}if(state.mode==='idle'){startPan(e);return;}}
+  function onPointDown(e){if(state.mode==='calibrate')return;e.stopPropagation();const id=e.currentTarget.getAttribute('data-id');state.selectedId=id;state.selectedCurveId=null;renderAll();if(!isCalibrated())return;drag={id,hist:false};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.addEventListener('pointermove',onPointMove);overlay.addEventListener('pointerup',onPointUp);}
+  function onPointMove(e){if(!drag)return;if(!drag.hist){pushHistory();drag.hist=true;}const o=clientToImg(e.clientX,e.clientY),d=imgToData(o.px,o.py),p=state.points.find(p=>p.id===drag.id);if(p){p.x=Math.round(d.x);p.y=Math.round(d.y);renderOverlay();renderTable();}}
+  function onPointUp(){overlay.removeEventListener('pointermove',onPointMove);overlay.removeEventListener('pointerup',onPointUp);drag=null;}
+  function onCalloutDown(e){if(state.mode==='calibrate')return;e.stopPropagation();const id=e.currentTarget.getAttribute('data-id');state.selectedId=id;renderAll();calloutDrag={id,hist:false};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.addEventListener('pointermove',onCalloutMove);overlay.addEventListener('pointerup',onCalloutUp);}
+  function onCalloutMove(e){if(!calloutDrag)return;if(!calloutDrag.hist){pushHistory();calloutDrag.hist=true;}const p=state.points.find(p=>p.id===calloutDrag.id);if(!p)return;const m=dataToImg(p.x,p.y),o=clientToImg(e.clientX,e.clientY);p.callout={dx:o.px-m.px,dy:o.py-m.py,manual:true};renderOverlay();}
+  function onCalloutUp(){overlay.removeEventListener('pointermove',onCalloutMove);overlay.removeEventListener('pointerup',onCalloutUp);calloutDrag=null;}
+  function onCalloutCtx(e){e.preventDefault();e.stopPropagation();const id=e.currentTarget.getAttribute('data-id'),p=state.points.find(p=>p.id===id);if(!p)return;pushHistory();p.callout={dx:null,dy:null,manual:false};renderAll();toast('Callout reset to auto.');}
+  function deleteSelected(){
+    if(state.tab==='curve'&&state.selectedNode){const c=state.curves[state.selectedNode.fam].find(x=>x.id===state.selectedNode.cid);if(c){pushHistory();c.trace.splice(state.selectedNode.i,1);state.selectedNode=null;recomputeModels();renderAll();}return;}
+    if(state.tab==='curve'&&state.selectedProbeId){const i=state.probes.findIndex(p=>p.id===state.selectedProbeId);if(i>=0){pushHistory();state.probes.splice(i,1);state.selectedProbeId=null;renderAll();}return;}
+    if(state.tab==='curve'&&state.selectedCurveId){deleteCurve(state.selectedCurveId);return;}
+    if(state.selectedId){const i=state.points.findIndex(p=>p.id===state.selectedId);if(i<0)return;pushHistory();state.points.splice(i,1);state.selectedId=null;renderAll();}}
+  function deleteCurve(id){for(const fam of ['rpm','eff']){const i=state.curves[fam].findIndex(c=>c.id===id);if(i>=0){pushHistory();state.curves[fam].splice(i,1);if(state.tracingId===id){state.tracingId=null;if(state.mode==='trace')exitMode(true);}if(state.selectedCurveId===id)state.selectedCurveId=null;recomputeModels();renderAll();return;}}}
+  function enterProbe(){if(!isCalibrated()){toast('Calibrate the axes first.',true);return;}if(state.mode==='probe'){exitMode();return;}exitMode(true);state.mode='probe';renderAll();toast('Click the chart to drop check points reading X, Y, RPM and efficiency.');}
+  function probeVal(model,x,y){if(!model||!model.predict||model.method==='need'||model.method==='none')return null;const v=model.predict(x,y);return isFinite(v)?v:null;}
+  function evalAlong(trace,key,target){const other=key==='x'?'y':'x';const pts=trace.slice().sort((a,b)=>a[key]-b[key]);if(pts.length<2)return null;if(target<pts[0][key]-1e-9||target>pts[pts.length-1][key]+1e-9)return null;for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];if(target>=a[key]&&target<=b[key]){const dk=b[key]-a[key];if(Math.abs(dk)<1e-12)return a[other];return a[other]+(b[other]-a[other])*((target-a[key])/dk);}}return null;}
+  function bracketInterp(samples,target,tmin,tmax){if(samples.length<2)return null;samples.sort((a,b)=>a.pos-b.pos);let lo=null,hi=null;for(let i=0;i<samples.length-1;i++){if(target>=samples[i].pos&&target<=samples[i+1].pos){lo=samples[i];hi=samples[i+1];break;}}if(!lo){if(target<samples[0].pos){lo=samples[0];hi=samples[1];}else{lo=samples[samples.length-2];hi=samples[samples.length-1];}}const d=hi.pos-lo.pos;if(Math.abs(d)<1e-12)return lo.v;let t=(target-lo.pos)/d;if(t<tmin)t=tmin;if(t>tmax)t=tmax;return lo.v+(hi.v-lo.v)*t;}
+  function bracketRead(fam,x,y){const curves=state.curves[fam].filter(c=>c.value!=null&&isFinite(c.value)&&c.trace.length>=2);if(curves.length<2)return null;const samples=[];
+    if(fam==='rpm'){curves.forEach(c=>{const h=evalAlong(c.trace,'x',x);if(h!=null)samples.push({v:c.value,pos:h});});return bracketInterp(samples,y,-0.6,1.6);}
+    curves.forEach(c=>{const q=evalAlong(c.trace,'y',y);if(q!=null)samples.push({v:c.value,pos:q});});return bracketInterp(samples,x,-0.5,1.0);}
+  function readRpm(x,y){const v=bracketRead('rpm',x,y);return (v!=null&&isFinite(v))?v:probeVal(state.rpmModel,x,y);}
+  function readEff(x,y){const v=bracketRead('eff',x,y);return (v!=null&&isFinite(v))?v:probeVal(state.effModel,x,y);}
+  function fmtVal(v,dp){return v==null?'\u2014':String(parseFloat(v.toFixed(dp)));}
+  function probeLines(p,i){const rv=readRpm(p.x,p.y),ev=readEff(p.x,p.y);const lines=[(p.title&&p.title.trim())?p.title.trim():('P'+(i+1)),'('+disp(p.x)+', '+disp(p.y)+')'];if(rv!=null&&isFinite(rv))lines.push('RPM '+fmtVal(rv,0));if(ev!=null&&isFinite(ev))lines.push('\u03B7 '+fmtVal(ev,1)+'%');return lines;}
+  function calloutBoxLines(lines){const r=markerR(),fsT=r*0.92,fsC=r*0.82,pad=r*0.6,gap=r*0.14,lhT=fsT*1.18,lhC=fsC*1.18;let maxw=measure(lines[0],'700 '+fsT+'px '+FONT);for(let i=1;i<lines.length;i++)maxw=Math.max(maxw,measure(lines[i],'500 '+fsC+'px '+MONO));const cys=[];let y=pad;cys.push(y+lhT/2);y+=lhT;for(let i=1;i<lines.length;i++){y+=gap;cys.push(y+lhC/2);y+=lhC;}return {w:maxw+pad*2,h:y+pad,fsT,fsC,pad,cys,lines};}
+  let pcalloutDrag=null,probeDrag=null;
+  function onProbeDown(e){if(state.mode==='calibrate')return;e.stopPropagation();const id=e.currentTarget.getAttribute('data-id');state.selectedProbeId=id;state.selectedId=null;state.selectedCurveId=null;state.selectedNode=null;renderAll();if(!isCalibrated())return;probeDrag={id,hist:false};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.addEventListener('pointermove',onProbeMove);overlay.addEventListener('pointerup',onProbeUp);}
+  function onProbeMove(e){if(!probeDrag)return;if(!probeDrag.hist){pushHistory();probeDrag.hist=true;}const o=clientToImg(e.clientX,e.clientY),d=imgToData(o.px,o.py),p=state.probes.find(p=>p.id===probeDrag.id);if(p){p.x=Math.round(d.x);p.y=Math.round(d.y);renderOverlay();renderProbeTable();}}
+  function onProbeUp(){overlay.removeEventListener('pointermove',onProbeMove);overlay.removeEventListener('pointerup',onProbeUp);probeDrag=null;}
+  function onPCalloutDown(e){if(state.mode==='calibrate')return;e.stopPropagation();const id=e.currentTarget.getAttribute('data-id');state.selectedProbeId=id;state.selectedId=null;state.selectedCurveId=null;renderAll();pcalloutDrag={id,hist:false};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.addEventListener('pointermove',onPCalloutMove);overlay.addEventListener('pointerup',onPCalloutUp);}
+  function onPCalloutMove(e){if(!pcalloutDrag)return;if(!pcalloutDrag.hist){pushHistory();pcalloutDrag.hist=true;}const p=state.probes.find(p=>p.id===pcalloutDrag.id);if(!p)return;const m=dataToImg(p.x,p.y),o=clientToImg(e.clientX,e.clientY);p.callout={dx:o.px-m.px,dy:o.py-m.py,manual:true};renderOverlay();}
+  function onPCalloutUp(){overlay.removeEventListener('pointermove',onPCalloutMove);overlay.removeEventListener('pointerup',onPCalloutUp);pcalloutDrag=null;}
+  function renderProbeTable(){const tbl=$('#probeTable'),body=$('#probeBody');if(!state.probes.length){tbl.style.display='none';body.innerHTML='';return;}tbl.style.display='';let html='';
+    state.probes.forEach((p,i)=>{const rv=readRpm(p.x,p.y),ev=readEff(p.x,p.y),sel=p.id===state.selectedProbeId?' class="sel"':'';
+      html+='<tr'+sel+' data-id="'+p.id+'"><td><div class="titlecell"><span class="rowdot"></span>'+('P'+(i+1))+'</div></td>'
+        +'<td><input type="number" step="any" class="numcell" data-f="x" value="'+disp(p.x)+'"></td>'
+        +'<td><input type="number" step="any" class="numcell" data-f="y" value="'+disp(p.y)+'"></td>'
+        +'<td style="text-align:right;font-family:var(--mono);color:var(--accent-deep)">'+fmtVal(rv,0)+'</td>'
+        +'<td style="text-align:right;font-family:var(--mono);color:var(--green-deep)">'+(ev==null?'\u2014':fmtVal(ev,1))+'</td>'
+        +'<td class="del"><button class="delbtn" title="Delete"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button></td></tr>';});
+    body.innerHTML=html;
+    body.querySelectorAll('tr').forEach(tr=>{const id=tr.getAttribute('data-id');
+      tr.addEventListener('mousedown',ev=>{if(ev.target.closest('input,button'))return;state.selectedProbeId=id;state.selectedCurveId=null;renderAll();});
+      tr.querySelectorAll('input').forEach(inp=>{inp.addEventListener('focus',()=>{state.selectedProbeId=id;});inp.addEventListener('change',()=>{const p=state.probes.find(p=>p.id===id);if(!p)return;pushHistory();p[inp.getAttribute('data-f')]=parseFloat(inp.value);renderAll();});});
+      tr.querySelector('.delbtn').addEventListener('click',()=>{const i=state.probes.findIndex(p=>p.id===id);if(i<0)return;pushHistory();state.probes.splice(i,1);if(state.selectedProbeId===id)state.selectedProbeId=null;renderAll();});});}
+
+  overlay.addEventListener('pointermove',e=>{lastCursor={x:e.clientX,y:e.clientY,inside:true};if((state.mode==='calibrate'&&(state.calStep==='origin'||state.calStep==='scale'))||state.mode==='duty'||state.mode==='trace'||state.mode==='probe'){updateCross(e.clientX,e.clientY);showTip(e.clientX,e.clientY);}});
+  overlay.addEventListener('pointerleave',()=>{lastCursor.inside=false;hideTip();const c=overlay.querySelector('#cross');if(c)c.style.display='none';});
+
+  function renderTable(){if(!ptBody)return;if(!state.points.length){ptBody.innerHTML='<tr><td colspan="4" class="empty">No duty points yet. Use Place duty point or add a row.</td></tr>';return;}
+    let html='';state.points.forEach((p,i)=>{const sel=p.id===state.selectedId?' class="sel"':'';
+      html+='<tr'+sel+' data-id="'+p.id+'"><td><div class="titlecell"><span class="rowdot"></span><input type="text" data-f="title" value="'+escAttr(p.title||'')+'" placeholder="'+letterFor(i)+'"></div></td>'
+        +'<td><input type="number" step="any" class="numcell" data-f="x" value="'+disp(p.x)+'"></td>'
+        +'<td><input type="number" step="any" class="numcell" data-f="y" value="'+disp(p.y)+'"></td>'
+        +'<td class="del"><button class="delbtn" title="Delete"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button></td></tr>';});
+    ptBody.innerHTML=html;
+    ptBody.querySelectorAll('tr').forEach(tr=>{const id=tr.getAttribute('data-id');
+      tr.addEventListener('mousedown',ev=>{if(ev.target.closest('input,button'))return;state.selectedId=id;state.selectedCurveId=null;renderAll();});
+      tr.querySelectorAll('input').forEach(inp=>{inp.addEventListener('focus',()=>{state.selectedId=id;});inp.addEventListener('change',()=>{const p=state.points.find(p=>p.id===id);if(!p)return;const f=inp.getAttribute('data-f');pushHistory();if(f==='title')p.title=inp.value;else p[f]=parseFloat(inp.value);renderAll();});});
+      tr.querySelector('.delbtn').addEventListener('click',()=>{const i=state.points.findIndex(p=>p.id===id);if(i<0)return;pushHistory();state.points.splice(i,1);if(state.selectedId===id)state.selectedId=null;renderAll();});});}
+  function renderCurveList(fam){const host=$('#'+fam+'List'),arr=state.curves[fam],col=fam==='rpm'?CA:CGREEN;
+    const ae=document.activeElement;let keepId=null;if(ae&&ae.tagName==='INPUT'&&host.contains(ae))keepId=ae.getAttribute('data-id');
+    if(!arr.length){host.innerHTML='';return;}
+    let html='';arr.forEach(c=>{const sel=c.id===state.selectedCurveId,ph=fam==='rpm'?'DOL':'%';
+      html+='<div class="crow'+(sel?' sel':'')+(fam==='eff'?' effrow':'')+'" data-id="'+c.id+'"><span class="cdot" style="background:'+col+'"></span>'
+        +'<input type="number" step="any" data-id="'+c.id+'" data-fam="'+fam+'" value="'+(c.value!=null?c.value:'')+'" placeholder="'+ph+'">'
+        +'<button class="delbtn" data-id="'+c.id+'" title="Delete curve"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button></div>';});
+    host.innerHTML=html;
+    host.querySelectorAll('.crow').forEach(row=>{const id=row.getAttribute('data-id');
+      row.addEventListener('mousedown',ev=>{if(ev.target.closest('input,button'))return;state.family=fam;state.selectedCurveId=id;state.selectedId=null;state.selectedNode=null;renderAll();});
+      const inp=row.querySelector('input');
+      inp.addEventListener('focus',()=>{state.family=fam;state.selectedCurveId=id;state.selectedId=null;state.selectedNode=null;document.querySelectorAll('.crow').forEach(rr=>rr.classList.remove('sel'));row.classList.add('sel');renderOverlay();syncStatus();});
+      inp.addEventListener('input',()=>{const c=state.curves[fam].find(x=>x.id===id);if(!c)return;const t=inp.value.trim();c.value=t===''?null:parseFloat(t);recomputeModels();renderOverlay();fillOut('rpm',state.rpmModel);fillOut('eff',state.effModel);renderProbeTable();});
+      inp.addEventListener('change',()=>{pushHistory();});
+      row.querySelector('.delbtn').addEventListener('click',()=>deleteCurve(id));});
+    if(keepId){const el=host.querySelector('.crow[data-id="'+keepId+'"] input');if(el&&document.activeElement!==el){const v=el.value;el.focus();try{el.setSelectionRange(v.length,v.length);}catch(_){}}}}
+  function fillOut(fam,model){const out=$('#'+fam+'Out'),fEl=$('#'+fam+'Formula'),mEl=$('#'+fam+'Meta');
+    if(!model||model.method==='none'){out.style.display='none';return;}
+    if(model.method==='need'){out.style.display='block';fEl.textContent='';mEl.textContent='Trace at least two labelled curves to build the surface.';return;}
+    out.style.display='block';fEl.textContent=model.formula||'';let meta='';
+    if(model.method==='dol')meta='Direct on line, no speed entered. Single Y(X) fit, R\u00B2 = '+pct(model.r2)+'. Copy gives the Excel formula.';
+    else meta='Single smooth surface in X and Y, R\u00B2 = '+pct(model.r2)+'. Copy gives the Excel formula using your X and Y cells.';
+    mEl.textContent=meta;}
+  function updateCurvePanels(){renderCurveList('rpm');renderCurveList('eff');fillOut('rpm',state.rpmModel);fillOut('eff',state.effModel);renderProbeTable();
+    const rpmHas=state.curves.rpm.length,effHas=state.curves.eff.length;
+    $('#rpmTrace').textContent=rpmHas?'Add another RPM curve':'Trace new RPM curve';
+    $('#effTrace').textContent=effHas?'Add another efficiency curve':'Trace new efficiency curve';
+    $('#rpmTrace').classList.toggle('active',state.mode==='trace'&&state.family==='rpm');
+    $('#effTrace').classList.toggle('active',state.mode==='trace'&&state.family==='eff');
+    $('#probeBtn').classList.toggle('active',state.mode==='probe');
+    $$('#traceModeSeg button').forEach(b=>{const on=b.getAttribute('data-trace')===state.traceMode;b.classList.toggle('on',on);b.style.background=on?'var(--accent)':'#fff';b.style.color=on?'#fff':'var(--text-3)';});}
+  function sizeDesc(){['#pumpMake','#pumpModel'].forEach(sel=>{const i=$(sel);if(i)i.size=Math.max(((i.value||i.placeholder||'').length+1),10);});}
+  function syncInputs(){$('#pumpMake').value=state.make||'';$('#pumpModel').value=state.model||'';sizeDesc();$('#sxVal').value=state.calib.scale.xval!=null?state.calib.scale.xval:'';$('#syVal').value=state.calib.scale.yval!=null?state.calib.scale.yval:'';}
+  function syncStatus(){const cal=isCalibrated();calBadge.textContent=cal?'Calibrated':'Not set';calBadge.className='badge '+(cal?'ok':'warn');
+    const o=state.calib.origin,s=state.calib.scale,ro=$('#refOrigin'),rs=$('#refScale');ro.classList.toggle('set',o.px!=null);rs.classList.toggle('set',s.px!=null);
+    rs.querySelector('.rv').textContent=(s.xval!=null&&s.yval!=null)?(disp(s.xval)+' , '+disp(s.yval)):'not set';rs.querySelector('.rv').classList.toggle('muted',!(s.xval!=null&&s.yval!=null));
+    calBtn.disabled=!state.imgEl;calBtn.classList.toggle('active',state.mode==='calibrate');
+    $('#rpmTrace').disabled=!cal;$('#effTrace').disabled=!cal;$('#probeBtn').disabled=!cal;}
+  function reflectTitle(){const mk=$('#pumpMake'),md=$('#pumpModel');if(mk&&document.activeElement!==mk&&mk.value!==(state.make||''))mk.value=state.make||'';if(md&&document.activeElement!==md&&md.value!==(state.model||''))md.value=state.model||'';}
+  function renderAll(){renderOverlay();updateCurvePanels();syncStatus();reflectTitle();}
+  function rr(ctx,x,y,w,h,r){if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,w,h,r);return;}ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function composeBase(){
+    const S=6,W=420*S,H=297*S;const cv=document.createElement('canvas');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+    const m=15*S,logo=12*S,hx=m,hy=m,midY=hy+logo/2;
+    rr(ctx,hx,hy,logo,logo,4*S);ctx.fillStyle=CA;ctx.fill();
+    ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='800 '+(7*S)+'px '+FONT;ctx.fillText('P',hx+logo/2,midY+0.3*S);
+    ctx.fillStyle=CINK;ctx.textAlign='left';ctx.font='800 '+(8*S)+'px '+FONT;ctx.fillText(pumpTitle(),hx+logo+5*S,midY+0.4*S);
+    const pillTxt=state.tab==='curve'?'CURVE FIT':'DUTY POINTS';ctx.font='700 '+(3*S)+'px '+FONT;
+    const ptw=ctx.measureText(pillTxt).width,pillH=7.4*S,pillW=ptw+8*S,pillX=W-m-pillW,pillY=midY-pillH/2;
+    rr(ctx,pillX,pillY,pillW,pillH,pillH/2);ctx.fillStyle='#EEF0FE';ctx.fill();
+    ctx.fillStyle=CAdeep;ctx.textAlign='center';ctx.fillText(pillTxt,pillX+pillW/2,pillY+pillH/2+0.4*S);
+    ctx.textAlign='left';ctx.textBaseline='alphabetic';
+    const divY=hy+logo+7*S;ctx.strokeStyle=CLINE;ctx.lineWidth=1*S;ctx.beginPath();ctx.moveTo(m,divY);ctx.lineTo(W-m,divY);ctx.stroke();
+    const cardX=m,cardY=divY+9*S,cardW=W-2*m,cardH=H-(divY+9*S)-m,cardR=5*S;
+    ctx.save();ctx.shadowColor='rgba(30,31,34,0.09)';ctx.shadowBlur=5*S;ctx.shadowOffsetY=2*S;rr(ctx,cardX,cardY,cardW,cardH,cardR);ctx.fillStyle='#ffffff';ctx.fill();ctx.restore();
+    let ox=cardX,oy=cardY,dW=cardW,dH=cardH,isc=1;
+    ctx.save();rr(ctx,cardX,cardY,cardW,cardH,cardR);ctx.clip();
+    if(state.imgEl&&state.imgW){const iAR=state.imgW/state.imgH,rAR=cardW/cardH;if(iAR>rAR){dW=cardW;dH=cardW/iAR;}else{dH=cardH;dW=cardH*iAR;}ox=cardX+(cardW-dW)/2;oy=cardY+(cardH-dH)/2;isc=dW/state.imgW;ctx.drawImage(state.imgEl,ox,oy,dW,dH);}
+    ctx.restore();
+    rr(ctx,cardX,cardY,cardW,cardH,cardR);ctx.strokeStyle=CLINE;ctx.lineWidth=1*S;ctx.stroke();
+    return {cv,ctx,ox,oy,isc,cardX,cardY,cardW,cardH,cardR,S};}
+
+  function collectAnnots(b){const out=[],ox=b.ox,oy=b.oy,isc=b.isc;
+    if(state.tab==='duty'&&isCalibrated()){layoutCallouts();const dotR=Math.max(b.cardW,b.cardH)*0.0055;
+      state.points.forEach((p,i)=>{const m=dataToImg(p.x,p.y),cb=calloutBox(p,i),c=p.callout||{dx:0,dy:0},cxn=m.px+c.dx,cyn=m.py+c.dy,ed=boxEdgePoint(m.px,m.py,cxn,cyn,cb.w,cb.h);
+        out.push({k:'line',x1:ox+m.px*isc,y1:oy+m.py*isc,x2:ox+ed.x*isc,y2:oy+ed.y*isc,color:CA,w:dotR*0.3,op:0.55});
+        out.push({k:'dot',cx:ox+m.px*isc,cy:oy+m.py*isc,r:dotR,color:CA});
+        out.push({k:'callout',bx:ox+(cxn-cb.w/2)*isc,by:oy+(cyn-cb.h/2)*isc,bw:cb.w*isc,bh:cb.h*isc,title:cb.lines[0],coords:cb.lines[1],tSize:cb.fsT*isc,cSize:cb.fsC*isc,tipx:ox+m.px*isc,tipy:oy+m.py*isc,joinx:ox+ed.x*isc,joiny:oy+ed.y*isc,lc:CA});});}
+    if(state.tab==='curve'&&isCalibrated()){
+      ['rpm','eff'].forEach(fam=>{const col=fam==='rpm'?CA:CGREEN,cold=fam==='rpm'?CAdeep:CGREENd;
+        state.curves[fam].forEach(c=>{const pl=curvePolyline(c,fam);if(pl.length>1)out.push({k:'poly',pts:pl.map(ip=>[ox+ip.px*isc,oy+ip.py*isc]),color:col,w:Math.max(b.cardW,b.cardH)*0.0028});
+          const lp=labelPoint(c,fam);if(lp)out.push({k:'label',x:ox+lp.px*isc+markerR()*isc*1.0,y:oy+lp.py*isc-markerR()*isc*0.3,text:curveLabelText(c,fam),color:cold,size:markerR()*isc*0.95});});});
+      const boxes=[['rpm',state.rpmModel],['eff',state.effModel]].filter(e=>e[1]&&e[1].formula);
+      let fy=b.cardY+4*b.S;boxes.forEach(([fam,m])=>{const lines=m.formula.split('\n'),fs=2.9*b.S,bw=Math.min(b.cardW-8*b.S,Math.max.apply(null,lines.map(l=>measure(l,fs+'px '+MONO)))+9*b.S),bh=lines.length*fs*1.45+5*b.S;out.push({k:'formula',bx:b.cardX+4*b.S,by:fy,bw,bh,lines,size:fs,accent:fam==='rpm'?CA:CGREEN,accentd:fam==='rpm'?CAdeep:CGREENd});fy+=bh+3*b.S;});
+      layoutProbes();const pdotR2=Math.max(b.cardW,b.cardH)*0.0055;
+      state.probes.forEach((p,i)=>{const m=dataToImg(p.x,p.y),lines=probeLines(p,i),cb=calloutBoxLines(lines),c=p.callout||{dx:0,dy:0},cxn=m.px+c.dx,cyn=m.py+c.dy,ed=boxEdgePoint(m.px,m.py,cxn,cyn,cb.w,cb.h);
+        out.push({k:'line',x1:ox+m.px*isc,y1:oy+m.py*isc,x2:ox+ed.x*isc,y2:oy+ed.y*isc,color:CA,w:pdotR2*0.3,op:0.55});
+        out.push({k:'dot',cx:ox+m.px*isc,cy:oy+m.py*isc,r:pdotR2,color:CA});
+        out.push({k:'pcallout',bx:ox+(cxn-cb.w/2)*isc,by:oy+(cyn-cb.h/2)*isc,bw:cb.w*isc,bh:cb.h*isc,lines:lines,cys:cb.cys.map(v=>v*isc),tSize:cb.fsT*isc,cSize:cb.fsC*isc,tipx:ox+m.px*isc,tipy:oy+m.py*isc,joinx:ox+ed.x*isc,joiny:oy+ed.y*isc,lc:CA});});}
+    return out;}
+
+  function drawAnnotsCanvas(b,specs){const ctx=b.ctx;ctx.save();rr(ctx,b.cardX,b.cardY,b.cardW,b.cardH,b.cardR);ctx.clip();
+    specs.forEach(s=>{if(s.k==='line'){ctx.strokeStyle='rgba(88,101,242,0.55)';ctx.lineWidth=s.w;ctx.beginPath();ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);ctx.stroke();}
+      else if(s.k==='poly'){ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle='#ffffff';ctx.lineWidth=s.w*1.9;ctx.beginPath();s.pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();ctx.strokeStyle=s.color;ctx.lineWidth=s.w;ctx.beginPath();s.pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();}});
+    specs.forEach(s=>{if(s.k==='dot'){ctx.beginPath();ctx.arc(s.cx,s.cy,s.r,0,Math.PI*2);ctx.fillStyle=s.color;ctx.fill();ctx.lineWidth=s.r*0.45;ctx.strokeStyle='#ffffff';ctx.stroke();}});
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    specs.forEach(s=>{if(s.k==='callout'){rr(ctx,s.bx,s.by,s.bw,s.bh,Math.min(s.bw,s.bh)*0.22);ctx.fillStyle='#F8F9FB';ctx.fill();ctx.lineWidth=Math.max(1,s.tSize*0.05);ctx.strokeStyle='#E3E5E8';ctx.stroke();const cx=s.bx+s.bw/2,pad=s.bh*0.2,tCY=s.by+pad+s.tSize*0.6,cCY=s.by+s.bh-pad-s.cSize*0.6;ctx.font='700 '+s.tSize+'px '+FONT;ctx.fillStyle='#1E1F22';ctx.fillText(s.title,cx,tCY);ctx.font='500 '+s.cSize+'px '+MONO;ctx.fillStyle='#5C5E66';ctx.fillText(s.coords,cx,cCY);}});
+    specs.forEach(s=>{if(s.k==='pcallout'){rr(ctx,s.bx,s.by,s.bw,s.bh,Math.min(s.bw,s.bh)*0.16);ctx.fillStyle='#F8F9FB';ctx.fill();ctx.lineWidth=Math.max(1,s.tSize*0.05);ctx.strokeStyle='#E3E5E8';ctx.stroke();const cx=s.bx+s.bw/2;s.lines.forEach((ln,k)=>{const isT=k===0,ly=s.by+s.cys[k];ctx.font=(isT?'700 ':'500 ')+(isT?s.tSize:s.cSize)+'px '+(isT?FONT:MONO);ctx.fillStyle=isT?'#1E1F22':'#5C5E66';ctx.fillText(ln,cx,ly);});}});
+    ctx.textAlign='left';
+    specs.forEach(s=>{if(s.k==='label'){ctx.font='700 '+s.size+'px '+MONO;ctx.lineWidth=s.size*0.34;ctx.lineJoin='round';ctx.strokeStyle='#ffffff';ctx.strokeText(s.text,s.x,s.y);ctx.fillStyle=s.color;ctx.fillText(s.text,s.x,s.y);}});
+    specs.forEach(s=>{if(s.k==='formula'){rr(ctx,s.bx,s.by,s.bw,s.bh,2.2*b.S);ctx.fillStyle=s.accent===CA?'#EEF0FE':'#E7F4EC';ctx.fill();ctx.fillStyle=s.accent;rr(ctx,s.bx,s.by+s.size*0.5,1.5*b.S,s.bh-s.size,0.7*b.S);ctx.fill();ctx.font='600 '+s.size+'px '+MONO;ctx.fillStyle=s.accentd;ctx.textBaseline='middle';s.lines.forEach((ln,i)=>{ctx.fillText(ln,s.bx+5*b.S,s.by+2.5*b.S+i*s.size*1.45+s.size*0.3);});}});
+    ctx.textBaseline='alphabetic';ctx.restore();}
+  function composeFlat(){const b=composeBase();const specs=collectAnnots(b);drawAnnotsCanvas(b,specs);return b.cv;}
+  function hexRgb01(h){h=String(h).replace('#','');const n=parseInt(h,16);return [((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255];}
+  function dataURLtoBytes(u){const b=atob(u.split(',')[1]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;}
+  function downloadBytes(bytes,name,mime){const blob=new Blob([bytes],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
+  function pumpTitle(){const t=[state.make,state.model].map(s=>(s||'').trim()).filter(Boolean).join('  \u00B7  ');return t||'Untitled pump';}
+  function safeFilename(){return ([state.make,state.model].map(s=>(s||'').trim()).filter(Boolean).join('_')||'pump_curve').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_')||'pump_curve';}
+  async function exportPDF(){if(!state.imgEl){toast('Load a curve image first.',true);return;}if(!window.PDFLib){toast('PDF engine did not load. Check network settings.',true);return;}
+    try{const {PDFDocument,PDFName,PDFString,StandardFonts}=PDFLib;
+      const b=composeBase(),specs=collectAnnots(b),bytes=dataURLtoBytes(b.cv.toDataURL('image/png'));
+      const doc=await PDFDocument.create(),pw=1190.55,ph=841.89,page=doc.addPage([pw,ph]);
+      const helv=await doc.embedFont(StandardFonts.Helvetica),ctx=doc.context;
+      const acro=ctx.obj({Fields:[],DR:ctx.obj({Font:ctx.obj({Helv:helv.ref})}),DA:PDFString.of('/Helv 0 Tf 0 g')});
+      doc.catalog.set(PDFName.of('AcroForm'),ctx.register(acro));
+      const png=await doc.embedPng(bytes);page.drawImage(png,{x:0,y:0,width:pw,height:ph});
+      const sf=pw/b.cv.width,PX=x=>x*sf,PY=y=>ph-y*sf;
+      function add(d){const ref=ctx.register(ctx.obj(d));page.node.addAnnot(ref);}
+      function da(size,hex){const c=hexRgb01(hex);return PDFString.of('/Helv '+Math.max(6,size).toFixed(1)+' Tf '+c[0].toFixed(3)+' '+c[1].toFixed(3)+' '+c[2].toFixed(3)+' rg');}
+      function calloutAnnot(s,text,fontPx,hex){const tbL=PX(s.bx),tbR=PX(s.bx+s.bw),tbTop=PY(s.by),tbBottom=PY(s.by+s.bh),tipX=PX(s.tipx),tipY=PY(s.tipy),joinX=PX(s.joinx),joinY=PY(s.joiny);const rL=Math.min(tbL,tipX),rR=Math.max(tbR,tipX),rB=Math.min(tbBottom,tipY),rT=Math.max(tbTop,tipY);add({Type:'Annot',Subtype:'FreeText',IT:'FreeTextCallout',Rect:[rL,rB,rR,rT],RD:[Math.max(0,tbL-rL),Math.max(0,rT-tbTop),Math.max(0,rR-tbR),Math.max(0,tbBottom-rB)],CL:[tipX,tipY,joinX,joinY],LE:'OpenArrow',Contents:PDFString.of(text),DA:da(fontPx,hex),Q:1,C:hexRgb01(s.lc||'#5865F2'),CA:0.9,BS:ctx.obj({W:1,S:'S'}),F:4});}
+      specs.forEach(s=>{
+        if(s.k==='dot'){const rp=s.r*sf,c=hexRgb01(s.color);add({Type:'Annot',Subtype:'Circle',Rect:[PX(s.cx)-rp,PY(s.cy)-rp,PX(s.cx)+rp,PY(s.cy)+rp],C:c,IC:c,CA:1,BS:ctx.obj({W:Math.max(0.4,rp*0.3),S:'S'}),F:4});}
+        else if(s.k==='line'){/* leader is part of the callout annotation, not a separate object */}
+        else if(s.k==='poly'){const V=[];let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;s.pts.forEach(p=>{const x=PX(p[0]),y=PY(p[1]);V.push(x,y);minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);});add({Type:'Annot',Subtype:'PolyLine',Vertices:V,Rect:[minx,miny,maxx,maxy],C:hexRgb01(s.color),BS:ctx.obj({W:Math.max(0.8,s.w*sf),S:'S'}),F:4});}
+        else if(s.k==='callout'){calloutAnnot(s,s.title+'\n'+s.coords,s.tSize*sf*0.78,'#1E1F22');}
+        else if(s.k==='pcallout'){calloutAnnot(s,s.lines.join('\n'),s.cSize*sf*0.8,'#2E3035');}
+        else if(s.k==='label'){const fs=Math.max(6,s.size*sf*0.92),w=fs*String(s.text).length*0.72,h=fs*1.5,x1=PX(s.x),y2=PY(s.y-s.size*0.7),x2=x1+w,y1=y2-h;add({Type:'Annot',Subtype:'FreeText',Rect:[x1,y1,x2,y2],Contents:PDFString.of(String(s.text)),DA:da(fs,s.color),Q:0,F:4});}
+        else if(s.k==='formula'){const x1=PX(s.bx),y1=PY(s.by+s.bh),x2=PX(s.bx+s.bw),y2=PY(s.by);add({Type:'Annot',Subtype:'FreeText',Rect:[x1,y1,x2,y2],Contents:PDFString.of(s.lines.join('\n')),DA:da(s.size*sf*0.92,s.accentd),Q:0,C:[0.89,0.9,0.93],F:4});}
+      });
+      const outBytes=await doc.save();downloadBytes(outBytes,safeFilename()+'.pdf','application/pdf');toast('Editable A3 PDF exported.');
+    }catch(err){console.error(err);toast('PDF export failed.',true);}}
+  async function copyImage(){if(!state.imgEl){toast('Load a curve image first.',true);return;}try{const cv=composeFlat(),blob=await new Promise(r=>cv.toBlob(r,'image/png'));if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);toast('Flat view copied to clipboard.');}else throw 0;}
+    catch(err){try{const cv=composeFlat(),a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download=safeFilename()+'.png';document.body.appendChild(a);a.click();a.remove();toast('Clipboard blocked here, downloaded a PNG instead.');}catch(e){toast('Could not copy the image.',true);}}}
+  function setTab(t,quiet){state.tab='curve';if(!quiet&&(state.mode==='trace'||state.mode==='probe'))exitMode(true);state.selectedNode=null;if(!quiet)renderAll();}
+
+  const HELP={
+    duty:{title:'Duty points',steps:['Calibrate the axes first, using the panel on the right.','Press Place duty point, then click the curve to drop points. Graph clicks snap to whole numbers.','Edit titles and exact values in the table, or use Add a point for precise figures.','Drag a callout to reposition it, right click to auto place it again. Callout text is driven by the table.','Drag a marker to move it. Select a marker or row and press Delete to remove it.'],notes:'Callout text is set from the table and dot position, it is not retyped on the graph. In the exported PDF each callout is one movable, editable callout object with its leader and arrow built in, and every point marker is its own object.'},
+    curve:{title:'Curve fit, RPM and efficiency',steps:['Calibrate the axes first.','Press Trace new RPM curve, then click or drag along that speed curve. Enter its speed in the table row on the left. Leave it blank for a single DOL curve, giving Y against X.','Press Add another RPM curve for the next speed. The single RPM(X,Y) formula updates live.','Repeat with Trace new efficiency curve for the percent efficiency family. RPM curves stay visible underneath.','Set the Excel cells for X and Y, then Copy to paste a ready formula into your sheet.','Press Place check point and click anywhere to read X, Y, RPM and efficiency at that point, straight from the formula.'],notes:'Each family is fitted as one smooth surface in X and Y by least squares, so RPM and efficiency are each a single closed form you can paste into Excel and verify point by point. Values are entered and edited in the table on the left. Check points evaluate the same formula, so the on screen number matches the spreadsheet. Curves, labels, formulas and check points export as editable PDF objects.'},
+    calib:{title:'Axis calibration',steps:['Press Calibrate axes.','Click the 0, 0 origin on the chart.','Click any second known point on the chart.','Type its X value and press Enter, then its Y value and press Enter.'],notes:'Two clicks set the whole scale. Duty points and both curve families use this same calibration.'}};
+  function openHelp(key,btn){const h=HELP[key];if(!h)return;popover.innerHTML='<h4>'+h.title+'</h4><ol>'+h.steps.map(s=>'<li>'+s+'</li>').join('')+'</ol><div class="notes">'+h.notes+'</div>';
+    const r=btn.getBoundingClientRect();let left=Math.min(r.left,window.innerWidth-346),top=r.bottom+8;if(top+300>window.innerHeight)top=Math.max(12,r.top-300);popover.style.left=Math.max(10,left)+'px';popover.style.top=top+'px';popover.style.display='block';}
+  function closeHelp(){popover.style.display='none';}
+
+  dropzone.addEventListener('click',()=>{const f=document.createElement('input');f.type='file';f.accept='image/*';f.onchange=e=>{if(e.target.files[0])handleFile(e.target.files[0]);};f.click();});
+  ['dragenter','dragover'].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.remove('drag');}));
+  dropzone.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)handleFile(f);});
+  stagewrap.addEventListener('dragover',e=>e.preventDefault());
+  stagewrap.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f)handleFile(f);});
+  document.addEventListener('paste',e=>{const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type.indexOf('image')===0){handleFile(it.getAsFile());e.preventDefault();return;}}});
+  stagewrap.addEventListener('wheel',e=>{if(!state.imgEl)return;e.preventDefault();const r=stagewrap.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,e.deltaY<0?1.12:1/1.12);},{passive:false});
+  window.addEventListener('resize',()=>{if(state.imgEl)fitView();});
+
+  $$('.help').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();if(popover.style.display==='block')closeHelp();else openHelp(b.getAttribute('data-help'),b);}));
+  document.addEventListener('click',e=>{if(popover.style.display==='block'&&!popover.contains(e.target)&&!e.target.closest('.help'))closeHelp();});
+
+  calBtn.addEventListener('click',enterCalibrate);
+  $('#rpmTrace').addEventListener('click',()=>startNewCurve('rpm'));
+  $('#effTrace').addEventListener('click',()=>startNewCurve('eff'));
+  $('#rpmCopy').addEventListener('click',()=>copyText(modelExcel(state.rpmModel)));
+  $('#effCopy').addEventListener('click',()=>copyText(modelExcel(state.effModel)));
+  $('#probeBtn').addEventListener('click',enterProbe);
+  $('#xref').addEventListener('input',()=>updateCurvePanels());
+  $('#yref').addEventListener('input',()=>updateCurvePanels());
+  $$('#traceModeSeg button').forEach(b=>b.addEventListener('click',()=>{state.traceMode=b.getAttribute('data-trace');updateCurvePanels();if(state.mode==='trace')toast(state.traceMode==='poly'?'Click nodes along the curve.':'Drag along the curve.');}));
+  $('#copyBtn').addEventListener('click',copyImage);
+  $('#pdfBtn').addEventListener('click',exportPDF);
+  $('#openBtn').addEventListener('click',doOpen);
+  $('#saveBtn').addEventListener('click',doSave);
+  $('#saveAsBtn').addEventListener('click',doSaveAs);
+  $('#fileInput').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{openParsed(JSON.parse(ev.target.result));}catch(_){toast('That file is not valid JSON.',true);}};r.readAsText(f);e.target.value='';});
+  $('#sxVal').addEventListener('change',e=>{pushHistory();const v=parseFloat(e.target.value);state.calib.scale.xval=isNaN(v)?null:v;renderAll();});
+  $('#syVal').addEventListener('change',e=>{pushHistory();const v=parseFloat(e.target.value);state.calib.scale.yval=isNaN(v)?null:v;renderAll();});
+  $('#pumpMake').addEventListener('input',e=>{sizeDesc();state.make=e.target.value;});
+  $('#pumpModel').addEventListener('input',e=>{sizeDesc();state.model=e.target.value;});
+
+  document.addEventListener('keydown',e=>{const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);const k=e.key.toLowerCase();
+    if((e.ctrlKey||e.metaKey)&&k==='z'&&!e.shiftKey){e.preventDefault();undo();return;}
+    if((e.ctrlKey||e.metaKey)&&(k==='y'||(k==='z'&&e.shiftKey))){e.preventDefault();redo();return;}
+    if(e.key==='Escape'){if(state.mode==='calibrate')cancelCalibrate();else if(state.mode==='duty'||state.mode==='trace'||state.mode==='probe')exitMode();closeHelp();return;}
+    if(!typing&&(e.key==='Delete'||e.key==='Backspace')){e.preventDefault();deleteSelected();}});
+
+  setTab('curve',true);recomputeModels();syncInputs();renderAll();
+})();
+</script>
+</body>
+</html>

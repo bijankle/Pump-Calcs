@@ -54,20 +54,38 @@ button{font-family:inherit}
 .section-title{font-weight:700;color:var(--red);font-size:12px;text-transform:uppercase;
   letter-spacing:.5px;margin:14px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
 
-/* Input rows */
-.row{display:grid;grid-template-columns:1fr 86px 64px;align-items:center;gap:8px;padding:3px 0}
-.row label{color:var(--grey);font-size:13px}
+/* Input rows — fixed-width label keeps every field's left edge aligned,
+   field auto-sizes to its content leaving room on the right */
+.row{display:flex;align-items:center;gap:14px;padding:3px 0}
+.row > label{flex:0 0 210px;color:var(--grey);font-size:13px}
+.row .fieldwrap{display:flex;align-items:center;gap:8px;min-width:0}
 .row .unit{color:#999;font-size:12px}
-.row input,.row select{width:100%;padding:6px 8px;border:1px solid #d4d4d4;border-radius:6px;
-  background:var(--yellow);font-family:inherit;font-size:13px}
-.row select{background:var(--yellow)}
+.row input,.row select{padding:6px 9px;border:1px solid #d4d4d4;border-radius:6px;
+  background:var(--yellow);font-family:inherit;font-size:13px;text-align:left}
+.row input[type=number]{text-align:left}
+.row select{background:var(--yellow);width:auto;max-width:240px}
 .row input:focus,.row select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
 
-/* Output rows */
-.orow{display:grid;grid-template-columns:1fr 110px 56px 22px;align-items:center;gap:8px;
+/* Process-variable (solver) fields */
+.proc{margin-bottom:6px}
+.proc-status{font-size:12px;font-weight:600;border-radius:6px;padding:6px 10px;margin:2px 0 8px}
+.proc-status.ok{background:#e7f5ec;color:var(--ok)}
+.proc-status.warn{background:#fdf0dd;color:var(--warn)}
+.proc-status.bad{background:#fbe3e6;color:var(--bad)}
+.proc-input.known{background:var(--yellow)}
+.proc-input.auto{background:#f3f4f6;color:var(--grey);font-style:italic}
+.proc-input.auto::placeholder{color:var(--grey);opacity:.9;font-style:normal}
+.autobadge{font-size:10px;font-weight:700;color:var(--grey-2);background:#eceef0;border-radius:9px;padding:1px 7px}
+.autobadge.hidden{display:none}
+
+/* Output rows — Parameter | Nominal | Design | Unit | info */
+.orow{display:grid;grid-template-columns:1fr 96px 96px 52px 22px;align-items:center;gap:8px;
   padding:4px 0;border-bottom:1px dashed #eee}
+.orow.ohead{border-bottom:2px solid var(--line);font-weight:700;color:var(--grey)}
+.orow.ohead .oval{color:var(--grey);font-weight:700}
 .orow .olabel{color:var(--black);font-size:13px}
 .orow .oval{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.orow .oval.design{font-weight:600;color:var(--grey)}
 .orow .ounit{color:#999;font-size:12px}
 .orow .sym{color:var(--grey);font-size:11px}
 .info{width:18px;height:18px;border-radius:50%;border:1px solid var(--line);background:#fafafa;
@@ -111,9 +129,21 @@ h1.page{font-size:20px;margin:18px 0 4px}
 .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 16px}
 .tag-input{padding:7px 10px;border:1px solid #d4d4d4;border-radius:6px;font-family:inherit}
-.kpi{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 16px}
-.kpi .box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 16px;box-shadow:var(--shadow);min-width:120px}
+.kpi{display:flex;gap:12px;flex-wrap:wrap;margin:6px 0 16px}
+.kpi .box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 16px;box-shadow:var(--shadow);min-width:150px;flex:1 1 150px}
 .kpi .box .k{color:var(--grey);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-.kpi .box .v{font-size:20px;font-weight:800}
+.kpi .box .v{font-size:20px;font-weight:800;line-height:1.2}
 .kpi .box .v small{font-size:12px;color:var(--grey);font-weight:600}
+.kpi .box .vsub{font-size:11.5px;font-weight:700;margin-top:3px}
+.kpi .box .vsub.muted{color:var(--grey-2);font-weight:600}
+.kpi .box .vsub.ok{color:var(--ok)}
+.kpi .box .vsub.warn{color:var(--warn)}
+.kpi .box .vsub.bad{color:var(--bad)}
+
+/* Pump curve block */
+.curvebody{padding:0}
+.curveframe{width:100%;height:760px;border:0;display:block;background:#fff}
+
+/* Brand logo (SVG) */
+.brand .nexlogo{height:26px;display:block}
 .hidden{display:none}

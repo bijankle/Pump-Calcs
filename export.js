@@ -34,6 +34,13 @@
     cell.font = { name: FONT, size: 10, bold: !!bold, color: { argb: BLACK } };
   }
   const numFmt = { 0: '0', 1: '0.0', 2: '0.00', 3: '0.000', 4: '0.0000' };
+  // round to 3 significant figures (process values may themselves be solved)
+  function round3(v) {
+    if (v == null || !isFinite(v) || v === 0) return v;
+    const d = Math.ceil(Math.log10(Math.abs(v)));
+    const f = Math.pow(10, 3 - d);
+    return Math.round(v * f) / f;
+  }
 
   // ---- reference sheets ----------------------------------------------------
   function buildReference(wb) {
@@ -170,12 +177,12 @@
     const row = (r, b, c, d) => { if (b) label(ws.getCell('B' + r), b); if (c) label(ws.getCell('C' + r), c); if (d) label(ws.getCell('D' + r), d); };
 
     sectionStyle(ws.getCell('B11'), 'SLURRY DETAILS');
-    row(13, 'Solids', "m's", 'tph'); V('F13', s.solidsTPH); F('G13', '(1+$G$15)*F13');
-    row(14, 'Liquid', "m'L", 'tph'); V('F14', s.liquidTPH); F('G14', '(1+$G$15)*F14');
+    row(13, 'Solids', "m's", 'tph'); V('F13', round3(o.solidsN)); F('G13', '(1+$G$15)*F13');
+    row(14, 'Liquid', "m'L", 'tph'); V('F14', round3(o.liquidN)); F('G14', '(1+$G$15)*F14');
     row(15, 'Design Factor %', 'S'); V('G15', s.designFactor);
     row(16, 'Flowrate', 'Q', 'm3/hr'); F('F16', '((F13/F18)+(F14/F17))*F26'); F('G16', '((G13/F18)+(G14/F17))*F26');
-    row(17, 'Liquor s.g.', 'SL'); V('F17', s.liquorSG);
-    row(18, 'Solids s.g.', 'SS'); V('F18', s.solidsSG);
+    row(17, 'Liquor s.g.', 'SL'); V('F17', round3(o.SL));
+    row(18, 'Solids s.g.', 'SS'); V('F18', round3(o.SS));
     row(19, 'Mixture s.g.', 'SM'); F('F19', 'IFERROR(IF(F18<>0,(F13+F14)/F16,F17)*F26,"")');
     row(20, 'Concentration', 'Cw', 'w/w'); F('F20', 'F13/(F13+F14)');
     row(21, 'Concentration', 'Cv', 'v/v'); F('F21', 'IFERROR(F19/F18*F20,"")');
@@ -402,7 +409,7 @@
       const set = (col, val) => { const c = ws.getCell(r, col); c.value = val; c.border = border; c.font = baseFont; };
       const fr = (col, formula, result) => set(col, (result != null && isFinite(result)) ? { formula, result } : { formula });
       set(1, p.tag || ''); set(2, p.name || ''); set(3, p.stream || '');
-      set(4, p.slurry.solidsTPH); set(5, p.slurry.liquidTPH);
+      set(4, round3(o.solidsN)); set(5, round3(o.liquidN));
       fr(6, `${sh}!F19`, o.SM); fr(7, `${sh}!F21*100`, o.Cv * 100);
       fr(8, `${sh}!F16`, o.flowN); fr(9, `${sh}!F30`, p.suction.dn); fr(10, `${sh}!F49`, o.suc.V);
       fr(11, `${sh}!F60`, p.discharge.dn); fr(12, `${sh}!F79`, o.dis.V); fr(13, `${sh}!F105`, o.Hdyn);

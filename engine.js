@@ -116,16 +116,20 @@
     const s = inp.slurry, su = inp.suction, di = inp.discharge,
       pu = inp.pump, np = inp.npsh, pw = inp.power;
 
-    // Slurry details (col F = nominal, col G = design)
-    const df = s.designFactor;                 // G15
-    o.solidsN = s.solidsTPH; o.solidsD = (1 + df) * s.solidsTPH;
-    o.liquidN = s.liquidTPH; o.liquidD = (1 + df) * s.liquidTPH;
-    o.froth = s.frothFactor;
-    o.flowN = ((o.solidsN / s.solidsSG) + (o.liquidN / s.liquorSG)) * o.froth;       // F16
-    o.flowD = ((o.solidsD / s.solidsSG) + (o.liquidD / s.liquorSG)) * o.froth;       // G16
-    o.SM = (s.solidsSG !== 0 ? (o.solidsN + o.liquidN) / o.flowN : s.liquorSG) * o.froth; // F19
-    o.Cw = o.solidsN / (o.solidsN + o.liquidN);                                       // F20
-    o.Cv = o.SM / s.solidsSG * o.Cw;                                                  // F21
+    // Slurry details (col F = nominal, col G = design) — process variables solved
+    const df = s.designFactor || 0;                 // G15
+    const froth = (s.frothFactor != null ? s.frothFactor : 1);
+    const sv = solveProcess(s.proc || legacyProc(s), froth);
+    const SS = sv.v.Ss, SL = sv.v.SL;
+    o.SS = SS; o.SL = SL; o.df = df; o.froth = froth;
+    o.procStatus = sv.status; o.procUnknown = sv.unknown; o.procOk = sv.ok; o.proc = sv.v;
+    o.solidsN = sv.v.ms; o.solidsD = (1 + df) * sv.v.ms;
+    o.liquidN = sv.v.mL; o.liquidD = (1 + df) * sv.v.mL;
+    o.flowN = sv.v.Q;                                                                 // F16 (incl. froth)
+    o.flowD = (1 + df) * sv.v.Q;                                                      // G16
+    o.SM = sv.v.Sm;                                                                   // F19
+    o.Cw = sv.v.Cw;                                                                   // F20
+    o.Cv = sv.v.Cv;                                                                   // F21
     o.muL = waterViscosity(np.temp);                                                 // F22
     o.muM = s.viscOverride > 0 ? s.viscOverride : thomas(o.solidsN, o.Cv * 100, o.muL); // F23
     o.viscSource = s.viscOverride > 0 ? 'User defined' : 'Est. by program';
@@ -149,7 +153,7 @@
     Object.assign(o.dis, dh);
     o.dis.FL = o.FL;                                                                   // F80
     o.dis.Vlim = di.VlimOverride > 0 ? di.VlimOverride
-      : o.FL * Math.sqrt(2 * g * (dg.IDs / 1000) * (s.solidsSG - s.liquorSG) / s.liquorSG); // F81
+      : o.FL * Math.sqrt(2 * g * (dg.IDs / 1000) * (SS - SL) / SL); // F81
     o.dis.ratio = dh.V / o.dis.Vlim;                                                  // F82
     o.dis.Hd = di.Hsd + dh.Hp + dh.Hf + (di.Pd / (g * o.SM));                          // F88
 
@@ -160,10 +164,10 @@
     const Dimp = pu.impellerDia;                                                      // F97
     const maxd = (o.d50 / 1000 < 0.0228) ? 0.0228 : (o.d50 / 1000);
     o.HR = pu.headRatioOverride > 0 ? pu.headRatioOverride
-      : (1 - ((120 / Math.pow(Dimp, 0.8)) * (1 - (1 - (0.000385 * (s.solidsSG - 1) * (1 + 4 / s.solidsSG)) * (o.Cw * 100) * Math.log(maxd / 0.0227))))); // F98
+      : (1 - ((120 / Math.pow(Dimp, 0.8)) * (1 - (1 - (0.000385 * (SS - 1) * (1 + 4 / SS)) * (o.Cw * 100) * Math.log(maxd / 0.0227))))); // F98
     o.HRsource = pu.headRatioOverride > 0 ? 'User defined' : 'Est. by program';
     o.HE = pu.effRatioOverride > 0 ? pu.effRatioOverride
-      : ((1 - 0.00007 * Math.pow(100 / ((100 / (o.Cw * 100)) * (s.solidsSG / (s.solidsSG + 1) + 1)), 2)) * o.HR); // F99
+      : ((1 - 0.00007 * Math.pow(100 / ((100 / (o.Cw * 100)) * (SS / (SS + 1) + 1)), 2)) * o.HR); // F99
     o.HEsource = pu.effRatioOverride > 0 ? 'User defined' : 'Est. by program';
 
     o.Q1 = o.flowN / pu.nParallel;                                                    // F104
@@ -188,13 +192,13 @@
     o.motorReq = (o.P1 > o.P2 ? o.P1 : o.P2) * (1 / pw.driveEff) * (1 + pw.margin);   // F131
     o.motorSel = pw.motorSize;                                                        // F132
     o.pctFL = pw.motorSize > 0 ? o.motorReq / pw.motorSize : NaN;                     // F133
-    o.Pc = o.P2 * (o.SM / s.liquorSG);                                                // F135
+    o.Pc = o.P2 * (o.SM / SL);                                                        // F135
     o.Pcs = o.Pc * (1 + pw.margin) * (1 / pw.driveEff);                               // F136
     return o;
   }
 
   function settlingMethods(s, o, ID) {
-    const SS = s.solidsSG, SL = s.liquorSG, d = o.d50 * 1e-6, IDm = o.dis.ID * 1e-3;
+    const SS = o.SS, SL = o.SL, d = o.d50 * 1e-6, IDm = o.dis.ID * 1e-3;
     const mu = o.muL; // cP
     const durandV = durand(SL, SS, o.Cv, o.d50, o.dis.ID, o.FL);
     // Wilson & Judge (K85)
@@ -213,8 +217,94 @@
     return { durand: durandV, wilson, thomas: thomasV, wasp, sinclair: sinc };
   }
 
+  /* ---- Process-variable solver -----------------------------------------
+   * 8 interchangeable variables, 4 governing equations. Enter any independent
+   * 4, the solver finds the other 4 (Newton-Raphson, numeric Jacobian).
+   *   Vb = ms/Ss + mL/SL           (base volumetric flow, no froth)
+   *   Q  = froth * Vb
+   *   Sm = (ms+mL)/Vb
+   *   Cw = ms/(ms+mL)
+   *   Cv = (ms/Ss)/Vb
+   * --------------------------------------------------------------------- */
+  const PROC_KEYS = ['ms', 'mL', 'Ss', 'SL', 'Sm', 'Q', 'Cw', 'Cv'];
+  function legacyProc(s) {
+    return { ms: numOrNull(s.solidsTPH), mL: numOrNull(s.liquidTPH), Ss: numOrNull(s.solidsSG), SL: numOrNull(s.liquorSG), Sm: null, Q: null, Cw: null, Cv: null };
+  }
+  function numOrNull(x) { return (x === '' || x == null || isNaN(x)) ? null : Number(x); }
+
+  function residuals(v, froth) {
+    const Vb = v.ms / v.Ss + v.mL / v.SL;
+    return [
+      froth * Vb - v.Q,
+      (v.ms + v.mL) - v.Sm * Vb,
+      v.ms - v.Cw * (v.ms + v.mL),
+      (v.ms / v.Ss) - v.Cv * Vb
+    ];
+  }
+  function solve4(A, b) { // Gaussian elimination, 4x4
+    const n = b.length, M = A.map((r, i) => r.concat(b[i]));
+    for (let c = 0; c < n; c++) {
+      let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      if (Math.abs(M[p][c]) < 1e-14) return null;
+      [M[c], M[p]] = [M[p], M[c]];
+      for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
+    }
+    return M.map((r, i) => r[n] / r[i]);
+  }
+  function solveProcess(proc, froth) {
+    proc = proc || {}; froth = froth || 1;
+    const v = {}; PROC_KEYS.forEach(k => v[k] = numOrNull(proc[k]));
+    const unknown = PROC_KEYS.filter(k => v[k] == null);
+    const known = PROC_KEYS.filter(k => v[k] != null);
+    if (unknown.length > 4) return { status: 'under', need: unknown.length - 4, unknown, known, ok: false, v };
+    // need at least one extensive (flow/mass) quantity to fix the absolute scale
+    if (!['ms', 'mL', 'Q'].some(k => v[k] != null)) return { status: 'needflow', unknown, known, ok: false, v };
+    if (unknown.length < 4) { // over-specified: ignore lowest-priority extras, recompute & flag
+      const drop = known.slice().reverse().slice(0, 4 - unknown.length);
+      drop.forEach(k => v[k] = null);
+    }
+    const U = PROC_KEYS.filter(k => v[k] == null);
+    const guess = { ms: 100, mL: 100, Ss: 2.65, SL: 1, Sm: 1.3, Q: 150, Cw: 0.4, Cv: 0.2 };
+    U.forEach(k => v[k] = guess[k]);
+    let conv = false;
+    for (let it = 0; it < 200; it++) {
+      const r = residuals(v, froth);
+      const J = [[], [], [], []];
+      U.forEach((k, j) => {
+        const h = Math.max(1e-7, Math.abs(v[k]) * 1e-7);
+        const v2 = Object.assign({}, v); v2[k] += h;
+        const r2 = residuals(v2, froth);
+        for (let i = 0; i < 4; i++) J[i][j] = (r2[i] - r[i]) / h;
+      });
+      const dx = solve4(J, r.map(x => -x));
+      if (!dx) break;
+      let mx = 0; U.forEach((k, j) => { v[k] += dx[j]; mx = Math.max(mx, Math.abs(dx[j])); });
+      if (mx < 1e-10) { conv = true; break; }
+    }
+    const r = residuals(v, froth);
+    const finite = PROC_KEYS.every(k => isFinite(v[k]));
+    const physical = v.ms >= 0 && v.mL >= 0 && v.Ss > 0 && v.SL > 0 && v.Q > 0 && v.Sm > 0;
+    const ok = conv && finite && physical && r.every(x => Math.abs(x) < 1e-5);
+    return { status: ok ? 'solved' : 'fail', unknown: U, known, ok, v };
+  }
+
+  // Full nominal + design computation (design = flows × (1 + design factor)).
+  function computeBoth(pump) {
+    const n = compute(pump);
+    const dp = JSON.parse(JSON.stringify(pump));
+    dp.slurry.proc = { ms: n.solidsN * (1 + n.df), mL: n.liquidN * (1 + n.df), Ss: n.SS, SL: n.SL, Sm: null, Q: null, Cw: null, Cv: null };
+    dp.slurry.designFactor = 0;
+    const d = compute(dp);
+    return { n, d };
+  }
+
+  // Standard IEC motor ratings (kW)
+  const IEC_MOTORS = [0.37, 0.55, 0.75, 1.1, 1.5, 2.2, 3, 4, 5.5, 7.5, 11, 15, 18.5, 22, 30, 37, 45, 55, 75, 90, 110, 132, 160, 200, 250, 315, 355, 400, 450, 500, 560, 630, 710, 800, 900, 1000];
+  function nextMotor(kw) { for (const m of IEC_MOTORS) if (m >= kw) return m; return IEC_MOTORS[IEC_MOTORS.length - 1]; }
+
   window.ENGINE = {
-    compute, chen, thomas, durand, sinclair,
+    compute, computeBoth, solveProcess, PROC_KEYS, IEC_MOTORS, nextMotor,
+    chen, thomas, durand, sinclair,
     specRoughness, boreID, kBend, waterViscosity, vapourMwater, barometricKPa
   };
 })();
