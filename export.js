@@ -151,6 +151,7 @@
     const V = (c, val) => { ws.getCell(c).value = (val === undefined || val === null || val === '') ? null : val; };
     const yel = (c) => { ws.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: YELLOW } }; ws.getCell(c).border = border; };
     const s = pump.slurry, su = pump.suction, di = pump.discharge, pu = pump.pump, np = pump.npsh, pw = pump.power;
+    const o = ENGINE.compute(pump); // engine results -> cached into formula cells so values show instantly
 
     // Header
     ws.mergeCells('A1:D1'); titleStyle(ws.getCell('A1'), 'SLURRY PUMP CALCULATION');
@@ -269,6 +270,8 @@
     row(136, 'Motor Power for Conservative Power (check above)', 'Pcs'); F('F136', 'F135*(1+$E$131)*(1/F130)'); F('G136', 'G135*(1+E131)*(1/G130)');
     ['F130', 'G130', 'E131', 'F132'].forEach(yel);
 
+    applyResults(ws, o, pump); // cache computed values onto the live formulas
+
     // number formats for the F/G data columns
     for (let r = 11; r <= 136; r++) {
       ['F', 'G', 'K'].forEach(cl => { const c = ws.getCell(cl + r); if (c.type === ExcelJS.ValueType.Formula || typeof c.value === 'number') c.numFmt = '0.00'; });
@@ -279,6 +282,40 @@
     // light styling: borders on label columns
     ws.views = [{ showGridLines: false }];
     return ws;
+  }
+
+  // Attach engine-computed values as the *cached result* of each live formula.
+  // The cell stays a real, editable formula; Excel recalculates on edit/open,
+  // but the value is visible immediately even in non-recalculating viewers.
+  function applyResults(ws, o, pump) {
+    const npshr = pump.npsh.npshr;
+    const res = {
+      G13: o.solidsD, G14: o.liquidD, F16: o.flowN, G16: o.flowD,
+      F19: o.SM, F20: o.Cw, F21: o.Cv, F22: o.muL, F23: o.muM, G23: o.viscSource, F25: o.FL,
+      F31: o.suc.ID, F33: o.suc.IDs, F34: o.suc.e, F35: o.suc.eD,
+      F40: o.suc.k90, F41: o.suc.k45, F42: o.suc.kRun, F43: o.suc.kBranch,
+      F49: o.suc.V, G49: o.suc.VD, F50: o.suc.Re, F51: o.suc.f, F52: o.suc.Hf,
+      F53: o.suc.K, G53: o.suc.K, F54: o.suc.Hp, F55: o.suc.Hs,
+      F61: o.dis.ID, F63: o.dis.IDs, F64: o.dis.e, F65: o.dis.eD,
+      F70: o.dis.k90, F71: o.dis.k45, F72: o.dis.kRun, F73: o.dis.kBranch,
+      F79: o.dis.V, F80: o.dis.FL, F81: o.dis.Vlim, F82: o.dis.ratio,
+      F83: o.dis.Re, F84: o.dis.f, F85: o.dis.Hf, F86: o.dis.K, F87: o.dis.Hp, F88: o.dis.Hd,
+      K84: o.settle.durand, K85: o.settle.wilson, K86: o.settle.thomas, K87: o.settle.wasp, K88: o.settle.sinclair,
+      F98: o.HR, G98: o.HRsource, F99: o.HE, G99: o.HEsource,
+      F104: o.Q1, F105: o.Hdyn, F106: o.etaS, F107: o.P1,
+      F109: o.Q1, F110: o.Hw, F112: o.P2, F115: o.tipSpeed,
+      F119: o.PatmM, F121: o.PvM, F122: o.NPSHa_slurry, G122: o.NPSHa_slurry,
+      F123: o.NPSHa_water, G123: o.NPSHa_water,
+      F125: (npshr > 0 ? (o.npshOK ? 'true' : 'false') : 'Enter NPSHr above'),
+      F128: o.P1, F129: o.P2, F131: o.motorReq, F133: o.pctFL, F135: o.Pc, F136: o.Pcs
+    };
+    Object.keys(res).forEach(c => {
+      const cur = ws.getCell(c).value;
+      const v = res[c];
+      if (cur && cur.formula && v != null && (typeof v === 'string' || isFinite(v))) {
+        ws.getCell(c).value = { formula: cur.formula, result: v };
+      }
+    });
   }
 
   function buildLeg(ws, F, V, yel, row, side, p, base) {
@@ -361,14 +398,16 @@
     ws.getRow(hr).height = 30;
     project.pumps.forEach((p, i) => {
       const r = hr + 1 + i; const sh = `'${sanitize(p.tag || p.name)}'`;
+      const o = ENGINE.compute(p);
       const set = (col, val) => { const c = ws.getCell(r, col); c.value = val; c.border = border; c.font = baseFont; };
+      const fr = (col, formula, result) => set(col, (result != null && isFinite(result)) ? { formula, result } : { formula });
       set(1, p.tag || ''); set(2, p.name || ''); set(3, p.stream || '');
       set(4, p.slurry.solidsTPH); set(5, p.slurry.liquidTPH);
-      set(6, { formula: `${sh}!F19` }); set(7, { formula: `${sh}!F21*100` });
-      set(8, { formula: `${sh}!F16` }); set(9, { formula: `${sh}!F30` }); set(10, { formula: `${sh}!F49` });
-      set(11, { formula: `${sh}!F60` }); set(12, { formula: `${sh}!F79` }); set(13, { formula: `${sh}!F105` });
-      set(14, p.pump.model || ''); set(15, { formula: `${sh}!F131` }); set(16, p.power.motorSize);
-      set(17, { formula: `${sh}!F133*100` }); set(18, { formula: `${sh}!F122` });
+      fr(6, `${sh}!F19`, o.SM); fr(7, `${sh}!F21*100`, o.Cv * 100);
+      fr(8, `${sh}!F16`, o.flowN); fr(9, `${sh}!F30`, p.suction.dn); fr(10, `${sh}!F49`, o.suc.V);
+      fr(11, `${sh}!F60`, p.discharge.dn); fr(12, `${sh}!F79`, o.dis.V); fr(13, `${sh}!F105`, o.Hdyn);
+      set(14, p.pump.model || ''); fr(15, `${sh}!F131`, o.motorReq); set(16, p.power.motorSize);
+      fr(17, `${sh}!F133*100`, o.pctFL * 100); fr(18, `${sh}!F122`, o.NPSHa_slurry);
       [6, 7, 8, 10, 12, 13, 17, 18].forEach(cc => ws.getCell(r, cc).numFmt = '0.00');
     });
     [12, 22, 9, 11, 11, 9, 9, 10, 10, 10, 10, 10, 10, 14, 10, 10, 9, 10].forEach((w, i) => ws.getColumn(i + 1).width = w);
