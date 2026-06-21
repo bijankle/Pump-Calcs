@@ -37,8 +37,9 @@
     --danger:#D83C3E;
     --red-tint:#FCEDED;
     --grid:#E3E5E8;
-    --mono:'Aptos Mono','Cascadia Code', ui-monospace, monospace;
-    --ui:'Aptos','Segoe UI Variable Text','Segoe UI', system-ui, -apple-system, sans-serif;
+    /* match the main calc UI: one Aptos/Segoe sans stack everywhere (no monospace) */
+    --ui:'Aptos','Segoe UI Variable Text','Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --mono:'Aptos','Segoe UI Variable Text','Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
   }
 
   *{ box-sizing:border-box; }
@@ -201,7 +202,7 @@
   #calloutDD{ top:54px; }
   #flowDD{ top:96px; }
   .dd-btn{
-    font-family:var(--ui); font-size:12px; font-weight:600; letter-spacing:.3px; color:var(--ink);
+    font-family:var(--ui); font-size:13px; font-weight:600; letter-spacing:.3px; color:var(--ink);
     background:#fff; border:1px solid var(--line); border-radius:7px; padding:7px 11px; cursor:pointer;
     display:inline-flex; align-items:center; gap:7px; box-shadow:0 4px 14px -8px rgba(0,0,0,.5);
   }
@@ -364,9 +365,19 @@
   .map-btn .ic{ font-family:var(--mono); }
 
   /* callout visibility toggles, inside the Callouts dropdown */
-  #calloutTools{ display:flex; flex-direction:column; gap:6px; }
-  #calloutTools .ct-check{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink); cursor:pointer; white-space:nowrap; }
-  #calloutTools .ct-check input{ accent-color:var(--accent); width:14px; height:14px; }
+  /* NB: no display rule here — must not override .dd-menu{display:none} (ID beats class) */
+  #calloutTools .ct-check{ display:flex; align-items:center; gap:9px; font-size:13px; color:var(--ink); cursor:pointer; white-space:nowrap; margin:8px 0; }
+  #calloutTools .ct-check:first-child{ margin-top:0; }
+  #calloutTools .ct-check:last-child{ margin-bottom:0; }
+  #calloutTools .ct-check input{
+    appearance:none; -webkit-appearance:none; flex:0 0 auto; position:relative; cursor:pointer;
+    width:16px; height:16px; border:1.5px solid #aab0b8; border-radius:4px; background:#fff;
+  }
+  #calloutTools .ct-check input:checked{ background:var(--accent); border-color:var(--accent); }
+  #calloutTools .ct-check input:checked::after{
+    content:''; position:absolute; left:4.5px; top:1px; width:4px; height:8px;
+    border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg);
+  }
 
   /* help overlay (How to use / Good to know) */
   .help-overlay{ position:fixed; inset:0; z-index:4000; background:rgba(30,31,34,.32);
