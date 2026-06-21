@@ -17,7 +17,7 @@ button{font-family:inherit}
 
 /* Header */
 .topbar{background:var(--black);color:#fff;display:flex;align-items:center;gap:16px;
-  padding:10px 22px;position:sticky;top:0;z-index:40}
+  padding:10px 22px;position:sticky;top:0;z-index:50;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.5px}
 .brand .mark{width:14px;height:22px;background:var(--red);display:inline-block;transform:skewX(-12deg)}
 .brand .sub{color:#bdbdbd;font-weight:400;font-size:12px;margin-left:4px}
@@ -28,7 +28,8 @@ button{font-family:inherit}
 .btn-grey{background:#ececec;color:var(--black)}.btn-grey:hover{background:#dedede}
 
 /* Tabs */
-.tabs{display:flex;gap:2px;background:var(--grey);border-radius:0 0 8px 8px;overflow:hidden;flex-wrap:wrap}
+.tabs{display:flex;gap:2px;background:var(--grey);border-radius:0 0 8px 8px;overflow:hidden;flex-wrap:wrap;
+  position:sticky;top:var(--topbar-h,56px);z-index:45}
 .tab{padding:11px 18px;color:#e7e7e7;cursor:pointer;font-weight:600;font-size:13px;border-bottom:3px solid transparent}
 .tab:hover{background:#5c5c5c;color:#fff}
 .tab.active{background:var(--card);color:var(--black);border-bottom:3px solid var(--red)}
@@ -38,7 +39,8 @@ button{font-family:inherit}
 .pumpchip{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
   border-radius:20px;padding:5px 6px 5px 14px;cursor:pointer;box-shadow:var(--shadow)}
 .pumpchip.active{border-color:var(--red);box-shadow:0 0 0 2px rgba(200,16,46,.15)}
-.pumpchip .tag{font-weight:700}.pumpchip .nm{color:var(--grey);font-size:12px}
+.pumpchip .chiptext{display:flex;flex-direction:column;line-height:1.12;text-align:left}
+.pumpchip .tag{font-weight:700;font-size:13px}.pumpchip .nm{color:var(--grey);font-size:11px}
 .pumpchip .x{border:none;background:#f0f0f0;border-radius:50%;width:20px;height:20px;cursor:pointer;color:#888}
 .pumpchip .x:hover{background:var(--red);color:#fff}
 
@@ -62,7 +64,9 @@ button{font-family:inherit}
 .row .unit{color:#999;font-size:12px}
 .row input,.row select{padding:6px 9px;border:1px solid #d4d4d4;border-radius:6px;
   background:var(--yellow);font-family:inherit;font-size:13px;text-align:left}
-.row input[type=number]{text-align:left}
+.row input[type=number]{text-align:left;-moz-appearance:textfield;appearance:textfield}
+.row input[type=number]::-webkit-outer-spin-button,
+.row input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .row select{background:var(--yellow);width:auto;max-width:240px}
 .row input:focus,.row select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
 
@@ -77,6 +81,19 @@ button{font-family:inherit}
 .proc-input.auto::placeholder{color:var(--grey);opacity:.9;font-style:normal}
 .autobadge{font-size:10px;font-weight:700;color:var(--grey-2);background:#eceef0;border-radius:9px;padding:1px 7px}
 .autobadge.hidden{display:none}
+
+/* Auto / Manual toggle on override rows */
+.autotoggle{display:inline-flex;border:1px solid #d4d4d4;border-radius:6px;overflow:hidden;flex:none}
+.autotoggle .at{border:none;background:#fff;color:var(--grey);font:inherit;font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer}
+.autotoggle .at + .at{border-left:1px solid #d4d4d4}
+.autotoggle .at.on{background:var(--red);color:#fff}
+.row input.autoval{background:#f3f4f6;color:var(--grey);font-style:italic}
+.row input.autoval::placeholder{color:var(--grey);font-style:normal;opacity:.9}
+
+/* Transposed summary */
+table.ref.summary td.pname{text-align:left;font-weight:600;background:#f7f7f7}
+table.ref.summary td.punit{text-align:left;color:var(--grey);font-size:11px;background:#fff}
+table.ref.summary th.pumpcol{text-align:center;min-width:80px}
 
 /* Output rows — Parameter | Nominal | Design | Unit | info */
 .orow{display:grid;grid-template-columns:1fr 96px 96px 52px 22px;align-items:center;gap:8px;
@@ -139,6 +156,28 @@ h1.page{font-size:20px;margin:18px 0 4px}
 .kpi .box .vsub.ok{color:var(--ok)}
 .kpi .box .vsub.warn{color:var(--warn)}
 .kpi .box .vsub.bad{color:var(--bad)}
+
+/* Frozen results band (pump chips + KPI summary) */
+.calc-sticky{position:sticky;top:calc(var(--topbar-h,56px) + var(--tabs-h,44px));z-index:30;
+  background:var(--bg);padding-top:10px;margin-bottom:4px;
+  box-shadow:0 8px 8px -8px rgba(0,0,0,.18)}
+.calc-sticky .pumpbar{margin-top:0}
+.calc-sticky .kpi{margin-bottom:10px}
+
+/* Soft anchored call-out (replaces modal popover) */
+.callout{position:fixed;z-index:80;max-width:360px;background:#fff;border:1px solid var(--line);
+  border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.16);overflow:hidden;font-size:13px}
+.callout-h{background:var(--black);color:#fff;font-weight:700;font-size:13px;padding:8px 12px}
+.callout-b{padding:10px 12px;max-height:60vh;overflow:auto}
+.callout-text{color:var(--black);line-height:1.5;margin-bottom:8px}
+.callout .formula{background:#faf7f2;border-left:3px solid var(--red);padding:8px 10px;border-radius:4px;
+  font-family:'Cascadia Code',Consolas,monospace;font-size:12px;white-space:pre-wrap;margin:8px 0}
+.callout-table{margin:8px 0}
+.callout-cap{font-size:11px;color:var(--grey);margin-bottom:4px}
+.callout-table table.ref{font-size:11.5px}
+.callout-table table.ref th,.callout-table table.ref td{padding:3px 7px}
+.callout .refs{margin-top:8px}
+.callout .ref{font-size:11px;color:var(--grey);padding:5px 0;border-top:1px solid var(--line)}
 
 /* Pump curve block */
 .curvebody{padding:0}

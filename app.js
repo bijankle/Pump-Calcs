@@ -72,20 +72,42 @@
     { k: 'Cv', l: 'Conc. by volume', u: '%', dec: 1, pct: true }
   ];
 
-  // -------- standard-input info call-outs -----------------------------------
+  // -------- standard-input info call-outs (text + optional source table) ----
+  const K_ENTRANCE = () => miniTable(['Entrance / inlet geometry', 'K'], [
+    ['Bell-mouth / well-rounded', '0.04'], ['Slightly rounded', '0.2'],
+    ['Sharp-edged (flush)', '0.5'], ['Re-entrant / projecting', '0.8–1.0'],
+    ['Sharp suction offtake (slurry)', '1.5']], 'Typical entrance loss coefficients (Crane TP-410)');
+  const K_VALVE = () => miniTable(['Valve type (full open)', 'K'], [
+    ['Knife-gate / gate (full bore)', '0.1–0.3'], ['Ball / plug (full bore)', '0.05'],
+    ['Butterfly', '0.3–0.6'], ['Swing check', '1.0–2.5'], ['Globe', '6–10']], 'Typical valve K, fully open (Crane TP-410)');
+  const K_REDUCER = () => miniTable(['Reducer / expander', 'K'], [
+    ['Gradual reducer (≤15°)', '0.05–0.1'], ['Sudden contraction', '0.3–0.5'],
+    ['Gradual expander', '0.2–0.3'], ['Sudden enlargement', '0.5–1.0']], 'Typical reducer K (Crane TP-410)');
+  const K_EXIT = () => miniTable(['Discharge / exit', 'K'], [
+    ['Pipe exit to tank/atmosphere', '1.0'], ['Pump discharge connection', '0.3–0.5'],
+    ['Gradual diffuser', '0.2–0.3']], 'Typical exit/discharge K (Crane TP-410)');
+
   const INPUT_INFO = {
-    'slurry.designFactor': ['Design (process) factor', 'Margin added to the mass flows to produce the “Design” column. <b>0.20 (20%)</b> is the usual house standard — it rarely changes between calcs unless the process group specifies a different basis.'],
-    'slurry.frothFactor': ['Froth volume factor', 'Multiplier on volumetric flow to allow for entrained air in flotation / froth streams. <b>1.0 = no froth</b>. Only differs from 1 on froth-handling duties.'],
-    'suction.k1': ['Inlet coefficient K1', 'Entrance loss at the pump suction. <b>≈1.5</b> for a sharp/projecting inlet typical of slurry pumps. This is a geometry constant, not duty-dependent, so it is the same on almost every calc.'],
-    'suction.k2': ['Suction valve K2', 'Loss across the suction isolation valve. <b>≈0.3</b> for a full-bore knife-gate. Usually the same valve type plant-wide, so it seldom changes.'],
-    'suction.k3': ['Reducer K3', 'Eccentric reducer at the suction. <b>≈0.1</b>. A standard fitting on most pumps — typically constant across calcs.'],
-    'discharge.k1': ['Discharge coefficient K1', 'Connection/exit coefficient at the pump discharge. <b>≈0.5</b>. Geometry-based and rarely duty-specific.'],
-    'discharge.k2': ['Outlet valves K2', 'Combined loss for the discharge valves (e.g. knife-gate + check). <b>≈1.0</b>. The same valve set is normally used across similar duties.'],
-    'discharge.k3': ['Reducer K3', 'Discharge reducer/expander. <b>≈0.3</b>. Standard fitting; usually constant.'],
-    'power.driveEff': ['Drive efficiency', 'Transmission efficiency (V-belt or gearbox). <b>0.95</b> is typical for belt drives and is constant across most installations.'],
-    'power.margin': ['Power-draw margin', 'Margin applied when sizing the motor. <b>0.20 (20%)</b> is the common standard.'],
-    'npsh.altitude': ['Site elevation', 'Sets the atmospheric pressure used for NPSH via the barometric formula. Constant for a given site.']
+    'slurry.designFactor': ['Design (process) factor', 'Margin added to the mass flows to produce the “Design” column (G = (1+factor)·nominal). <b>0.20 (20%)</b> is the usual house standard — it rarely changes between calcs unless the process group specifies a different basis.'],
+    'slurry.frothFactor': ['Froth volume factor', 'Multiplier on volumetric flow to allow for entrained air in flotation / froth streams. <b>1.0 = no froth</b>. Only differs from 1 on froth-handling duties (values of 1.1–1.5 are common on flotation concentrate/tails).'],
+    'suction.k1': ['Inlet coefficient K1', 'Entrance loss at the pump suction. <b>≈1.5</b> for a sharp/projecting slurry inlet. It depends on the inlet <i>geometry</i>, not the duty — so it is the same on almost every calc. Pick from the table for other geometries:', K_ENTRANCE],
+    'suction.k2': ['Suction valve K2', 'Loss across the suction isolation valve. <b>≈0.3</b> for a full-bore knife-gate. Depends on valve type, not duty — usually the same valve plant-wide. Values for other valves:', K_VALVE],
+    'suction.k3': ['Reducer K3', 'Eccentric reducer at the suction. <b>≈0.1</b> for a gradual reducer. Depends on the contraction geometry, not duty:', K_REDUCER],
+    'discharge.k1': ['Discharge coefficient K1', 'Connection/exit coefficient at the pump discharge. <b>≈0.5</b>. Depends on the discharge geometry, not the duty — so it is usually constant. Values for other cases:', K_EXIT],
+    'discharge.k2': ['Outlet valves K2', 'Combined loss for the discharge valves (e.g. knife-gate + check). <b>≈1.0</b>. Sum the K of the valves actually fitted:', K_VALVE],
+    'discharge.k3': ['Reducer K3', 'Discharge reducer/expander. <b>≈0.3</b>. Depends on the reducer geometry, not duty:', K_REDUCER],
+    'suction.q90': ['Bend & tee K (auto)', 'Enter the <b>quantity</b> of each fitting — the K value (K4–K7) is looked up automatically from the nominal size, so it <i>does</i> change with diameter. The lookup table:', () => bendTable()],
+    'discharge.q90': ['Bend & tee K (auto)', 'Enter the <b>quantity</b> of each fitting — the K value (K4–K7) is looked up automatically from the nominal size, so it <i>does</i> change with diameter. The lookup table:', () => bendTable()],
+    'power.driveEff': ['Drive efficiency', 'Transmission efficiency (V-belt or gearbox). <b>0.95</b> is typical for belt drives and is constant across most installations. Direct-coupled ≈ 1.0; worn belts as low as 0.90.'],
+    'power.margin': ['Power-draw margin', 'Margin applied when sizing the motor (motor ≥ (1+margin)·duty power / drive eff). <b>0.20 (20%)</b> is the common standard; some specs use 10–15% on large motors.'],
+    'npsh.altitude': ['Site elevation', 'Sets the atmospheric pressure used for NPSH via the barometric formula Patm = 101.325·(1−2.25577e-5·h)^5.25588 kPa. Constant for a given site.']
   };
+  function bendTable() {
+    const dns = [50, 100, 150, 200, 250, 315, 400];
+    return miniTable(['Fitting'].concat(dns.map(String)),
+      ['90', '45', 'Run', 'Branch'].map(nm => [nm + (nm === 'Run' || nm === 'Branch' ? ' tee' : '° bend')].concat(dns.map(dn => ENGINE.kBend(nm, dn)))),
+      'K by nominal size DN (auto-looked-up)');
+  }
 
   // -------- input schema ----------------------------------------------------
   const INPUTS = [
@@ -93,7 +115,7 @@
       { p: 'tag', l: 'Pump Tag', t: 'text' }, { p: 'name', l: 'Pump Name', t: 'text' }, { p: 'stream', l: 'Stream No', t: 'text' } ] },
     { title: 'Slurry Details', proc: true, fields: [
       { p: 'slurry.designFactor', l: 'Design factor', u: 'frac', step: 0.05 },
-      { p: 'slurry.viscOverride', l: 'Slurry viscosity override (0=auto)', u: 'cP' },
+      { p: 'slurry.viscOverride', l: 'Slurry viscosity', u: 'cP', t: 'auto', autoKey: 'muM' },
       { p: 'slurry.d50', l: 'Particle size d50', u: 'µm' },
       { p: 'slurry.frothFactor', l: 'Froth volume factor', u: '' } ] },
     { title: 'Suction Pipe', leg: 'suction', fields: legFields('suction') },
@@ -101,8 +123,8 @@
     { title: 'Pump / Duty Points', fields: [
       { p: 'pump.make', l: 'Make', t: 'text' }, { p: 'pump.model', l: 'Model', t: 'text' },
       { p: 'pump.impellerDia', l: 'Impeller diameter', u: 'mm' },
-      { p: 'pump.headRatioOverride', l: 'Head ratio override (0=auto)', u: '' },
-      { p: 'pump.effRatioOverride', l: 'Efficiency ratio override (0=auto)', u: '' },
+      { p: 'pump.headRatioOverride', l: 'Head ratio', u: '', t: 'auto', autoKey: 'HR' },
+      { p: 'pump.effRatioOverride', l: 'Efficiency ratio', u: '', t: 'auto', autoKey: 'HE' },
       { p: 'pump.nSeries', l: 'Pumps in series', u: '' },
       { p: 'pump.nParallel', l: 'Pumps in parallel', u: '' },
       { p: 'pump.effWater', l: 'Water efficiency ηw (duty pt 2)', u: '%', t: 'pct' },
@@ -187,24 +209,28 @@
 
   // -------- dynamic input sizing -------------------------------------------
   function sizeInput(inp) {
-    const len = (inp.value || inp.placeholder || '').length;
-    inp.style.width = Math.max(4.5, Math.min(20, len + 2.5)) + 'ch';
+    const txt = (inp.value !== '' ? inp.value : inp.placeholder) || '';
+    inp.style.width = Math.max(6, Math.min(24, txt.length + 3)) + 'ch';
   }
 
   // -------- render: calculator ---------------------------------------------
-  let procInputs = {}, slurryStatusEl = null;
+  let procInputs = {}, slurryStatusEl = null, autoInputs = {}, curN = null;
   function renderCalc() {
-    const root = $('#view'); root.innerHTML = ''; procInputs = {};
+    const root = $('#view'); root.innerHTML = ''; procInputs = {}; autoInputs = {};
     const p = activePump();
-    root.appendChild(pumpBar());
+    const both = ENGINE.computeBoth(p); curN = both.n;
 
-    const both = ENGINE.computeBoth(p);
-    root.appendChild(kpis(both.n, both.d));
+    // sticky band: pump chips + results summary stay visible while scrolling
+    const sticky = el('div', { class: 'calc-sticky' });
+    sticky.appendChild(pumpBar());
+    sticky.appendChild(kpis(both.n, both.d));
+    root.appendChild(sticky);
+    requestAnimationFrame(updateSticky);
 
     const grid = el('div', { class: 'grid' });
     // inputs card
     const inCard = el('div', { class: 'card' });
-    inCard.appendChild(el('h2', {}, '<span class="accent"></span> Inputs'));
+    inCard.appendChild(el('h2', {}, 'Inputs'));
     const inBody = el('div', { class: 'body' });
     INPUTS.forEach(sec => {
       inBody.appendChild(el('div', { class: 'section-title' }, sec.title));
@@ -215,7 +241,7 @@
 
     // outputs card (Nominal + Design)
     const outCard = el('div', { class: 'card' });
-    outCard.appendChild(el('h2', {}, '<span class="accent"></span> Calculated Results'));
+    outCard.appendChild(el('h2', {}, 'Calculated Results'));
     const outBody = el('div', { class: 'body' });
     outBody.appendChild(outHeader());
     OUTPUTS.forEach(sec => {
@@ -292,8 +318,24 @@
     const fieldwrap = el('div', { class: 'fieldwrap' });
     let inp;
     if (f.t === 'text') {
+      const identity = ['tag', 'name', 'stream'].includes(f.p);
       inp = el('input', { type: 'text', value: getPath(p, f.p) ?? '' });
-      inp.addEventListener('input', () => { setPath(p, f.p, inp.value); sizeInput(inp); commit(false); });
+      inp.addEventListener('input', () => { setPath(p, f.p, inp.value); sizeInput(inp); if (identity) { refreshPumpBar(); save(); } else commit(false); });
+    } else if (f.t === 'auto') {
+      // Auto / Manual toggle replaces the "0 = auto" convention
+      const stored = getPath(p, f.p), manual = stored > 0;
+      const toggle = el('div', { class: 'autotoggle' });
+      const bAuto = el('button', { class: 'at' + (!manual ? ' on' : '') }, 'Auto');
+      const bMan = el('button', { class: 'at' + (manual ? ' on' : '') }, 'Manual');
+      toggle.appendChild(bAuto); toggle.appendChild(bMan);
+      bAuto.addEventListener('click', () => { setPath(p, f.p, 0); commit(true); });
+      bMan.addEventListener('click', () => { const cv = curN ? curN[f.autoKey] : 0; setPath(p, f.p, cv > 0 ? Number(sig(cv)) : 0.001); commit(true); });
+      fieldwrap.appendChild(toggle);
+      inp = el('input', { type: 'number', step: 'any' });
+      if (manual) { inp.value = stored; inp.classList.add('known'); }
+      else { inp.value = ''; inp.readOnly = true; inp.classList.add('autoval'); inp.placeholder = curN ? sig(curN[f.autoKey]) : '?'; }
+      inp.addEventListener('input', () => { const v = parseFloat(inp.value); setPath(p, f.p, isNaN(v) ? 0 : v); sizeInput(inp); commit(false); });
+      autoInputs[f.p] = { inp, key: f.autoKey };
     } else if (f.t === 'mat') {
       inp = el('select');
       REFDATA.materials.forEach(m => inp.appendChild(el('option', { value: m, selected: getPath(p, f.p) === m ? '' : null }, m)));
@@ -331,7 +373,7 @@
     const info = INPUT_INFO[f.p];
     if (info) {
       const b = el('button', { class: 'info', title: info[0] }, 'i');
-      b.addEventListener('click', () => openInfo(info[0], info[1]));
+      b.addEventListener('click', (e) => openInfo(e.currentTarget, info[0], info[1], info[2]));
       fieldwrap.appendChild(b);
     }
     r.appendChild(fieldwrap);
@@ -358,10 +400,11 @@
     const valCell = el('div', { class: 'oval' }, vN);
     if (pillFn) { const pl = pillFn(oN); if (pl) valCell.innerHTML = vN + ` <span class="pill ${pl.cls}">${pl.t}</span>`; }
     row.appendChild(valCell);
-    row.appendChild(el('div', { class: 'oval design' }, vD));
+    // Design column blank when identical to Nominal (readability)
+    row.appendChild(el('div', { class: 'oval design' }, vD === vN ? '' : vD));
     row.appendChild(el('div', { class: 'ounit' }, unit));
     const info = el('button', { class: 'info', title: 'How this is calculated' }, 'i');
-    info.addEventListener('click', () => openDoc(key));
+    info.addEventListener('click', (e) => openDoc(e.currentTarget, key));
     row.appendChild(info);
     return row;
   }
@@ -402,7 +445,7 @@
   // -------- pump curve block ------------------------------------------------
   function pumpCurveBlock() {
     const card = el('div', { class: 'card', style: 'margin-top:18px' });
-    card.appendChild(el('h2', {}, '<span class="accent"></span> Pump Curve'));
+    card.appendChild(el('h2', {}, 'Pump Curve'));
     const body = el('div', { class: 'curvebody' });
     const frame = el('iframe', { class: 'curveframe', title: 'Pump Curve', loading: 'lazy' });
     // PUMP_CURVE_SRCDOC is injected by the single-file build; otherwise load the file
@@ -418,8 +461,10 @@
     STATE.pumps.forEach((p, i) => {
       const chip = el('div', { class: 'pumpchip' + (i === STATE.active ? ' active' : '') });
       chip.addEventListener('click', () => { STATE.active = i; commit(true); });
-      chip.appendChild(el('span', { class: 'tag' }, p.tag));
-      chip.appendChild(el('span', { class: 'nm' }, p.name || ''));
+      const txt = el('div', { class: 'chiptext' });
+      txt.appendChild(el('span', { class: 'tag' }, p.tag || '—'));
+      txt.appendChild(el('span', { class: 'nm' }, p.name || ''));
+      chip.appendChild(txt);
       if (STATE.pumps.length > 1) {
         const x = el('button', { class: 'x', title: 'Remove pump' }, '×');
         x.addEventListener('click', (e) => { e.stopPropagation(); STATE.pumps.splice(i, 1); STATE.active = Math.max(0, STATE.active - (i <= STATE.active ? 1 : 0)); commit(true); });
@@ -432,6 +477,7 @@
     bar.appendChild(add);
     return bar;
   }
+  function refreshPumpBar() { const old = $('#view .pumpbar'); if (old) old.replaceWith(pumpBar()); }
   function addPump() {
     const tag = prompt('New pump tag:', 'PP' + String(pumpSeq).padStart(3, '0'));
     if (tag == null) return;
@@ -441,63 +487,127 @@
     STATE.pumps.push(np); STATE.active = STATE.pumps.length - 1; commit(true);
   }
 
-  // -------- popovers --------------------------------------------------------
-  function popover(title, bodyBuild) {
-    const back = el('div', { class: 'pop-backdrop' });
-    back.addEventListener('click', e => { if (e.target === back) back.remove(); });
-    const pop = el('div', { class: 'pop' });
-    const head = el('header', {}); head.appendChild(el('h3', {}, title));
-    const cl = el('button', { class: 'pclose' }, '×'); cl.addEventListener('click', () => back.remove()); head.appendChild(cl);
-    pop.appendChild(head);
-    const body = el('div', { class: 'pbody' }); bodyBuild(body);
-    pop.appendChild(body); back.appendChild(pop); document.body.appendChild(back);
+  // -------- soft anchored call-outs (no backdrop, click another to switch) --
+  let activeCallout = null;
+  function closeCallout() {
+    if (activeCallout) { activeCallout.remove(); activeCallout = null; document.removeEventListener('mousedown', onDocDown, true); }
   }
-  function openInfo(title, html) { popover(title, body => body.appendChild(el('p', {}, html))); }
-  function openDoc(key) {
+  function onDocDown(e) {
+    if (activeCallout && !activeCallout.contains(e.target) && !(e.target.classList && e.target.classList.contains('info'))) closeCallout();
+  }
+  function showCallout(anchor, title, bodyBuild) {
+    const reopen = activeCallout && activeCallout.dataset.anchor === anchorId(anchor);
+    closeCallout();
+    if (reopen) return; // clicking the same i again closes it
+    const c = el('div', { class: 'callout' });
+    c.dataset.anchor = anchorId(anchor);
+    c.appendChild(el('div', { class: 'callout-h' }, title));
+    const body = el('div', { class: 'callout-b' }); bodyBuild(body); c.appendChild(body);
+    document.body.appendChild(c);
+    const r = anchor.getBoundingClientRect(), cw = c.offsetWidth, ch = c.offsetHeight, gap = 8;
+    let left = r.right + gap; if (left + cw > window.innerWidth - 8) left = Math.max(8, r.left - cw - gap);
+    let top = r.top + r.height / 2 - ch / 2;
+    top = Math.max(8, Math.min(top, window.innerHeight - ch - 8));
+    c.style.left = left + 'px'; c.style.top = top + 'px';
+    activeCallout = c;
+    setTimeout(() => document.addEventListener('mousedown', onDocDown, true), 0);
+  }
+  let _anchorSeq = 0;
+  function anchorId(a) { if (!a.dataset.cid) a.dataset.cid = 'a' + (++_anchorSeq); return a.dataset.cid; }
+
+  function openInfo(anchor, title, html, tableFn) {
+    showCallout(anchor, title, body => {
+      body.appendChild(el('div', { class: 'callout-text' }, html));
+      if (tableFn) { const t = tableFn(); if (t) body.appendChild(t); }
+    });
+  }
+  function openDoc(anchor, key) {
     const d = META.DOC[key]; if (!d) return;
-    popover(d.title, body => {
-      body.appendChild(el('p', {}, d.what));
+    showCallout(anchor, d.title, body => {
+      body.appendChild(el('div', { class: 'callout-text' }, d.what));
       body.appendChild(el('div', { class: 'formula' }, d.formula));
+      const t = sourceTable(key); if (t) body.appendChild(t);
       if (d.refs && d.refs.length) {
         const refs = el('div', { class: 'refs' });
-        refs.appendChild(el('div', { class: 'olabel', style: 'font-weight:700;margin-bottom:4px' }, 'References'));
         d.refs.forEach(id => { const R = META.REFERENCES[id]; if (R) refs.appendChild(el('div', { class: 'ref' }, `<span class="reftag">${R.tag}</span>${R.cite}`)); });
         body.appendChild(refs);
       }
     });
   }
+  // mini reference table builder for call-outs
+  function miniTable(headers, rows, caption) {
+    const wrap = el('div', { class: 'callout-table' });
+    if (caption) wrap.appendChild(el('div', { class: 'callout-cap' }, caption));
+    const t = el('table', { class: 'ref' });
+    const thead = el('thead'), htr = el('tr'); headers.forEach(h => htr.appendChild(el('th', {}, String(h)))); thead.appendChild(htr); t.appendChild(thead);
+    const tb = el('tbody'); rows.forEach(r => { const tr = el('tr'); r.forEach(c => tr.appendChild(el('td', {}, c == null ? '—' : String(c)))); tb.appendChild(tr); }); t.appendChild(tb);
+    wrap.appendChild(t); return wrap;
+  }
+  // source table for an output key (the lookup behind it)
+  function sourceTable(key) {
+    if (key === 'eD') return miniTable(['Material / lining', 'e (mm)'], REFDATA.roughnessNamed, 'Pipe roughness — selected by pipe spec');
+    if (key === 'ID' || key === 'IDs') return miniTable(['Steel spec', 'example DN250 ID'], REFDATA.steelHeader.map(h => [h, REFDATA.steelBore[h][REFDATA.steelSizes.indexOf(250)] || '—']), 'Internal bore from the pipe schedule (see Reference tables tab for the full set)');
+    if (key === 'muL') return miniTable(['T °C', 'µ (cP)'], REFDATA.water.filter((_, i) => i % 2 === 0).map(w => [w.T, w.mu]), 'Dynamic viscosity of water — Streeter & Wylie (1983)');
+    if (key === 'PvM') return miniTable(['T °C', 'Pv (m water)'], REFDATA.vapour.filter((_, i) => i % 6 === 0).map(v => [v.T, sig(v.m)]), 'Absolute vapour pressure of water');
+    if (key === 'K' || key === 'Hp') return miniTable(['Fitting'].concat([50, 100, 150, 250, 400].map(String)), ['90', '45', 'Run', 'Branch'].map(nm => [nm + (nm === 'Run' || nm === 'Branch' ? ' tee' : '° bend')].concat([50, 100, 150, 250, 400].map(dn => ENGINE.kBend(nm, dn)))), 'Bend/tee K by DN (auto-looked-up by size)');
+    return null;
+  }
 
   // -------- render: summary -------------------------------------------------
+  // Transposed summary: rows = parameters (param | units | pump1 | pump2 …)
+  const SUMMARY_PARAMS = [
+    { l: 'Pump name', u: '', f: (o, p) => p.name || '—' },
+    { l: 'Stream no', u: '', f: (o, p) => p.stream || '—' },
+    { l: 'Solids', u: 'tph', f: o => sig(o.solidsN) },
+    { l: 'Liquid', u: 'tph', f: o => sig(o.liquidN) },
+    { l: 'Flowrate', u: 'm³/h', f: o => sig(o.flowN) },
+    { l: 'Slurry s.g.', u: '', f: o => sig(o.SM) },
+    { l: 'Conc. by volume', u: '%', f: o => sig(o.Cv * 100) },
+    { l: 'Particle size d50', u: 'µm', f: (o, p) => sig(p.slurry.d50) },
+    { l: 'Suction size', u: 'DN', f: (o, p) => p.suction.dn },
+    { l: 'Discharge size', u: 'DN', f: (o, p) => p.discharge.dn },
+    { l: 'Discharge velocity', u: 'm/s', f: o => sig(o.dis.V) },
+    { l: 'Limiting velocity', u: 'm/s', f: o => sig(o.dis.Vlim) },
+    { l: 'Settling check', u: '', pill: o => { const s = isFinite(o.dis.ratio) && o.dis.V < o.dis.Vlim; return { cls: s ? 'bad' : 'ok', t: s ? 'settles' : 'OK' }; } },
+    { l: 'Total dynamic head', u: 'm', f: o => sig(o.Hdyn) },
+    { l: 'NPSHa (eq. water)', u: 'm', f: o => sig(o.NPSHa_water) },
+    { l: 'NPSH check', u: '', pill: o => o.npshOK == null ? { cls: 'warn', t: 'n/a' } : (o.npshOK ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'low' }) },
+    { l: 'Slurry efficiency', u: '%', f: o => sig(o.etaS * 100) },
+    { l: 'Power required', u: 'kW', f: o => sig(o.motorReq) },
+    { l: 'Motor selected', u: 'kW', f: (o, p) => sig(p.power.motorSize) },
+    { l: 'Motor freeboard', u: '%', pill: (o, p) => { const fb = p.power.motorSize > 0 ? (p.power.motorSize - o.motorReq) / p.power.motorSize * 100 : NaN; return !isFinite(fb) ? { cls: 'warn', t: '—' } : { cls: fb < 10 ? 'bad' : (fb <= 30 ? 'ok' : 'warn'), t: sig(fb) + '%' }; } },
+    { l: 'Pump model', u: '', f: (o, p) => p.pump.model || '—' }
+  ];
   function renderSummary() {
     const root = $('#view'); root.innerHTML = '';
     root.appendChild(el('h1', { class: 'page' }, 'Project Summary'));
-    root.appendChild(el('p', { class: 'sub' }, 'Live roll-up across all pumps. Pass/fail and settling status mirror the calculator. Export to Excel reproduces every pump as a Calc_Template-style sheet.'));
-    const cols = ['Tag', 'Name', 'Stream', 'Solids tph', 'Liquid tph', 'Slurry SG', 'Cv %', 'Flow m³/h', 'Disch V', 'Settling', 'TDH m', 'Motor kW', 'Freeboard', 'NPSH'];
+    root.appendChild(el('p', { class: 'sub' }, 'Live roll-up across all pumps — parameters down the side, one column per pump (like the main calc). Pass/fail and settling status mirror the calculator.'));
+    const results = STATE.pumps.map(p => ENGINE.compute(p));
     const wrap = el('div', { class: 'tablewrap' });
-    const t = el('table', { class: 'ref zebra' });
-    const thead = el('thead'); const htr = el('tr'); cols.forEach(c => htr.appendChild(el('th', {}, c))); thead.appendChild(htr); t.appendChild(thead);
-    const tb = el('tbody');
+    const t = el('table', { class: 'ref zebra summary' });
+    // header: Parameter | Units | tag1 | tag2 ...
+    const thead = el('thead'), htr = el('tr');
+    htr.appendChild(el('th', {}, 'Parameter')); htr.appendChild(el('th', {}, 'Units'));
     STATE.pumps.forEach((p, i) => {
-      const o = ENGINE.compute(p);
-      const tr = el('tr', { style: 'cursor:pointer' });
-      tr.addEventListener('click', () => { STATE.active = i; switchTab('calc'); });
-      const settles = isFinite(o.dis.ratio) && o.dis.V < o.dis.Vlim;
-      const fb = (p.power.motorSize > 0) ? (p.power.motorSize - o.motorReq) / p.power.motorSize * 100 : NaN;
-      const cells = [
-        td(p.tag), td(p.name), td(p.stream), td(sig(o.solidsN)), td(sig(o.liquidN)),
-        td(sig(o.SM)), td(sig(o.Cv * 100)), td(sig(o.flowN)), td(sig(o.dis.V)),
-        pillTd(settles ? 'bad' : 'ok', settles ? `settles ${sig(o.dis.Vlim)}` : `OK ${sig(o.dis.Vlim)}`),
-        td(sig(o.Hdyn)), td(sig(p.power.motorSize)),
-        pillTd(!isFinite(fb) ? 'warn' : (fb < 10 ? 'bad' : fb <= 30 ? 'ok' : 'warn'), isFinite(fb) ? sig(fb) + '%' : '—'),
-        pillTd(o.npshOK == null ? 'warn' : (o.npshOK ? 'ok' : 'bad'), o.npshOK == null ? 'n/a' : (o.npshOK ? 'OK' : 'low'))
-      ];
-      cells.forEach(c => tr.appendChild(c));
+      const th = el('th', { class: 'pumpcol', style: 'cursor:pointer' }, p.tag || ('Pump ' + (i + 1)));
+      th.addEventListener('click', () => { STATE.active = i; switchTab('calc'); });
+      htr.appendChild(th);
+    });
+    thead.appendChild(htr); t.appendChild(thead);
+    const tb = el('tbody');
+    SUMMARY_PARAMS.forEach(par => {
+      const tr = el('tr');
+      tr.appendChild(el('td', { class: 'pname' }, par.l));
+      tr.appendChild(el('td', { class: 'punit' }, par.u || ''));
+      STATE.pumps.forEach((p, i) => {
+        const o = results[i];
+        if (par.pill) { const pl = par.pill(o, p); const c = el('td', {}); c.innerHTML = `<span class="pill ${pl.cls}">${pl.t}</span>`; tr.appendChild(c); }
+        else tr.appendChild(el('td', {}, String(par.f(o, p))));
+      });
       tb.appendChild(tr);
     });
     t.appendChild(tb); wrap.appendChild(t); root.appendChild(wrap);
-    root.appendChild(el('p', { class: 'hint' }, 'Tip: click any row to open that pump in the Calculator.'));
-    function td(v) { return el('td', {}, String(v)); }
-    function pillTd(cls, txt) { const c = el('td', {}); c.innerHTML = `<span class="pill ${cls}">${txt}</span>`; return c; }
+    root.appendChild(el('p', { class: 'hint' }, 'Tip: click a pump column header to open it in the Calculator. Edit the parameter list in SUMMARY_PARAMS to tweak what appears here.'));
   }
 
   // -------- render: how it works -------------------------------------------
@@ -603,6 +713,15 @@
     root.appendChild(el('div', { class: 'note' }, 'Why Durand is conservative: its correlation was developed on a narrow band of particle sizes. Real slurries contain a range — fines are incorporated into the carrier fluid, raising its viscosity and buoyancy so coarse particles are transported more readily. Thomas, Wasp and Sinclair account for this and give lower settling velocities.'));
   }
 
+  // -------- sticky header offsets ------------------------------------------
+  function updateSticky() {
+    const tb = document.querySelector('.topbar'), tabs = document.querySelector('.tabs');
+    const root = document.documentElement;
+    if (tb) root.style.setProperty('--topbar-h', tb.offsetHeight + 'px');
+    if (tabs) root.style.setProperty('--tabs-h', tabs.offsetHeight + 'px');
+  }
+  window.addEventListener('resize', () => { updateSticky(); closeCallout(); });
+
   // -------- tabs ------------------------------------------------------------
   const TABS = { calc: renderCalc, summary: renderSummary, docs: renderDocs, ref: renderRef, settle: renderSettle };
   let current = 'calc';
@@ -610,10 +729,11 @@
   function commit(rerender) { save(); if (rerender) TABS[current](); else refreshOutputs(); }
   function refreshOutputs() {
     if (current !== 'calc') { TABS[current](); return; }
-    const both = ENGINE.computeBoth(activePump());
+    const both = ENGINE.computeBoth(activePump()); curN = both.n;
     const view = $('#view');
     const kpi = view.querySelector('.kpi'); if (kpi) kpi.replaceWith(kpis(both.n, both.d));
     updateProcPlaceholders(both.n);
+    Object.keys(autoInputs).forEach(path => { const a = autoInputs[path]; if (a.inp.readOnly) { a.inp.placeholder = sig(both.n[a.key]); sizeInput(a.inp); } });
     const cards = view.querySelectorAll('.grid .card');
     if (cards[1]) {
       const outBody = cards[1].querySelector('.body'); outBody.innerHTML = '';
@@ -663,5 +783,5 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => { initHeader(); switchTab('calc'); });
+  document.addEventListener('DOMContentLoaded', () => { initHeader(); switchTab('calc'); updateSticky(); });
 })();

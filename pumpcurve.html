@@ -84,7 +84,14 @@
   .card .cb{padding:0 15px 16px;}
   .cgroup{border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:14px;background:#fff;}
   .cglabel{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);margin-bottom:11px;}
-  .swatch{width:11px;height:11px;border-radius:3px;flex:none;}.swatch.rpm{background:var(--accent);}.swatch.eff{background:var(--green);}
+  .swatch{width:11px;height:11px;border-radius:3px;flex:none;}.swatch.rpm{background:var(--accent);}.swatch.eff{background:var(--green);}.swatch.npshr{background:#2D7DD2;}
+  .btn.blue{background:#2D7DD2;border-color:#2D7DD2;color:#fff;}.btn.blue:hover{background:#1B5E9B;border-color:#1B5E9B;}
+  .btn.blue.active{background:#1B5E9B;border-color:#1B5E9B;}
+  .btn.blue.ghostb{background:transparent;border-color:transparent;color:#1B5E9B;}.btn.blue.ghostb:hover{background:#E7F0FA;}
+  .graphtools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 24px;border-bottom:1px solid var(--line);background:var(--panel);}
+  .graphtools .tdiv{width:1px;height:22px;background:var(--line-strong);margin:0 2px;}
+  .graphtools .btn{font-size:13px;padding:7px 11px;}
+  .fitbtns{display:flex;gap:7px;margin-top:8px;}.fitbtns .btn{flex:1;justify-content:center;}
   .curvelist{margin-top:11px;display:flex;flex-direction:column;gap:6px;}
   .crow{display:flex;align-items:center;gap:8px;padding:6px 7px;border:1px solid var(--line);border-radius:9px;background:#fff;}
   .crow.sel{border-color:var(--accent);background:var(--accent-tint);}
@@ -130,7 +137,7 @@
   #dropzone h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--ink);}
   #dropzone p{margin:0;font-size:14px;max-width:440px;line-height:1.6;color:var(--text-3);}
   #dropzone .hint{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);font-weight:700;}
-  #stage{position:absolute;top:0;left:0;display:none;line-height:0;transform-origin:0 0;will-change:transform;box-shadow:0 8px 30px rgba(30,31,34,.12);background:#fff;border-radius:6px;}
+  #stage{position:absolute;top:0;left:0;display:none;line-height:0;transform-origin:0 0;box-shadow:0 8px 30px rgba(30,31,34,.12);background:#fff;border-radius:6px;}
   #curveImg{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none;border-radius:6px;}
   #overlay{position:absolute;inset:0;width:100%;height:100%;touch-action:none;}
   #overlay.cross{cursor:crosshair;}#overlay.grab{cursor:grab;}#overlay.grabbing{cursor:grabbing;}
@@ -193,7 +200,7 @@
 <body>
 <main>
   <aside class="left">
-    <div class="brand"><div class="logo" style="background:#161616;border-radius:8px;padding:0 6px;"><svg width="30" height="26" viewBox="0 0 30 30" aria-label="Nexmin"><polygon points="0,0 7,0 7,30 0,30" fill="#fff"/><polygon points="5,0 12,0 24,30 17,30" fill="#fff"/><polygon points="23,0 30,0 30,30 23,30" fill="#C8102E"/></svg></div><div class="bt"><b>NEXMIN</b><span>Pump Curve</span></div></div>
+    <div class="brand"><div class="bt"><b>Pump Curve</b><span>Trace &amp; fit tools</span></div></div>
     <div class="dbbar"><button class="btn dbload" id="openBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Open pump file</button>
       <input id="fileInput" type="file" accept=".json,application/json" style="display:none"></div>
     <div class="tabpanel" id="tab-curve">
@@ -208,19 +215,21 @@
         </div>
         <div class="cgroup">
           <div class="cglabel"><span class="swatch rpm"></span>Speed (RPM) curves</div>
-          <button class="btn mode wide" id="rpmTrace" disabled>Trace new RPM curve</button>
           <div class="curvelist" id="rpmList"></div>
-          <div class="fitout" id="rpmOut" style="display:none"><div class="formula" id="rpmFormula"></div><div class="fitmeta" id="rpmMeta"></div><button class="btn ghost wide" id="rpmCopy">Copy RPM formula</button></div>
+          <div class="fitout" id="rpmOut" style="display:none"><div class="fitmeta" id="rpmMeta"></div><div class="formula" id="rpmFormula" style="display:none"></div><div class="fitbtns"><button class="btn ghost" id="rpmShowFormula">Show formula</button><button class="btn ghost" id="rpmCopy">Copy formula</button></div></div>
         </div>
         <div class="cgroup">
           <div class="cglabel"><span class="swatch eff"></span>Efficiency (%) curves</div>
-          <button class="btn green wide" id="effTrace" disabled>Trace new efficiency curve</button>
           <div class="curvelist" id="effList"></div>
-          <div class="fitout eff" id="effOut" style="display:none"><div class="formula" id="effFormula"></div><div class="fitmeta" id="effMeta"></div><button class="btn green ghostg wide" id="effCopy">Copy efficiency formula</button></div>
+          <div class="fitout eff" id="effOut" style="display:none"><div class="fitmeta" id="effMeta"></div><div class="formula" id="effFormula" style="display:none"></div><div class="fitbtns"><button class="btn green ghostg" id="effShowFormula">Show formula</button><button class="btn green ghostg" id="effCopy">Copy formula</button></div></div>
         </div>
         <div class="cgroup">
-          <div class="cglabel">Check points</div>
-          <button class="btn mode wide" id="probeBtn" disabled>Place check point</button>
+          <div class="cglabel"><span class="swatch npshr"></span>NPSHr (m) curves</div>
+          <div class="curvelist" id="npshrList"></div>
+          <div class="fitout npshr" id="npshrOut" style="display:none"><div class="fitmeta" id="npshrMeta"></div><div class="formula" id="npshrFormula" style="display:none"></div><div class="fitbtns"><button class="btn blue ghostb" id="npshrShowFormula">Show formula</button><button class="btn blue ghostb" id="npshrCopy">Copy formula</button></div></div>
+        </div>
+        <div class="cgroup">
+          <div class="cglabel">Duty points (manual)</div>
           <table id="probeTable" style="display:none"><thead><tr><th>Pt</th><th class="r">X</th><th class="r">Y</th><th class="r">RPM</th><th class="r">&eta;%</th><th></th></tr></thead><tbody id="probeBody"></tbody></table>
         </div>
       </div>
@@ -231,6 +240,15 @@
       <input id="pumpMake" type="text" placeholder="Pump make" spellcheck="false" autocomplete="off">
       <input id="pumpModel" type="text" placeholder="Pump model" spellcheck="false" autocomplete="off">
     </div></div>
+    <div class="graphtools" id="graphtools">
+      <button class="btn mode" id="calBtn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>Calibrate axes</button>
+      <span class="tdiv"></span>
+      <button class="btn mode" id="rpmTrace" disabled>Trace new RPM curve</button>
+      <button class="btn green" id="effTrace" disabled>Trace new efficiency curve</button>
+      <button class="btn blue" id="npshrTrace" disabled>Trace new NPSHr curve</button>
+      <span class="tdiv"></span>
+      <button class="btn mode" id="probeBtn" disabled>Place duty point (manual)</button>
+    </div>
     <div class="stagewrap" id="stagewrap">
       <div class="graph-actions hidden" id="graphActions">
         <button class="btn" id="saveBtn" title="Save this pump to its .json file">
@@ -258,9 +276,6 @@
       <div class="ch"><span>Axis calibration</span><button class="help" data-help="calib">?</button></div>
       <div class="cb">
         <span class="badge warn" id="calBadge" style="margin-bottom:12px">Not set</span>
-        <button class="btn mode wide" id="calBtn" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>Calibrate axes
-        </button>
         <div class="refrow">
           <div class="ref" id="refOrigin"><div class="rl">Origin <span class="dot"></span></div><div class="rv muted">0 , 0</div></div>
           <div class="ref" id="refScale"><div class="rl">Scale pt <span class="dot"></span></div><div class="rv muted">not set</div></div>
@@ -281,12 +296,14 @@
 "use strict";
 (function(){
   const FONT='Aptos,"Segoe UI",system-ui,sans-serif',MONO='Aptos Mono,Cascadia Code,ui-monospace,monospace',
-        CA='#C8102E',CAdeep='#9C0C24',CINK='#1E1F22',CTEXT='#2E3035',CLINE='#E3E5E8',CGREEN='#3BA55C',CGREENd='#2C7A47',CYEL='#E0A416',CYELd='#9A6F0C';
+        CA='#C8102E',CAdeep='#9C0C24',CINK='#1E1F22',CTEXT='#2E3035',CLINE='#E3E5E8',CGREEN='#3BA55C',CGREENd='#2C7A47',CYEL='#E0A416',CYELd='#9A6F0C',CBLUE='#2D7DD2',CBLUEd='#1B5E9B';
+  const FAMS=['rpm','eff','npshr'];
+  const FAMCOL={rpm:{c:CA,d:CAdeep,L:'RPM',sfx:''},eff:{c:CGREEN,d:CGREENd,L:'Efficiency',sfx:'%'},npshr:{c:CBLUE,d:CBLUEd,L:'NPSHr',sfx:' m'}};
   const state={imgSrc:null,imgEl:null,imgW:0,imgH:0,make:'',model:'',pumpId:null,pumpCreated:null,
     calib:{origin:{px:null,py:null},scale:{px:null,py:null,xval:null,yval:null}},
     points:[],selectedId:null,mode:'idle',calStep:null,tab:'curve',
-    family:'rpm',curves:{rpm:[],eff:[]},tracingId:null,selectedCurveId:null,selectedNode:null,
-    traceMode:'poly',rpmModel:null,effModel:null,probes:[],selectedProbeId:null};
+    family:'rpm',curves:{rpm:[],eff:[],npshr:[]},tracingId:null,selectedCurveId:null,selectedNode:null,
+    traceMode:'poly',rpmModel:null,effModel:null,npshrModel:null,probes:[],selectedProbeId:null};
   let undoStack=[],redoStack=[],calBackup=null,calHistLen=0,lastCursor={x:0,y:0,inside:false};
   const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
   const dropzone=$('#dropzone'),stage=$('#stage'),img=$('#curveImg'),overlay=$('#overlay'),stagewrap=$('#stagewrap'),
@@ -318,7 +335,7 @@
   function boxEdgePoint(mx,my,cx,cy,w,h){const dx=mx-cx,dy=my-cy;if(dx===0&&dy===0)return {x:cx,y:cy};const sx=dx!==0?(w/2)/Math.abs(dx):Infinity,sy=dy!==0?(h/2)/Math.abs(dy):Infinity;let s=Math.min(sx,sy);if(s>1)s=1;return {x:cx+dx*s,y:cy+dy*s};}
 
   function snapshot(){return JSON.stringify({c:state.calib,p:state.points,s:state.selectedId,pr:state.probes,cu:state.curves,fam:state.family,tb:state.tab});}
-  function applyState(o){state.calib=o.c;state.points=o.p;state.selectedId=o.s;state.probes=o.pr||[];state.curves=o.cu||{rpm:[],eff:[]};state.family=o.fam||'rpm';if(o.tb)setTab(o.tb,true);if(state.mode!=='idle')exitMode(true);state.tracingId=null;state.selectedCurveId=null;state.selectedNode=null;state.selectedProbeId=null;recomputeModels();syncInputs();renderAll();}
+  function applyState(o){state.calib=o.c;state.points=o.p;state.selectedId=o.s;state.probes=o.pr||[];state.curves=Object.assign({rpm:[],eff:[],npshr:[]},o.cu||{});state.family=o.fam||'rpm';if(o.tb)setTab(o.tb,true);if(state.mode!=='idle')exitMode(true);state.tracingId=null;state.selectedCurveId=null;state.selectedNode=null;state.selectedProbeId=null;recomputeModels();syncInputs();renderAll();}
   function pushHistory(){undoStack.push(snapshot());if(undoStack.length>200)undoStack.shift();redoStack=[];}
   function undo(){if(!undoStack.length)return;redoStack.push(snapshot());applyState(JSON.parse(undoStack.pop()));}
   function redo(){if(!redoStack.length)return;undoStack.push(snapshot());applyState(JSON.parse(redoStack.pop()));}
@@ -402,7 +419,7 @@
   function termPretty(i,j){let s='';if(i>0)s+='X'+supr(i);if(j>0)s+=(s?'\u00B7':'')+'Y'+supr(j);return s;}
   function fitSurface(pts,terms){const basis=terms.map(t=>(p=>Math.pow(p.x,t.i)*Math.pow(p.y,t.j)));const coef=lsq(basis,pts,pts.map(p=>p.v));if(!coef||coef.some(v=>!isFinite(v)))return null;const predict=(x,y)=>{let s=0;for(let k=0;k<terms.length;k++)s+=coef[k]*Math.pow(x,terms[k].i)*Math.pow(y,terms[k].j);return s;};const vs=pts.map(p=>p.v),mean=vs.reduce((a,b)=>a+b,0)/vs.length;let ss=0,st=0;pts.forEach(p=>{const e=p.v-predict(p.x,p.y);ss+=e*e;const d=p.v-mean;st+=d*d;});return {coef,terms,predict,r2:st===0?1:1-ss/st};}
   function bestSurface(fam,pts,nC){const dense=3,spread=Math.max(1,Math.min(3,nC-1)),xCap=fam==='rpm'?dense:spread,yCap=fam==='rpm'?spread:dense;let best=null,bestAdj=-Infinity;for(let total=1;total<=xCap+yCap&&total<=4;total++){const terms=[];for(let i=0;i<=xCap;i++)for(let j=0;j<=yCap;j++){if(i+j<=total)terms.push({i,j});}if(terms.length<2||pts.length<terms.length+1)continue;const s=fitSurface(pts,terms);if(!s)continue;const n=pts.length,p=terms.length,adj=(n-p-1>0)?1-(1-s.r2)*(n-1)/(n-p-1):s.r2;if(adj>bestAdj+1e-9){bestAdj=adj;best=s;}}return best;}
-  function surfFormula(fam,s){const L=fam==='rpm'?'RPM':'Efficiency';let out=L+' = ';s.terms.forEach((t,k)=>{const c=s.coef[k],lab=termPretty(t.i,t.j);if(k===0)out+=fnum(c)+(lab?'\u00B7'+lab:'');else out+=(c>=0?' + ':' \u2212 ')+fnum(Math.abs(c))+(lab?'\u00B7'+lab:'');});return out;}
+  function surfFormula(fam,s){const L=FAMCOL[fam].L;let out=L+' = ';s.terms.forEach((t,k)=>{const c=s.coef[k],lab=termPretty(t.i,t.j);if(k===0)out+=fnum(c)+(lab?'\u00B7'+lab:'');else out+=(c>=0?' + ':' \u2212 ')+fnum(Math.abs(c))+(lab?'\u00B7'+lab:'');});return out;}
   function dolFit(xs,ys){let best=null,bestAdj=-Infinity;for(let deg=1;deg<=4;deg++){const m=polyModel(deg,xs,ys);if(!m)continue;const n=xs.length,p=deg+1,adj=(n-p-1>0)?1-(1-m.r2)*(n-1)/(n-p-1):m.r2;if(adj>bestAdj+1e-9){bestAdj=adj;best=m;}}return best;}
   function buildFamilyModel(fam){const arr=state.curves[fam].filter(c=>c.trace.length>=2);arr.forEach(c=>fitCurve(c,fam));const valued=arr.filter(c=>c.value!=null&&isFinite(c.value)&&c.trace.length>=2);const nC=new Set(valued.map(c=>c.value)).size;
     if(fam==='rpm'&&nC<2){const pts=[];arr.forEach(c=>c.trace.forEach(p=>pts.push(p)));if(pts.length<3)return {method:'none'};const m=dolFit(pts.map(p=>p.x),pts.map(p=>p.y));if(!m)return {method:'none'};return {method:'dol',r2:m.r2,formula:m.formula,predict:(x,y)=>m.predict(x),ex:{kind:'dol',coef:m.coef}};}
@@ -413,9 +430,10 @@
   function modelExcel(model){if(!model||!model.ex)return '';const xr=(($('#xref').value)||'X').trim()||'X',yr=(($('#yref').value)||'Y').trim()||'Y';
     if(model.ex.kind==='dol'){const c=model.ex.coef;let out='=';for(let d=0;d<c.length;d++){let lab='';if(d>0)lab='*'+xr+(d>1?'^'+d:'');const num=excelNum(Math.abs(c[d]));out+=(d===0?((c[d]<0?'-':'')+num):((c[d]>=0?'+':'-')+num))+lab;}return out;}
     const terms=model.ex.terms,c=model.ex.coef;let out='=';terms.forEach((t,k)=>{let lab='';if(t.i>0)lab+='*'+xr+(t.i>1?'^'+t.i:'');if(t.j>0)lab+='*'+yr+(t.j>1?'^'+t.j:'');const num=excelNum(Math.abs(c[k]));out+=(k===0?((c[k]<0?'-':'')+num):((c[k]>=0?'+':'-')+num))+lab;});return out;}
-  function recomputeModels(){state.rpmModel=buildFamilyModel('rpm');state.effModel=buildFamilyModel('eff');}
+  function recomputeModels(){state.rpmModel=buildFamilyModel('rpm');state.effModel=buildFamilyModel('eff');state.npshrModel=buildFamilyModel('npshr');}
+  function famModel(fam){return fam==='rpm'?state.rpmModel:fam==='eff'?state.effModel:state.npshrModel;}
   function curvePolyline(c,fam){if(!c.fit){return c.trace.map(p=>dataToImg(p.x,p.y));}const f=c.fit,N=64,out=[];for(let i=0;i<=N;i++){const t=f.imin+(f.imax-f.imin)*i/N;let X,Y;if(fam==='rpm'){X=t;Y=f.pr(t);}else{Y=t;X=f.pr(t);}out.push(dataToImg(X,Y));}return out;}
-  function curveLabelText(c,fam){return c.value!=null?(fam==='rpm'?String(c.value):c.value+'%'):'DOL';}
+  function curveLabelText(c,fam){return c.value!=null?(c.value+FAMCOL[fam].sfx):'DOL';}
   function labelPoint(c,fam){if(!c.fit){if(!c.trace.length)return null;const p=c.trace[c.trace.length-1];return dataToImg(p.x,p.y);}const f=c.fit;let X,Y;if(fam==='rpm'){X=f.imax;Y=f.pr(f.imax);}else{Y=f.imax;X=f.pr(f.imax);}return dataToImg(X,Y);}
 
   function startNewCurve(fam){if(!isCalibrated()){toast('Calibrate the axes first.',true);return;}pushHistory();state.family=fam;const id=uid();state.curves[fam].push({id,value:null,trace:[]});state.tracingId=id;state.selectedCurveId=id;state.selectedId=null;state.selectedNode=null;state.mode='trace';recomputeModels();renderAll();setTimeout(()=>{const el=document.querySelector('#'+fam+'List .crow[data-id="'+id+'"] input');if(el)el.focus();},20);toast(state.traceMode==='poly'?'Click nodes along the curve. Enter its value in the table on the left.':'Drag along the curve. Enter its value in the table on the left.');}
@@ -454,12 +472,12 @@
     if(state.mode==='calibrate'){svg+=calMark(o.px,o.py,'0,0',state.calStep==='scale');svg+=calMark(s.px,s.py,(s.xval!=null&&s.yval!=null)?(disp(s.xval)+', '+disp(s.yval)):'P2',state.calStep==='enterX'||state.calStep==='enterY');}
 
     if(state.tab==='curve'&&isCalibrated()){
-      ['rpm','eff'].forEach(fam=>{const col=fam==='rpm'?CA:CGREEN;
+      FAMS.forEach(fam=>{const col=FAMCOL[fam].c;
         state.curves[fam].forEach(c=>{const isSel=c.id===state.selectedCurveId,isTr=c.id===state.tracingId,pl=curvePolyline(c,fam);
           if(pl.length>1){const ptsStr=pl.map(ip=>ip.px+','+ip.py).join(' ');
             svg+='<polyline points="'+ptsStr+'" fill="none" stroke="#ffffff" stroke-width="'+(r*0.5)+'" stroke-linejoin="round" stroke-linecap="round" pointer-events="none" opacity="0.85"/>';
             svg+='<polyline points="'+ptsStr+'" fill="none" stroke="'+col+'" stroke-width="'+(r*(isSel?0.34:0.24))+'" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>';}
-          const lp=labelPoint(c,fam);if(lp){const off=r*1.1,lx=lp.px+off,ly=lp.py-off*0.4;svg+='<text x="'+lx+'" y="'+ly+'" font-size="'+(r*0.95)+'" font-family="'+MONO+'" font-weight="700" paint-order="stroke" stroke="#ffffff" stroke-width="'+(r*0.34)+'" stroke-linejoin="round" fill="'+(fam==='rpm'?CAdeep:CGREENd)+'" pointer-events="none">'+escXml(curveLabelText(c,fam))+'</text>';}
+          const lp=labelPoint(c,fam);if(lp){const off=r*1.1,lx=lp.px+off,ly=lp.py-off*0.4;svg+='<text x="'+lx+'" y="'+ly+'" font-size="'+(r*0.95)+'" font-family="'+MONO+'" font-weight="700" paint-order="stroke" stroke="#ffffff" stroke-width="'+(r*0.34)+'" stroke-linejoin="round" fill="'+FAMCOL[fam].d+'" pointer-events="none">'+escXml(curveLabelText(c,fam))+'</text>';}
           if(isSel||isTr){c.trace.forEach((p,i)=>{const ip=dataToImg(p.x,p.y),selN=state.selectedNode&&state.selectedNode.cid===c.id&&state.selectedNode.i===i;svg+='<g class="cnode" data-fam="'+fam+'" data-cid="'+c.id+'" data-i="'+i+'">';if(selN)svg+='<circle cx="'+ip.px+'" cy="'+ip.py+'" r="'+(r*0.74)+'" fill="none" stroke="'+CINK+'" stroke-width="'+(r*0.12)+'"/>';svg+='<circle cx="'+ip.px+'" cy="'+ip.py+'" r="'+(r*0.4)+'" fill="'+col+'" stroke="#ffffff" stroke-width="'+(r*0.14)+'"/></g>';});}
         });
       });
@@ -528,7 +546,7 @@
     if(state.tab==='curve'&&state.selectedProbeId){const i=state.probes.findIndex(p=>p.id===state.selectedProbeId);if(i>=0){pushHistory();state.probes.splice(i,1);state.selectedProbeId=null;renderAll();}return;}
     if(state.tab==='curve'&&state.selectedCurveId){deleteCurve(state.selectedCurveId);return;}
     if(state.selectedId){const i=state.points.findIndex(p=>p.id===state.selectedId);if(i<0)return;pushHistory();state.points.splice(i,1);state.selectedId=null;renderAll();}}
-  function deleteCurve(id){for(const fam of ['rpm','eff']){const i=state.curves[fam].findIndex(c=>c.id===id);if(i>=0){pushHistory();state.curves[fam].splice(i,1);if(state.tracingId===id){state.tracingId=null;if(state.mode==='trace')exitMode(true);}if(state.selectedCurveId===id)state.selectedCurveId=null;recomputeModels();renderAll();return;}}}
+  function deleteCurve(id){for(const fam of FAMS){const i=state.curves[fam].findIndex(c=>c.id===id);if(i>=0){pushHistory();state.curves[fam].splice(i,1);if(state.tracingId===id){state.tracingId=null;if(state.mode==='trace')exitMode(true);}if(state.selectedCurveId===id)state.selectedCurveId=null;recomputeModels();renderAll();return;}}}
   function enterProbe(){if(!isCalibrated()){toast('Calibrate the axes first.',true);return;}if(state.mode==='probe'){exitMode();return;}exitMode(true);state.mode='probe';renderAll();toast('Click the chart to drop check points reading X, Y, RPM and efficiency.');}
   function probeVal(model,x,y){if(!model||!model.predict||model.method==='need'||model.method==='none')return null;const v=model.predict(x,y);return isFinite(v)?v:null;}
   function evalAlong(trace,key,target){const other=key==='x'?'y':'x';const pts=trace.slice().sort((a,b)=>a[key]-b[key]);if(pts.length<2)return null;if(target<pts[0][key]-1e-9||target>pts[pts.length-1][key]+1e-9)return null;for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];if(target>=a[key]&&target<=b[key]){const dk=b[key]-a[key];if(Math.abs(dk)<1e-12)return a[other];return a[other]+(b[other]-a[other])*((target-a[key])/dk);}}return null;}
@@ -538,8 +556,9 @@
     curves.forEach(c=>{const q=evalAlong(c.trace,'y',y);if(q!=null)samples.push({v:c.value,pos:q});});return bracketInterp(samples,x,-0.5,1.0);}
   function readRpm(x,y){const v=bracketRead('rpm',x,y);return (v!=null&&isFinite(v))?v:probeVal(state.rpmModel,x,y);}
   function readEff(x,y){const v=bracketRead('eff',x,y);return (v!=null&&isFinite(v))?v:probeVal(state.effModel,x,y);}
+  function readNpshr(x,y){const v=bracketRead('npshr',x,y);return (v!=null&&isFinite(v))?v:probeVal(state.npshrModel,x,y);}
   function fmtVal(v,dp){return v==null?'\u2014':String(parseFloat(v.toFixed(dp)));}
-  function probeLines(p,i){const rv=readRpm(p.x,p.y),ev=readEff(p.x,p.y);const lines=[(p.title&&p.title.trim())?p.title.trim():('P'+(i+1)),'('+disp(p.x)+', '+disp(p.y)+')'];if(rv!=null&&isFinite(rv))lines.push('RPM '+fmtVal(rv,0));if(ev!=null&&isFinite(ev))lines.push('\u03B7 '+fmtVal(ev,1)+'%');return lines;}
+  function probeLines(p,i){const rv=readRpm(p.x,p.y),ev=readEff(p.x,p.y),nv=readNpshr(p.x,p.y);const lines=[(p.title&&p.title.trim())?p.title.trim():('P'+(i+1)),'('+disp(p.x)+', '+disp(p.y)+')'];if(rv!=null&&isFinite(rv))lines.push('RPM '+fmtVal(rv,0));if(ev!=null&&isFinite(ev))lines.push('\u03B7 '+fmtVal(ev,1)+'%');if(nv!=null&&isFinite(nv))lines.push('NPSHr '+fmtVal(nv,1)+' m');return lines;}
   function calloutBoxLines(lines){const r=markerR(),fsT=r*0.92,fsC=r*0.82,pad=r*0.6,gap=r*0.14,lhT=fsT*1.18,lhC=fsC*1.18;let maxw=measure(lines[0],'700 '+fsT+'px '+FONT);for(let i=1;i<lines.length;i++)maxw=Math.max(maxw,measure(lines[i],'500 '+fsC+'px '+MONO));const cys=[];let y=pad;cys.push(y+lhT/2);y+=lhT;for(let i=1;i<lines.length;i++){y+=gap;cys.push(y+lhC/2);y+=lhC;}return {w:maxw+pad*2,h:y+pad,fsT,fsC,pad,cys,lines};}
   let pcalloutDrag=null,probeDrag=null;
   function onProbeDown(e){if(state.mode==='calibrate')return;e.stopPropagation();const id=e.currentTarget.getAttribute('data-id');state.selectedProbeId=id;state.selectedId=null;state.selectedCurveId=null;state.selectedNode=null;renderAll();if(!isCalibrated())return;probeDrag={id,hist:false};try{overlay.setPointerCapture(e.pointerId);}catch(_){}overlay.addEventListener('pointermove',onProbeMove);overlay.addEventListener('pointerup',onProbeUp);}
@@ -576,11 +595,11 @@
       tr.addEventListener('mousedown',ev=>{if(ev.target.closest('input,button'))return;state.selectedId=id;state.selectedCurveId=null;renderAll();});
       tr.querySelectorAll('input').forEach(inp=>{inp.addEventListener('focus',()=>{state.selectedId=id;});inp.addEventListener('change',()=>{const p=state.points.find(p=>p.id===id);if(!p)return;const f=inp.getAttribute('data-f');pushHistory();if(f==='title')p.title=inp.value;else p[f]=parseFloat(inp.value);renderAll();});});
       tr.querySelector('.delbtn').addEventListener('click',()=>{const i=state.points.findIndex(p=>p.id===id);if(i<0)return;pushHistory();state.points.splice(i,1);if(state.selectedId===id)state.selectedId=null;renderAll();});});}
-  function renderCurveList(fam){const host=$('#'+fam+'List'),arr=state.curves[fam],col=fam==='rpm'?CA:CGREEN;
+  function renderCurveList(fam){const host=$('#'+fam+'List');if(!host)return;const arr=state.curves[fam],col=FAMCOL[fam].c;
     const ae=document.activeElement;let keepId=null;if(ae&&ae.tagName==='INPUT'&&host.contains(ae))keepId=ae.getAttribute('data-id');
     if(!arr.length){host.innerHTML='';return;}
-    let html='';arr.forEach(c=>{const sel=c.id===state.selectedCurveId,ph=fam==='rpm'?'DOL':'%';
-      html+='<div class="crow'+(sel?' sel':'')+(fam==='eff'?' effrow':'')+'" data-id="'+c.id+'"><span class="cdot" style="background:'+col+'"></span>'
+    let html='';arr.forEach(c=>{const sel=c.id===state.selectedCurveId,ph=fam==='rpm'?'DOL':(FAMCOL[fam].sfx.trim()||'value');
+      html+='<div class="crow'+(sel?' sel':'')+(fam!=='rpm'?' effrow':'')+'" data-id="'+c.id+'"><span class="cdot" style="background:'+col+'"></span>'
         +'<input type="number" step="any" data-id="'+c.id+'" data-fam="'+fam+'" value="'+(c.value!=null?c.value:'')+'" placeholder="'+ph+'">'
         +'<button class="delbtn" data-id="'+c.id+'" title="Delete curve"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button></div>';});
     host.innerHTML=html;
@@ -588,24 +607,20 @@
       row.addEventListener('mousedown',ev=>{if(ev.target.closest('input,button'))return;state.family=fam;state.selectedCurveId=id;state.selectedId=null;state.selectedNode=null;renderAll();});
       const inp=row.querySelector('input');
       inp.addEventListener('focus',()=>{state.family=fam;state.selectedCurveId=id;state.selectedId=null;state.selectedNode=null;document.querySelectorAll('.crow').forEach(rr=>rr.classList.remove('sel'));row.classList.add('sel');renderOverlay();syncStatus();});
-      inp.addEventListener('input',()=>{const c=state.curves[fam].find(x=>x.id===id);if(!c)return;const t=inp.value.trim();c.value=t===''?null:parseFloat(t);recomputeModels();renderOverlay();fillOut('rpm',state.rpmModel);fillOut('eff',state.effModel);renderProbeTable();});
+      inp.addEventListener('input',()=>{const c=state.curves[fam].find(x=>x.id===id);if(!c)return;const t=inp.value.trim();c.value=t===''?null:parseFloat(t);recomputeModels();renderOverlay();FAMS.forEach(f=>fillOut(f,famModel(f)));renderProbeTable();});
       inp.addEventListener('change',()=>{pushHistory();});
+      inp.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();pushHistory();startNewCurve(fam);}});
       row.querySelector('.delbtn').addEventListener('click',()=>deleteCurve(id));});
     if(keepId){const el=host.querySelector('.crow[data-id="'+keepId+'"] input');if(el&&document.activeElement!==el){const v=el.value;el.focus();try{el.setSelectionRange(v.length,v.length);}catch(_){}}}}
-  function fillOut(fam,model){const out=$('#'+fam+'Out'),fEl=$('#'+fam+'Formula'),mEl=$('#'+fam+'Meta');
+  function fillOut(fam,model){const out=$('#'+fam+'Out');if(!out)return;const fEl=$('#'+fam+'Formula'),mEl=$('#'+fam+'Meta');
     if(!model||model.method==='none'){out.style.display='none';return;}
-    if(model.method==='need'){out.style.display='block';fEl.textContent='';mEl.textContent='Trace at least two labelled curves to build the surface.';return;}
-    out.style.display='block';fEl.textContent=model.formula||'';let meta='';
-    if(model.method==='dol')meta='Direct on line, no speed entered. Single Y(X) fit, R\u00B2 = '+pct(model.r2)+'. Copy gives the Excel formula.';
-    else meta='Single smooth surface in X and Y, R\u00B2 = '+pct(model.r2)+'. Copy gives the Excel formula using your X and Y cells.';
-    mEl.textContent=meta;}
-  function updateCurvePanels(){renderCurveList('rpm');renderCurveList('eff');fillOut('rpm',state.rpmModel);fillOut('eff',state.effModel);renderProbeTable();
-    const rpmHas=state.curves.rpm.length,effHas=state.curves.eff.length;
-    $('#rpmTrace').textContent=rpmHas?'Add another RPM curve':'Trace new RPM curve';
-    $('#effTrace').textContent=effHas?'Add another efficiency curve':'Trace new efficiency curve';
-    $('#rpmTrace').classList.toggle('active',state.mode==='trace'&&state.family==='rpm');
-    $('#effTrace').classList.toggle('active',state.mode==='trace'&&state.family==='eff');
-    $('#probeBtn').classList.toggle('active',state.mode==='probe');
+    out.style.display='block';
+    if(model.method==='need'){if(fEl)fEl.textContent='';if(mEl)mEl.textContent='Trace at least two labelled curves to build the surface.';return;}
+    if(mEl)mEl.textContent='';if(fEl)fEl.textContent=model.formula||'';}
+  const FAMLABEL={rpm:'RPM',eff:'efficiency',npshr:'NPSHr'};
+  function updateCurvePanels(){FAMS.forEach(f=>renderCurveList(f));FAMS.forEach(f=>fillOut(f,famModel(f)));renderProbeTable();
+    FAMS.forEach(fam=>{const b=$('#'+fam+'Trace');if(!b)return;const has=state.curves[fam].length;b.textContent=(has?'Add another ':'Trace new ')+FAMLABEL[fam]+' curve';b.classList.toggle('active',state.mode==='trace'&&state.family===fam);});
+    const pb=$('#probeBtn');if(pb)pb.classList.toggle('active',state.mode==='probe');
     $$('#traceModeSeg button').forEach(b=>{const on=b.getAttribute('data-trace')===state.traceMode;b.classList.toggle('on',on);b.style.background=on?'var(--accent)':'#fff';b.style.color=on?'#fff':'var(--text-3)';});}
   function sizeDesc(){['#pumpMake','#pumpModel'].forEach(sel=>{const i=$(sel);if(i)i.size=Math.max(((i.value||i.placeholder||'').length+1),10);});}
   function syncInputs(){$('#pumpMake').value=state.make||'';$('#pumpModel').value=state.model||'';sizeDesc();$('#sxVal').value=state.calib.scale.xval!=null?state.calib.scale.xval:'';$('#syVal').value=state.calib.scale.yval!=null?state.calib.scale.yval:'';}
@@ -613,7 +628,7 @@
     const o=state.calib.origin,s=state.calib.scale,ro=$('#refOrigin'),rs=$('#refScale');ro.classList.toggle('set',o.px!=null);rs.classList.toggle('set',s.px!=null);
     rs.querySelector('.rv').textContent=(s.xval!=null&&s.yval!=null)?(disp(s.xval)+' , '+disp(s.yval)):'not set';rs.querySelector('.rv').classList.toggle('muted',!(s.xval!=null&&s.yval!=null));
     calBtn.disabled=!state.imgEl;calBtn.classList.toggle('active',state.mode==='calibrate');
-    $('#rpmTrace').disabled=!cal;$('#effTrace').disabled=!cal;$('#probeBtn').disabled=!cal;}
+    FAMS.forEach(fam=>{const b=$('#'+fam+'Trace');if(b)b.disabled=!cal;});const pb=$('#probeBtn');if(pb)pb.disabled=!cal;}
   function reflectTitle(){const mk=$('#pumpMake'),md=$('#pumpModel');if(mk&&document.activeElement!==mk&&mk.value!==(state.make||''))mk.value=state.make||'';if(md&&document.activeElement!==md&&md.value!==(state.model||''))md.value=state.model||'';}
   function renderAll(){renderOverlay();updateCurvePanels();syncStatus();reflectTitle();}
   function rr(ctx,x,y,w,h,r){if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,w,h,r);return;}ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
@@ -646,11 +661,11 @@
         out.push({k:'dot',cx:ox+m.px*isc,cy:oy+m.py*isc,r:dotR,color:CA});
         out.push({k:'callout',bx:ox+(cxn-cb.w/2)*isc,by:oy+(cyn-cb.h/2)*isc,bw:cb.w*isc,bh:cb.h*isc,title:cb.lines[0],coords:cb.lines[1],tSize:cb.fsT*isc,cSize:cb.fsC*isc,tipx:ox+m.px*isc,tipy:oy+m.py*isc,joinx:ox+ed.x*isc,joiny:oy+ed.y*isc,lc:CA});});}
     if(state.tab==='curve'&&isCalibrated()){
-      ['rpm','eff'].forEach(fam=>{const col=fam==='rpm'?CA:CGREEN,cold=fam==='rpm'?CAdeep:CGREENd;
+      FAMS.forEach(fam=>{const col=FAMCOL[fam].c,cold=FAMCOL[fam].d;
         state.curves[fam].forEach(c=>{const pl=curvePolyline(c,fam);if(pl.length>1)out.push({k:'poly',pts:pl.map(ip=>[ox+ip.px*isc,oy+ip.py*isc]),color:col,w:Math.max(b.cardW,b.cardH)*0.0028});
           const lp=labelPoint(c,fam);if(lp)out.push({k:'label',x:ox+lp.px*isc+markerR()*isc*1.0,y:oy+lp.py*isc-markerR()*isc*0.3,text:curveLabelText(c,fam),color:cold,size:markerR()*isc*0.95});});});
-      const boxes=[['rpm',state.rpmModel],['eff',state.effModel]].filter(e=>e[1]&&e[1].formula);
-      let fy=b.cardY+4*b.S;boxes.forEach(([fam,m])=>{const lines=m.formula.split('\n'),fs=2.9*b.S,bw=Math.min(b.cardW-8*b.S,Math.max.apply(null,lines.map(l=>measure(l,fs+'px '+MONO)))+9*b.S),bh=lines.length*fs*1.45+5*b.S;out.push({k:'formula',bx:b.cardX+4*b.S,by:fy,bw,bh,lines,size:fs,accent:fam==='rpm'?CA:CGREEN,accentd:fam==='rpm'?CAdeep:CGREENd});fy+=bh+3*b.S;});
+      const boxes=FAMS.map(f=>[f,famModel(f)]).filter(e=>e[1]&&e[1].formula);
+      let fy=b.cardY+4*b.S;boxes.forEach(([fam,m])=>{const lines=m.formula.split('\n'),fs=2.9*b.S,bw=Math.min(b.cardW-8*b.S,Math.max.apply(null,lines.map(l=>measure(l,fs+'px '+MONO)))+9*b.S),bh=lines.length*fs*1.45+5*b.S;out.push({k:'formula',bx:b.cardX+4*b.S,by:fy,bw,bh,lines,size:fs,accent:FAMCOL[fam].c,accentd:FAMCOL[fam].d});fy+=bh+3*b.S;});
       layoutProbes();const pdotR2=Math.max(b.cardW,b.cardH)*0.0055;
       state.probes.forEach((p,i)=>{const m=dataToImg(p.x,p.y),lines=probeLines(p,i),cb=calloutBoxLines(lines),c=p.callout||{dx:0,dy:0},cxn=m.px+c.dx,cyn=m.py+c.dy,ed=boxEdgePoint(m.px,m.py,cxn,cyn,cb.w,cb.h);
         out.push({k:'line',x1:ox+m.px*isc,y1:oy+m.py*isc,x2:ox+ed.x*isc,y2:oy+ed.y*isc,color:CA,w:pdotR2*0.3,op:0.55});
@@ -724,10 +739,7 @@
   document.addEventListener('click',e=>{if(popover.style.display==='block'&&!popover.contains(e.target)&&!e.target.closest('.help'))closeHelp();});
 
   calBtn.addEventListener('click',enterCalibrate);
-  $('#rpmTrace').addEventListener('click',()=>startNewCurve('rpm'));
-  $('#effTrace').addEventListener('click',()=>startNewCurve('eff'));
-  $('#rpmCopy').addEventListener('click',()=>copyText(modelExcel(state.rpmModel)));
-  $('#effCopy').addEventListener('click',()=>copyText(modelExcel(state.effModel)));
+  FAMS.forEach(fam=>{const t=$('#'+fam+'Trace');if(t)t.addEventListener('click',()=>startNewCurve(fam));const cp=$('#'+fam+'Copy');if(cp)cp.addEventListener('click',()=>copyText(modelExcel(famModel(fam))));const sf=$('#'+fam+'ShowFormula');if(sf)sf.addEventListener('click',()=>{const f=$('#'+fam+'Formula');if(!f)return;const show=f.style.display==='none';f.style.display=show?'block':'none';sf.textContent=show?'Hide formula':'Show formula';});});
   $('#probeBtn').addEventListener('click',enterProbe);
   $('#xref').addEventListener('input',()=>updateCurvePanels());
   $('#yref').addEventListener('input',()=>updateCurvePanels());
