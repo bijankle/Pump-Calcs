@@ -196,23 +196,24 @@
   /* ---------- Map + table ---------- */
   .main{ display:grid; grid-template-rows:1fr; min-width:0; min-height:0; }
 
-  /* map-corner dropdowns (callouts, flow path summary) */
-  /* callout controls: all stacked down the left edge, menus pop out to the right */
-  .dropdown{ position:absolute; z-index:1000; left:12px; }
-  #calloutDD{ top:54px; }
-  #flowDD{ top:96px; }
+  /* left-side controls: one evenly-spaced flex column; menus pop out to the right */
+  .left-rail{
+    position:absolute; top:12px; left:12px; z-index:1000;
+    display:flex; flex-direction:column; align-items:flex-start; gap:8px;
+  }
+  .dropdown{ position:relative; }
   .dd-btn{
     font-family:var(--ui); font-size:13px; font-weight:600; letter-spacing:.3px; color:var(--ink);
     background:#fff; border:1px solid var(--line); border-radius:7px; padding:7px 11px; cursor:pointer;
     display:inline-flex; align-items:center; gap:7px; box-shadow:0 4px 14px -8px rgba(0,0,0,.5);
   }
-  .dd-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .dd-btn:hover{ border-color:#b8bcc4; }
   .dd-btn:disabled{ opacity:.5; cursor:default; }
   .dd-caret{ font-size:9px; opacity:.7; }
   .dropdown.open .dd-caret{ transform:rotate(180deg); }
   .dd-menu{
     display:none; position:absolute; left:calc(100% + 8px); top:0; min-width:170px;
-    background:#fff; border:1px solid var(--line); border-radius:8px; padding:9px 11px;
+    background:#ffffff; border:1px solid var(--line); border-radius:8px; padding:10px 12px;
     box-shadow:0 12px 30px -12px rgba(0,0,0,.45);
   }
   .dropdown.open .dd-menu{ display:block; }
@@ -398,8 +399,7 @@
 
   /* collapsible search: a diagonal magnifier that expands on click/hover */
   .map-search{
-    position:absolute; top:12px; left:12px; z-index:1000;
-    display:flex; align-items:center; gap:6px;
+    position:relative; display:flex; align-items:center; gap:6px;
     background:#fff; border:1px solid var(--line); border-radius:8px; padding:4px 6px;
     box-shadow:0 4px 14px -8px rgba(0,0,0,.5);
   }
@@ -467,41 +467,42 @@
     display:flex; flex-direction:column; gap:10px; align-items:stretch;
     width:236px; pointer-events:none;
   }
-  .mto{ background:transparent; border:0; padding:0; }
+  /* flow summary box: solid white (it is the dd-menu); monochrome text like the calc */
+  .mto{ border:0; padding:0; }
   .mto-title{
-    font-family:var(--mono); font-size:9.5px; letter-spacing:1.6px; text-transform:uppercase;
-    color:#5C5E66; margin-bottom:7px;
+    font-family:var(--ui); font-size:11px; letter-spacing:.6px; text-transform:uppercase;
+    color:var(--ink-dim); font-weight:700; margin-bottom:7px;
     display:flex; align-items:center; justify-content:space-between; gap:10px;
   }
   .mto-copy{
     background:transparent; border:1px solid var(--line-soft); border-radius:5px;
-    color:#5C5E66; font-size:13px; line-height:1; padding:2px 6px; cursor:pointer;
+    color:var(--ink-dim); font-size:13px; line-height:1; padding:2px 6px; cursor:pointer;
     flex:0 0 auto; transition:.15s ease;
   }
-  .mto-copy:hover{ border-color:var(--accent); color:var(--accent); }
-  .mto-copy.ok{ border-color:var(--green); color:var(--green); }
-  .mto-row{ display:flex; align-items:center; gap:9px; font-family:var(--mono); font-size:11px; margin:4px 0; }
+  .mto-copy:hover{ border-color:#b8bcc4; }
+  .mto-copy.ok{ border-color:#b8bcc4; }
+  .mto-row{ display:flex; align-items:center; gap:9px; font-family:var(--ui); font-size:12px; margin:4px 0; }
   .mto-swatch{ width:22px; height:4px; border-radius:2px; flex:0 0 auto; }
   .mto-label{ color:var(--ink); flex:1; white-space:nowrap; }
-  .mto-len{ color:var(--accent); font-weight:600; white-space:nowrap; }
+  .mto-len{ color:var(--ink); font-weight:600; white-space:nowrap; }
   .mto-total{ display:flex; justify-content:space-between; gap:9px; margin-top:7px; padding-top:7px;
-    border-top:1px solid var(--line); font-family:var(--mono); font-size:11px; }
-  .mto-total span:first-child{ color:var(--ink-faint); letter-spacing:1px; }
-  .mto-total span:last-child{ color:var(--green); font-weight:700; }
-  .mto-empty{ color:var(--ink-faint); font-family:var(--mono); font-size:11px; }
+    border-top:1px solid var(--line); font-family:var(--ui); font-size:12px; }
+  .mto-total span:first-child{ color:var(--ink-dim); letter-spacing:1px; }
+  .mto-total span:last-child{ color:var(--ink); font-weight:700; }
+  .mto-empty{ color:var(--ink-dim); font-family:var(--ui); font-size:12px; }
   #flowDD .dd-menu{ max-width:min(620px,60vw); max-height:70vh; overflow:auto; }
-  .fp-table{ border-collapse:collapse; font-family:var(--mono); font-size:10.5px; color:var(--ink); }
+  .fp-table{ border-collapse:collapse; font-family:var(--ui); font-size:12px; color:var(--ink); }
   .fp-table th, .fp-table td{ padding:3px 8px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line-soft); }
-  .fp-table thead th{ color:#5C5E66; font-weight:600; border-bottom:1px solid var(--line); }
+  .fp-table thead th{ color:var(--ink-dim); font-weight:600; border-bottom:1px solid var(--line); }
   .fp-table th:first-child, .fp-table td.fp-type{ text-align:left; color:var(--ink); }
   .fp-table .fp-sw{ display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:6px; vertical-align:middle; }
-  .fp-table tfoot td{ color:var(--green); font-weight:700; border-top:1px solid var(--line); border-bottom:none; }
-  .fp-table th.fp-mto, .fp-table td.fp-mto{ border-left:1px solid var(--line); color:var(--accent); font-weight:600; }
-  .fp-table tfoot td.fp-mto{ color:var(--green); }
-  .fp-table .fp-flow{ color:var(--accent); font-weight:600; margin-left:6px; }
+  .fp-table tfoot td{ color:var(--ink); font-weight:700; border-top:1px solid var(--line); border-bottom:none; }
+  .fp-table th.fp-mto, .fp-table td.fp-mto{ border-left:1px solid var(--line); color:var(--ink); font-weight:600; }
+  .fp-table tfoot td.fp-mto{ color:var(--ink); }
+  .fp-table .fp-flow{ color:var(--ink-dim); font-weight:600; margin-left:6px; }
   .fp-table .fp-flow.na{ color:var(--ink-faint); font-weight:400; font-style:italic; }
-  .fp-table .fp-delrow th{ color:#3BA55C; font-weight:600; font-size:9.5px; border-bottom:none; padding-bottom:1px; }
-  .fp-table .fp-delrow th.fp-delh{ color:#2C7A47; letter-spacing:.3px; }
+  .fp-table .fp-delrow th{ color:var(--ink-dim); font-weight:600; font-size:11px; border-bottom:none; padding-bottom:1px; }
+  .fp-table .fp-delrow th.fp-delh{ color:var(--ink-dim); letter-spacing:.3px; }
 
   /* sidebar how-to text */
   .howto-section p{ font-size:11px; line-height:1.55; color:var(--ink-dim); margin:0 0 8px; }
@@ -731,12 +732,37 @@
 
         <div class="proj-title" id="projTitle"></div>
 
-        <div class="map-search">
-          <button type="button" class="search-ic" title="Search a place or address" onclick="var i=document.getElementById('searchInput');i.focus();">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg>
-          </button>
-          <input id="searchInput" type="text" placeholder="Search a place or address..." autocomplete="off" />
-          <button id="searchBtn">Go</button>
+        <!-- left-side controls: evenly stacked, menus pop out to the right -->
+        <div class="left-rail">
+          <div class="map-search">
+            <button type="button" class="search-ic" title="Search a place or address" onclick="var i=document.getElementById('searchInput');i.focus();">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg>
+            </button>
+            <input id="searchInput" type="text" placeholder="Search a place or address..." autocomplete="off" />
+            <button id="searchBtn">Go</button>
+          </div>
+
+          <!-- callouts: dropdown, all off by default -->
+          <div class="dropdown" id="calloutDD">
+            <button type="button" class="dd-btn" id="calloutDDBtn">Callouts <span class="dd-caret">&#9662;</span></button>
+            <div class="dd-menu" id="calloutTools">
+              <label class="ct-check"><input type="checkbox" id="coTgl_size" /> Pipe size</label>
+              <label class="ct-check"><input type="checkbox" id="coTgl_spec" /> Pipe spec</label>
+              <label class="ct-check"><input type="checkbox" id="coTgl_flow" /> Flow rate</label>
+              <label class="ct-check"><input type="checkbox" id="coTgl_vel" /> Velocity</label>
+              <label class="ct-check"><input type="checkbox" id="coTgl_elev" /> Elevation</label>
+              <label class="ct-check"><input type="checkbox" id="coTgl_length" /> Length</label>
+            </div>
+          </div>
+
+          <!-- flow path summary: dropdown, pops out to the right -->
+          <div class="dropdown" id="flowDD">
+            <button type="button" class="dd-btn" id="flowDDBtn" disabled>Flow Path Summary <span class="dd-caret">&#9662;</span></button>
+            <div class="dd-menu mto" id="flowmto">
+              <div class="mto-title"><span>Flow Path Summary</span><button class="mto-copy" id="flowCopyBtn" title="Copy table to clipboard" aria-label="Copy table">&#10697;</button></div>
+              <div class="mto-body" id="flowmtoBody"></div>
+            </div>
+          </div>
         </div>
 
         <!-- active pipe spec: shown only while drawing, top of the map -->
@@ -745,28 +771,6 @@
           <select id="selMaterial" aria-label="Pipe material"></select>
           <select id="selRating" aria-label="Pressure rating"></select>
           <select id="selSize" aria-label="Nominal diameter"></select>
-        </div>
-
-        <!-- callouts: dropdown, all off by default -->
-        <div class="dropdown" id="calloutDD">
-          <button type="button" class="dd-btn" id="calloutDDBtn">Callouts <span class="dd-caret">&#9662;</span></button>
-          <div class="dd-menu" id="calloutTools">
-            <label class="ct-check"><input type="checkbox" id="coTgl_size" /> Pipe size</label>
-            <label class="ct-check"><input type="checkbox" id="coTgl_spec" /> Pipe spec</label>
-            <label class="ct-check"><input type="checkbox" id="coTgl_flow" /> Flow rate</label>
-            <label class="ct-check"><input type="checkbox" id="coTgl_vel" /> Velocity</label>
-            <label class="ct-check"><input type="checkbox" id="coTgl_elev" /> Elevation</label>
-            <label class="ct-check"><input type="checkbox" id="coTgl_length" /> Length</label>
-          </div>
-        </div>
-
-        <!-- flow path summary: dropdown, left-aligned, pops out to the right -->
-        <div class="dropdown" id="flowDD">
-          <button type="button" class="dd-btn" id="flowDDBtn" disabled>Flow Path Summary <span class="dd-caret">&#9662;</span></button>
-          <div class="dd-menu mto" id="flowmto">
-            <div class="mto-title"><span>Flow Path Summary</span><button class="mto-copy" id="flowCopyBtn" title="Copy table to clipboard" aria-label="Copy table">&#10697;</button></div>
-            <div class="mto-body" id="flowmtoBody"></div>
-          </div>
         </div>
       </div>
     </div>

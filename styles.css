@@ -60,7 +60,7 @@ button{font-family:inherit}
 /* Input rows — aligned grid mirroring the outputs:
    parameter (name + toggle/badge) | value | unit | info */
 .row{display:grid;grid-template-columns:224px 1fr 50px 24px;align-items:center;column-gap:10px;
-  padding:4px 0;border-bottom:2px dashed #e3e3e3}
+  padding:4px 0;border-bottom:1px solid var(--line)}
 .row .pcell{display:flex;align-items:center;gap:8px;min-width:0}
 .row .pname{color:var(--grey);font-size:13px}
 .row .vcell{min-width:0;display:flex;align-items:center}
@@ -104,7 +104,7 @@ table.ref.summary thead th.pumpcol{text-align:center;min-width:80px;max-width:16
 
 /* Output rows — Parameter | Nominal | Design | Unit | info */
 .orow{display:grid;grid-template-columns:1fr 96px 96px 52px 22px;align-items:center;gap:8px;
-  padding:4px 0;border-bottom:2px dashed #e3e3e3}
+  padding:4px 0;border-bottom:1px solid var(--line)}
 .orow.ohead{border-bottom:2px solid var(--line);font-weight:700;color:var(--grey)}
 .orow.ohead .oval{color:var(--grey);font-weight:700}
 .orow .olabel{color:var(--black);font-size:13px}
