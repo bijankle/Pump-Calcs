@@ -61,9 +61,9 @@
   .popup-node .pn-row{ display:flex; align-items:center; gap:7px; margin:5px 0; }
   .popup-node .pn-row input, .popup-node .pn-row select{ flex:1; min-width:0; width:auto; }
   .popup-node .unit{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); white-space:nowrap; flex:0 0 auto; }
-  .popup-node .pn-roles{ gap:4px; }
-  .popup-node .pn-roles .flow-roles{ display:flex; gap:4px; width:100%; }
-  .popup-node .pn-roles .flow-roles button{ flex:1; }
+  .popup-node .pn-roles .flow-roles{ display:flex; gap:4px; flex:0 0 auto; }
+  .popup-node .pn-roles .flow-roles button{ padding:4px 10px; }
+  .popup-node .pn-roles input{ flex:1; min-width:0; }
   .popup-node .pp-revert{ flex:0 0 auto; background:transparent; border:1px solid var(--line-soft); border-radius:5px; color:var(--ink-dim); cursor:pointer; padding:3px 6px; }
   header.topbar{
     display:flex;
@@ -196,27 +196,25 @@
   .main{ display:grid; grid-template-rows:1fr; min-width:0; min-height:0; }
 
   /* map-corner dropdowns (callouts, flow path summary) */
-  .dropdown{ position:absolute; z-index:1000; }
-  #calloutDD{ top:52px; left:12px; }
-  #flowDD{ top:12px; right:12px; }
+  /* callout controls: all stacked down the left edge, menus pop out to the right */
+  .dropdown{ position:absolute; z-index:1000; left:12px; }
+  #calloutDD{ top:54px; }
+  #flowDD{ top:96px; }
   .dd-btn{
     font-family:var(--ui); font-size:12px; font-weight:600; letter-spacing:.3px; color:var(--ink);
-    background:rgba(255,255,255,.92); backdrop-filter:blur(4px);
-    border:1px solid var(--line); border-radius:7px; padding:7px 11px; cursor:pointer;
-    display:inline-flex; align-items:center; gap:7px; box-shadow:0 6px 20px -10px #000;
+    background:#fff; border:1px solid var(--line); border-radius:7px; padding:7px 11px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:7px; box-shadow:0 4px 14px -8px rgba(0,0,0,.5);
   }
   .dd-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .dd-btn:disabled{ opacity:.5; cursor:default; }
   .dd-caret{ font-size:9px; opacity:.7; }
   .dropdown.open .dd-caret{ transform:rotate(180deg); }
   .dd-menu{
-    display:none; margin-top:6px; min-width:170px;
-    background:rgba(255,255,255,.96); backdrop-filter:blur(6px);
-    border:1px solid var(--line); border-radius:8px; padding:9px 11px;
-    box-shadow:0 12px 30px -12px #000;
+    display:none; position:absolute; left:calc(100% + 8px); top:0; min-width:170px;
+    background:#fff; border:1px solid var(--line); border-radius:8px; padding:9px 11px;
+    box-shadow:0 12px 30px -12px rgba(0,0,0,.45);
   }
   .dropdown.open .dd-menu{ display:block; }
-  .dropdown-right .dd-menu{ position:absolute; right:0; }
 
   /* active pipe spec, shown only while drawing */
   .draw-spec{
@@ -387,30 +385,34 @@
   .help-steps li, .help-notes li{ font-size:12.5px; line-height:1.6; color:var(--ink-dim); margin:0 0 9px; }
   .help-steps li::marker{ color:var(--accent); font-weight:700; }
 
-  /* collapsible search: a magnifier that expands on click/hover */
+  /* collapsible search: a diagonal magnifier that expands on click/hover */
   .map-search{
     position:absolute; top:12px; left:12px; z-index:1000;
     display:flex; align-items:center; gap:6px;
-    background:rgba(255,255,255,.94); backdrop-filter:blur(4px);
-    border:1px solid var(--line); border-radius:8px; padding:5px 6px 5px 9px;
-    box-shadow:0 6px 20px -8px #000;
+    background:#fff; border:1px solid var(--line); border-radius:8px; padding:4px 6px;
+    box-shadow:0 4px 14px -8px rgba(0,0,0,.5);
   }
-  .map-search .ic{ font-family:var(--mono); color:var(--ink-faint); font-size:14px; cursor:pointer; }
+  .search-ic{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:30px; height:30px; padding:0; border:none; background:transparent;
+    color:var(--ink-dim); cursor:pointer; flex:0 0 auto;
+  }
+  .search-ic:hover{ color:var(--accent); }
+  .search-ic svg{ width:19px; height:19px; display:block; }
   .map-search input{
     width:0; opacity:0; background:transparent; border:none; outline:none;
     color:var(--ink); font-family:var(--ui); font-size:13px; padding:3px 0;
     transition:width .18s ease, opacity .18s ease;
   }
   .map-search:hover input, .map-search:focus-within input{ width:200px; opacity:1; padding:3px 2px; }
-  .map-search button{ display:none; }
-  .map-search:hover button, .map-search:focus-within button{ display:inline-block; }
   .map-search input::placeholder{ color:var(--ink-faint); }
-  .map-search button{
-    font-family:var(--ui); font-size:12px; font-weight:600; color:#ffffff;
+  #searchBtn{
+    display:none; font-family:var(--ui); font-size:12px; font-weight:600; color:#fff;
     background:var(--accent); border:none; border-radius:5px; padding:6px 12px; cursor:pointer;
   }
-  .map-search button:hover{ filter:brightness(1.08); }
-  .map-search button:disabled{ opacity:.6; cursor:default; }
+  .map-search:hover #searchBtn, .map-search:focus-within #searchBtn{ display:inline-block; }
+  #searchBtn:hover{ filter:brightness(1.08); }
+  #searchBtn:disabled{ opacity:.6; cursor:default; }
 
   /* project title removed from the map */
   .proj-title{ display:none; }
@@ -691,8 +693,8 @@
     <div class="toolbar">
       <div class="tool-group">
         <button class="btn" id="btnDraw"><span class="ic">/</span> Draw <span class="hotkey">P</span></button>
-        <button class="btn" id="btnMeasure"><span class="ic">&#8596;</span> Measure <span class="hotkey">M</span></button>
-        <button class="btn" id="btnFit" onclick="try{fitToData()}catch(e){}" title="Zoom to the extent of the pipes drawn"><span class="ic">&#9974;</span> Zoom to pipes</button>
+        <button class="btn" id="btnFit" onclick="try{fitToData()}catch(e){}" title="Zoom to the extent of the pipes drawn"><span class="ic">&#9974;</span> Zoom to pipes <span class="hotkey">Z</span></button>
+        <button class="btn" id="btnCopyMap"><span class="ic">&#9113;</span> Copy Map Image</button>
       </div>
       <div class="tool-group" id="fileGroup">
         <button class="btn" id="btnNew">New</button>
@@ -713,19 +715,18 @@
     <div class="main">
       <div class="mapwrap">
         <div id="map"></div>
-        <div class="print-frame" id="printFrame"><span class="pf-tag">A3 LANDSCAPE PRINT AREA</span></div>
         <div class="scale-bar" id="scaleBar"><span class="sb-label"></span></div>
         <div class="statusbar" id="statusbar"><span class="pulse"></span><span id="statusText"></span></div>
 
         <div class="proj-title" id="projTitle"></div>
 
         <div class="map-search">
-          <span class="ic" title="Search a place or address" onclick="var i=document.getElementById('searchInput');i.focus();">&#9906;</span>
+          <button type="button" class="search-ic" title="Search a place or address" onclick="var i=document.getElementById('searchInput');i.focus();">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg>
+          </button>
           <input id="searchInput" type="text" placeholder="Search a place or address..." autocomplete="off" />
           <button id="searchBtn">Go</button>
         </div>
-
-        <button class="map-btn" id="btnCopyMap"><span class="ic">&#9113;</span> Copy Map Image</button>
 
         <!-- active pipe spec: shown only while drawing, top of the map -->
         <div class="draw-spec" id="drawSpec" hidden>
@@ -748,8 +749,8 @@
           </div>
         </div>
 
-        <!-- flow path summary: dropdown on the right -->
-        <div class="dropdown dropdown-right" id="flowDD">
+        <!-- flow path summary: dropdown, left-aligned, pops out to the right -->
+        <div class="dropdown" id="flowDD">
           <button type="button" class="dd-btn" id="flowDDBtn" disabled>Flow Path Summary <span class="dd-caret">&#9662;</span></button>
           <div class="dd-menu mto" id="flowmto">
             <div class="mto-title"><span>Flow Path Summary</span><button class="mto-copy" id="flowCopyBtn" title="Copy table to clipboard" aria-label="Copy table">&#10697;</button></div>
@@ -1441,7 +1442,7 @@ const MEASURE_CURSOR = buildCursor(RULER_GLYPH);
 function setMode(m){
   mode = m;
   btnDraw.classList.toggle('active', m==='draw');
-  btnMeasure.classList.toggle('active', m==='measure');
+  if(btnMeasure) btnMeasure.classList.toggle('active', m==='measure');
   const ds=document.getElementById('drawSpec'); if(ds) ds.hidden = (m!=='draw');
   map.getContainer().style.cursor =
     m==='draw' ? DRAW_CURSOR : m==='measure' ? MEASURE_CURSOR : '';
@@ -2395,15 +2396,14 @@ function openNodePopup(id, latlng){
   html += '<div class="pn-row"><input id="elevIn" type="number" step="0.01" placeholder="elevation" '+
           'value="'+(n.elevation!=null?sig3(n.elevation):'')+'" /><span class="unit">m AHD</span></div>';
   if(end){
-    const roleWord = effFlow(id)==='in' ? 'in' : 'out';
     const inf = inferredRate(id);
-    const ratePlace = inf!=null ? ('auto '+fmtFlow(inf)) : ('flow '+roleWord);
+    const ratePlace = inf!=null ? ('auto '+fmtFlow(inf)) : 'flow';
+    // in/out and the flow rate share one row; "auto" is just the unset starting point
     html += '<div class="pn-row pn-roles"><div class="flow-roles">'+
-              '<button data-role="none"'+(!n.flow?' class="active"':'')+'>Auto</button>'+
               '<button data-role="in"'+(n.flow==='in'?' class="active in"':'')+'>In</button>'+
               '<button data-role="out"'+(n.flow==='out'?' class="active out"':'')+'>Out</button>'+
-            '</div></div>'+
-            '<div class="pn-row"><input id="flowRateIn" type="number" step="0.1" min="0" placeholder="'+ratePlace+'" '+
+            '</div>'+
+            '<input id="flowRateIn" type="number" step="0.1" min="0" placeholder="'+ratePlace+'" '+
             'value="'+(n.flowRate!=null?fmtFlow(n.flowRate):'')+'" /><span class="unit">m\u00b3/h</span></div>';
   } else if(poi){
     const inf = inferredThrough(id);
@@ -3369,7 +3369,7 @@ const btnMeasure=document.getElementById('btnMeasure');
 })();
 
 btnDraw.onclick   = ()=> setMode(mode==='draw'?'none':'draw');
-btnMeasure.onclick= ()=> setMode(mode==='measure'?'none':'measure');
+if(btnMeasure) btnMeasure.onclick = ()=> setMode(mode==='measure'?'none':'measure');
 document.getElementById('btnNew').onclick    = newProject;
 document.getElementById('btnSave').onclick   = (e)=> save(e.currentTarget);
 document.getElementById('btnSaveAs').onclick = (e)=> saveAs(e.currentTarget);
@@ -3417,7 +3417,7 @@ document.addEventListener('keydown', e=>{
   // single key tool shortcuts (ignored while typing or with modifiers)
   if(!typing && !e.ctrlKey && !e.metaKey && !e.altKey){
     if(e.key==='p' || e.key==='P'){ e.preventDefault(); setMode(mode==='draw'?'none':'draw'); }
-    else if(e.key==='m' || e.key==='M'){ e.preventDefault(); setMode(mode==='measure'?'none':'measure'); }
+    else if(e.key==='z' || e.key==='Z'){ e.preventDefault(); try{ fitToData(); }catch(_){} }
   }
   // refresh the orthogonal preview the instant Shift is pressed
   if(e.key==='Shift' && mode==='draw') updatePreview(true);
