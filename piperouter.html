@@ -57,10 +57,14 @@
     height:100vh;
   }
 
-  /* one-row elevation field inside node popups */
-  .popup-node .pn-row{ display:flex; align-items:center; gap:8px; margin:2px 0; }
-  .popup-node .pn-row label{ margin:0; white-space:nowrap; flex:0 0 auto; }
-  .popup-node .pn-row input{ flex:1; min-width:0; }
+  /* compact one-row property fields inside node/pipe popups */
+  .popup-node .pn-row{ display:flex; align-items:center; gap:7px; margin:5px 0; }
+  .popup-node .pn-row input, .popup-node .pn-row select{ flex:1; min-width:0; width:auto; }
+  .popup-node .unit{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); white-space:nowrap; flex:0 0 auto; }
+  .popup-node .pn-roles{ gap:4px; }
+  .popup-node .pn-roles .flow-roles{ display:flex; gap:4px; width:100%; }
+  .popup-node .pn-roles .flow-roles button{ flex:1; }
+  .popup-node .pp-revert{ flex:0 0 auto; background:transparent; border:1px solid var(--line-soft); border-radius:5px; color:var(--ink-dim); cursor:pointer; padding:3px 6px; }
   header.topbar{
     display:flex;
     align-items:center;
@@ -189,7 +193,43 @@
   .stat span:last-child{ color:var(--ink); }
 
   /* ---------- Map + table ---------- */
-  .main{ display:grid; grid-template-rows:1fr auto; min-width:0; min-height:0; }
+  .main{ display:grid; grid-template-rows:1fr; min-width:0; min-height:0; }
+
+  /* map-corner dropdowns (callouts, flow path summary) */
+  .dropdown{ position:absolute; z-index:1000; }
+  #calloutDD{ top:52px; left:12px; }
+  #flowDD{ top:12px; right:12px; }
+  .dd-btn{
+    font-family:var(--ui); font-size:12px; font-weight:600; letter-spacing:.3px; color:var(--ink);
+    background:rgba(255,255,255,.92); backdrop-filter:blur(4px);
+    border:1px solid var(--line); border-radius:7px; padding:7px 11px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:7px; box-shadow:0 6px 20px -10px #000;
+  }
+  .dd-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .dd-btn:disabled{ opacity:.5; cursor:default; }
+  .dd-caret{ font-size:9px; opacity:.7; }
+  .dropdown.open .dd-caret{ transform:rotate(180deg); }
+  .dd-menu{
+    display:none; margin-top:6px; min-width:170px;
+    background:rgba(255,255,255,.96); backdrop-filter:blur(6px);
+    border:1px solid var(--line); border-radius:8px; padding:9px 11px;
+    box-shadow:0 12px 30px -12px #000;
+  }
+  .dropdown.open .dd-menu{ display:block; }
+  .dropdown-right .dd-menu{ position:absolute; right:0; }
+
+  /* active pipe spec, shown only while drawing */
+  .draw-spec{
+    position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:1001;
+    display:flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,.95); backdrop-filter:blur(5px);
+    border:1px solid var(--accent); border-radius:9px; padding:7px 10px;
+    box-shadow:0 10px 28px -12px #000;
+  }
+  .draw-spec[hidden]{ display:none; }
+  .draw-spec .swatch{ width:14px; height:14px; border-radius:4px; flex:0 0 auto; }
+  .draw-spec select{ height:30px; font-size:12px; padding:0 6px; border:1px solid var(--line-strong);
+    border-radius:7px; background:var(--panel); color:var(--ink); max-width:150px; }
   #map{ width:100%; height:100%; background:var(--surface); }
 
   .statusbar{
@@ -325,16 +365,10 @@
   .map-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .map-btn .ic{ font-family:var(--mono); }
 
-  /* callout visibility panel, top left under the Copy Map button */
-  .callout-tools{
-    position:absolute; top:94px; left:12px; z-index:1000;
-    background:rgba(255,255,255,.92); backdrop-filter:blur(4px);
-    border:1px solid var(--line); border-radius:8px; padding:9px 11px;
-    display:flex; flex-direction:column; gap:6px; box-shadow:0 6px 20px -10px rgba(30,31,34,.4);
-  }
-  .callout-tools .ct-title{ font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-faint); font-weight:700; margin-bottom:1px; }
-  .callout-tools .ct-check{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink); cursor:pointer; white-space:nowrap; }
-  .callout-tools .ct-check input{ accent-color:var(--accent); width:14px; height:14px; }
+  /* callout visibility toggles, inside the Callouts dropdown */
+  #calloutTools{ display:flex; flex-direction:column; gap:6px; }
+  #calloutTools .ct-check{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink); cursor:pointer; white-space:nowrap; }
+  #calloutTools .ct-check input{ accent-color:var(--accent); width:14px; height:14px; }
 
   /* help overlay (How to use / Good to know) */
   .help-overlay{ position:fixed; inset:0; z-index:4000; background:rgba(30,31,34,.32);
@@ -420,11 +454,7 @@
     display:flex; flex-direction:column; gap:10px; align-items:stretch;
     width:236px; pointer-events:none;
   }
-  .mto{
-    width:236px; max-height:100%; overflow:auto; pointer-events:auto;
-    background:rgba(255,255,255,.92); backdrop-filter:blur(5px);
-    border:1px solid var(--line-soft); border-radius:8px; padding:10px 12px;
-  }
+  .mto{ background:transparent; border:0; padding:0; }
   .mto-title{
     font-family:var(--mono); font-size:9.5px; letter-spacing:1.6px; text-transform:uppercase;
     color:#5C5E66; margin-bottom:7px;
@@ -446,7 +476,7 @@
   .mto-total span:first-child{ color:var(--ink-faint); letter-spacing:1px; }
   .mto-total span:last-child{ color:var(--green); font-weight:700; }
   .mto-empty{ color:var(--ink-faint); font-family:var(--mono); font-size:11px; }
-  #flowmto{ max-width:min(560px,46vw); overflow-x:auto; }
+  #flowDD .dd-menu{ max-width:min(620px,60vw); max-height:70vh; overflow:auto; }
   .fp-table{ border-collapse:collapse; font-family:var(--mono); font-size:10.5px; color:var(--ink); }
   .fp-table th, .fp-table td{ padding:3px 8px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line-soft); }
   .fp-table thead th{ color:#5C5E66; font-weight:600; border-bottom:1px solid var(--line); }
@@ -606,10 +636,7 @@
   .leaflet-popup-tip{ background:var(--panel-2); border:1px solid var(--line); }
   .leaflet-popup-content{ font-family:var(--ui); margin:12px 14px; }
   .leaflet-container a.leaflet-popup-close-button{ color:var(--ink-dim); }
-  .popup-node h3{ margin:0 0 8px; font-size:13px; letter-spacing:.5px; }
-  .popup-node .meta{ font-family:var(--mono); font-size:11px; color:var(--ink-dim); margin-bottom:10px; }
-  .popup-node label{ font-size:10.5px; letter-spacing:.5px; color:var(--ink-dim); text-transform:uppercase; display:block; margin-bottom:4px; }
-  .popup-node input{ width:140px; }
+  .popup-node{ min-width:158px; }
   .popup-node .note{ font-size:11px; color:var(--ink-faint); margin-top:8px; line-height:1.5; }
   .flow-roles{ display:flex; gap:5px; }
   .flow-roles button{
@@ -667,16 +694,6 @@
         <button class="btn" id="btnMeasure"><span class="ic">&#8596;</span> Measure <span class="hotkey">M</span></button>
         <button class="btn" id="btnFit" onclick="try{fitToData()}catch(e){}" title="Zoom to the extent of the pipes drawn"><span class="ic">&#9974;</span> Zoom to pipes</button>
       </div>
-      <div class="tool-group">
-        <button class="btn" id="btnUndo" title="Undo"><span class="ic">&#8630;</span></button>
-        <button class="btn" id="btnRedo" title="Redo"><span class="ic">&#8631;</span></button>
-      </div>
-      <div class="tool-group spec-group" title="Active pipe specification">
-        <span class="swatch" id="specSwatch" title="Active drawing colour"></span>
-        <select id="selMaterial" aria-label="Pipe material"></select>
-        <select id="selRating" aria-label="Pressure rating"></select>
-        <select id="selSize" aria-label="Nominal diameter"></select>
-      </div>
       <div class="tool-group" id="fileGroup">
         <button class="btn" id="btnNew">New</button>
         <button class="btn" id="btnSave">Save</button>
@@ -710,34 +727,34 @@
 
         <button class="map-btn" id="btnCopyMap"><span class="ic">&#9113;</span> Copy Map Image</button>
 
-        <div class="callout-tools" id="calloutTools">
-          <div class="ct-title">Callouts</div>
-          <label class="ct-check"><input type="checkbox" id="coTgl_size" checked /> Pipe size</label>
-          <label class="ct-check"><input type="checkbox" id="coTgl_spec" checked /> Pipe spec</label>
-          <label class="ct-check"><input type="checkbox" id="coTgl_flow" checked /> Flow rate</label>
-          <label class="ct-check"><input type="checkbox" id="coTgl_vel" checked /> Velocity</label>
-          <label class="ct-check"><input type="checkbox" id="coTgl_elev" checked /> Elevation</label>
-          <label class="ct-check"><input type="checkbox" id="coTgl_length" checked /> Length</label>
+        <!-- active pipe spec: shown only while drawing, top of the map -->
+        <div class="draw-spec" id="drawSpec" hidden>
+          <span class="swatch" id="specSwatch" title="Active drawing colour"></span>
+          <select id="selMaterial" aria-label="Pipe material"></select>
+          <select id="selRating" aria-label="Pressure rating"></select>
+          <select id="selSize" aria-label="Nominal diameter"></select>
         </div>
 
-        <div class="corner-bl">
-          <div class="mto" id="flowmto" style="display:none">
-            <div class="mto-title"><span>Flow Path Summary</span><button class="mto-copy" id="flowCopyBtn" title="Copy table to clipboard" aria-label="Copy table">&#10697;</button></div>
-            <div class="mto-body" id="flowmtoBody"></div>
+        <!-- callouts: dropdown, all off by default -->
+        <div class="dropdown" id="calloutDD">
+          <button type="button" class="dd-btn" id="calloutDDBtn">Callouts <span class="dd-caret">&#9662;</span></button>
+          <div class="dd-menu" id="calloutTools">
+            <label class="ct-check"><input type="checkbox" id="coTgl_size" /> Pipe size</label>
+            <label class="ct-check"><input type="checkbox" id="coTgl_spec" /> Pipe spec</label>
+            <label class="ct-check"><input type="checkbox" id="coTgl_flow" /> Flow rate</label>
+            <label class="ct-check"><input type="checkbox" id="coTgl_vel" /> Velocity</label>
+            <label class="ct-check"><input type="checkbox" id="coTgl_elev" /> Elevation</label>
+            <label class="ct-check"><input type="checkbox" id="coTgl_length" /> Length</label>
           </div>
         </div>
 
-        <div class="map-legend" id="mapLegend">
-          <div class="ml-title">Materials</div>
-          <div class="ml-row"><span class="ml-swatch" style="background:#36b0ff"></span> PE100</div>
-          <div class="ml-row"><span class="ml-swatch" style="background:#ff7a3d"></span> Carbon Steel</div>
-        </div>
-      </div>
-
-      <div class="tablepanel" id="tablePanel">
-        <div class="table-resizer" id="tableResizer" title="Drag to resize"></div>
-        <div class="table-scroll" id="tableScroll">
-          <div id="tablesContainer"></div>
+        <!-- flow path summary: dropdown on the right -->
+        <div class="dropdown dropdown-right" id="flowDD">
+          <button type="button" class="dd-btn" id="flowDDBtn" disabled>Flow Path Summary <span class="dd-caret">&#9662;</span></button>
+          <div class="dd-menu mto" id="flowmto">
+            <div class="mto-title"><span>Flow Path Summary</span><button class="mto-copy" id="flowCopyBtn" title="Copy table to clipboard" aria-label="Copy table">&#10697;</button></div>
+            <div class="mto-body" id="flowmtoBody"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -879,7 +896,7 @@ function pipeSpecText(p){ return friendlyMat(p.material)+' - '+p.rating; }
 
 /* callout visibility: global master toggles + per-element overrides */
 const CO_TYPES = ['size','spec','flow','vel','elev','length'];
-const coShow = { size:true, spec:true, flow:true, vel:true, elev:true, length:true };
+const coShow = { size:false, spec:false, flow:false, vel:false, elev:false, length:false };
 let coCell = {};   // coCell[elementId] = { type:false, ... }   (absent => shown)
 function coOn(id, type){
   if(!coShow[type]) return false;
@@ -948,8 +965,9 @@ function doRedo(){
   syncUndoButtons();
 }
 function syncUndoButtons(){
-  document.getElementById('btnUndo').disabled = undoStack.length===0;
-  document.getElementById('btnRedo').disabled = redoStack.length===0;
+  // undo/redo are keyboard-only now; buttons removed
+  const u=document.getElementById('btnUndo'); if(u) u.disabled = undoStack.length===0;
+  const r=document.getElementById('btnRedo'); if(r) r.disabled = redoStack.length===0;
 }
 
 /* =====================================================================
@@ -1424,6 +1442,7 @@ function setMode(m){
   mode = m;
   btnDraw.classList.toggle('active', m==='draw');
   btnMeasure.classList.toggle('active', m==='measure');
+  const ds=document.getElementById('drawSpec'); if(ds) ds.hidden = (m!=='draw');
   map.getContainer().style.cursor =
     m==='draw' ? DRAW_CURSOR : m==='measure' ? MEASURE_CURSOR : '';
   // left drag only pans with the hand tool. middle button pans in any mode (handled separately)
@@ -1840,6 +1859,9 @@ function render(){
       } else if(mode==='measure'){
         L.DomEvent.stopPropagation(ev); markerGuard = Date.now();
         handleMeasureClick(ev.latlng);
+      } else {
+        L.DomEvent.stopPropagation(ev); markerGuard = Date.now();
+        openPipePopup(id, ev.latlng);
       }
     });
 
@@ -1983,10 +2005,12 @@ function updateMTO(){
 // computed flow rate, columns are the flow paths, cells are the summed metreage, and a
 // final MTO column gives the whole-project total for that type+rate.
 function updateFlowMTO(){
-  const box=document.getElementById('flowmto'), body=document.getElementById('flowmtoBody');
-  if(!box||!body) return;
-  if(!Object.keys(state.pipes).length){ box.style.display='none'; return; }
-  box.style.display='';
+  const body=document.getElementById('flowmtoBody');
+  const ddBtn=document.getElementById('flowDDBtn'), dd=document.getElementById('flowDD');
+  if(!body) return;
+  const hasPipes = Object.keys(state.pipes).length>0;
+  if(ddBtn) ddBtn.disabled = !hasPipes;
+  if(!hasPipes){ if(dd) dd.classList.remove('open'); body.innerHTML=''; return; }
   const flows=computeFlows();
   const fp=flowPaths(), L=fp.letters, paths=fp.paths;
   const flowKey = pid => { const v=flows[pid]; return (v==null||isNaN(v))?'na':String(Math.round(v*100)/100); };
@@ -2082,6 +2106,7 @@ let flowTables = [];   // [{id, name, sub, segments:[{pipeId,code}]}]
 
 function renderTables(){
   const cont = document.getElementById('tablesContainer');
+  if(!cont) return;   // pipe schedule table removed; edit pipes by clicking them
   const scroll = document.getElementById('tableScroll');
   const keepScroll = scroll ? scroll.scrollTop : 0;
   const fp = flowInfo;
@@ -2364,32 +2389,27 @@ function openNodePopup(id, latlng){
   const poi = !!n.poi && deg>=2;
   if(!end && !poi) return;
   const letter = buildLetters()[id] || id;
-  let html = '<div class="popup-node"><h3>Node '+letter+(poi&&!end?' . Point of Interest':'')+'</h3>';
-  // elevation applies to end nodes and points of interest
-  html += '<div class="pn-row"><label>Elevation (m AHD)</label>'+
-          '<input id="elevIn" type="number" step="0.01" placeholder="enter" '+
-          'value="'+(n.elevation!=null?sig3(n.elevation):'')+'" /></div>';
+  // concise editor: placeholders name each field, units sit outside. No title (the
+  // node letter is already on the map). Elevation applies to end nodes and POIs.
+  let html = '<div class="popup-node">';
+  html += '<div class="pn-row"><input id="elevIn" type="number" step="0.01" placeholder="elevation" '+
+          'value="'+(n.elevation!=null?sig3(n.elevation):'')+'" /><span class="unit">m AHD</span></div>';
   if(end){
     const roleWord = effFlow(id)==='in' ? 'in' : 'out';
     const inf = inferredRate(id);
-    const ratePlace = inf!=null ? ('auto '+fmtFlow(inf)) : 'auto';
-    html += '<label style="margin-top:9px">Flow role</label>'+
-            '<div class="flow-roles">'+
+    const ratePlace = inf!=null ? ('auto '+fmtFlow(inf)) : ('flow '+roleWord);
+    html += '<div class="pn-row pn-roles"><div class="flow-roles">'+
               '<button data-role="none"'+(!n.flow?' class="active"':'')+'>Auto</button>'+
-              '<button data-role="in"'+(n.flow==='in'?' class="active in"':'')+'>Flow In</button>'+
-              '<button data-role="out"'+(n.flow==='out'?' class="active out"':'')+'>Flow Out</button>'+
-            '</div>'+
-            '<div class="flow-default" id="flowDefault"'+(n.flow?' style="display:none"':'')+'>Auto assumes <b>'+(effFlow(id)==='in'?'Flow In':'Flow Out')+'</b></div>'+
-            '<label style="margin-top:9px">Flow rate '+roleWord+' (m\u00b3/h)</label>'+
-            '<input id="flowRateIn" type="number" step="0.1" min="0" placeholder="'+ratePlace+'" '+
-            'value="'+(n.flowRate!=null?fmtFlow(n.flowRate):'')+'" />';
+              '<button data-role="in"'+(n.flow==='in'?' class="active in"':'')+'>In</button>'+
+              '<button data-role="out"'+(n.flow==='out'?' class="active out"':'')+'>Out</button>'+
+            '</div></div>'+
+            '<div class="pn-row"><input id="flowRateIn" type="number" step="0.1" min="0" placeholder="'+ratePlace+'" '+
+            'value="'+(n.flowRate!=null?fmtFlow(n.flowRate):'')+'" /><span class="unit">m\u00b3/h</span></div>';
   } else if(poi){
     const inf = inferredThrough(id);
-    const ratePlace = inf!=null ? ('auto '+fmtFlow(inf)) : 'auto';
-    html += '<label style="margin-top:9px">Flow through (m\u00b3/h)</label>'+
-            '<input id="flowRateIn" type="number" step="0.1" min="0" placeholder="'+ratePlace+'" '+
-            'value="'+(n.flowRate!=null?fmtFlow(n.flowRate):'')+'" />'+
-            '<div class="flow-default">Splits the supply at the tee upstream</div>';
+    const ratePlace = inf!=null ? ('auto '+fmtFlow(inf)) : 'flow through';
+    html += '<div class="pn-row"><input id="flowRateIn" type="number" step="0.1" min="0" placeholder="'+ratePlace+'" '+
+            'value="'+(n.flowRate!=null?fmtFlow(n.flowRate):'')+'" /><span class="unit">m\u00b3/h</span></div>';
   }
   html += '</div>';
 
@@ -2463,6 +2483,46 @@ function openNodePopup(id, latlng){
       });
     });
   }
+}
+
+// click a pipe (hand tool) to edit all of its properties, inline and concise
+function openPipePopup(id, latlng){
+  const p = state.pipes[id]; if(!p) return;
+  const spec = SPECS[p.material] || { ratings:[p.rating], sizes:[p.size] };
+  const len = pipeLength(p);
+  const manual = (p.manualLength!=null);
+  const fallback = (state.nodes[p.a] && state.nodes[p.b])
+    ? [(state.nodes[p.a].lat+state.nodes[p.b].lat)/2, (state.nodes[p.a].lng+state.nodes[p.b].lng)/2]
+    : map.getCenter();
+  const html = '<div class="popup-node popup-pipe">'+
+    '<div class="pn-row"><select id="ppMat">'+optionsHtml(Object.keys(SPECS),p.material)+'</select></div>'+
+    '<div class="pn-row"><select id="ppRating">'+optionsHtml(spec.ratings,p.rating)+'</select></div>'+
+    '<div class="pn-row"><select id="ppSize">'+optionsHtmlDN(spec.sizes,p.size)+'</select><span class="unit">DN</span></div>'+
+    '<div class="pn-row"><input id="ppLen" type="number" step="1" min="0" placeholder="length" value="'+Math.round(len)+'" /><span class="unit">m</span>'+
+      (manual?'<button id="ppRevert" class="pp-revert" title="Revert to calculated length">&#8635;</button>':'')+'</div>'+
+    '</div>';
+  const popup = L.popup({closeButton:true, autoClose:true}).setLatLng(latlng||fallback).setContent(html).openOn(map);
+  const root = popup.getElement(); if(!root) return;
+  const matSel=root.querySelector('#ppMat'), ratingSel=root.querySelector('#ppRating'),
+        sizeSel=root.querySelector('#ppSize'), lenInp=root.querySelector('#ppLen');
+  if(matSel) matSel.addEventListener('change', e=>{
+    const v=e.target.value, pp=state.pipes[id]; if(!pp) return;
+    captureUndo(); pp.material=v;
+    if(!SPECS[v].ratings.includes(pp.rating)) pp.rating=SPECS[v].ratings[0];
+    if(!SPECS[v].sizes.includes(pp.size)) pp.size=SPECS[v].sizes[0];
+    if(ratingSel) ratingSel.innerHTML=optionsHtml(SPECS[v].ratings,pp.rating);
+    if(sizeSel) sizeSel.innerHTML=optionsHtmlDN(SPECS[v].sizes,pp.size);
+    render();
+  });
+  if(ratingSel) ratingSel.addEventListener('change', e=>{ const pp=state.pipes[id]; if(!pp) return; captureUndo(); pp.rating=e.target.value; render(); });
+  if(sizeSel) sizeSel.addEventListener('change', e=>{ const pp=state.pipes[id]; if(!pp) return; captureUndo(); pp.size=e.target.value; render(); });
+  const commitLen=(raw)=>{ const pp=state.pipes[id]; if(!pp) return; const v=parseFloat(raw); captureUndo(); pp.manualLength=(isNaN(v)||v<0)?null:v; render(); };
+  if(lenInp){
+    lenInp.addEventListener('change', ()=> commitLen(lenInp.value));
+    lenInp.addEventListener('keydown', ev=>{ if(ev.key==='Enter'){ ev.preventDefault(); commitLen(lenInp.value); map.closePopup(); } });
+  }
+  const rev=root.querySelector('#ppRevert');
+  if(rev) rev.addEventListener('click', ()=>{ const pp=state.pipes[id]; if(!pp) return; captureUndo(); pp.manualLength=null; render(); map.closePopup(); });
 }
 
 /* =====================================================================
@@ -3290,10 +3350,26 @@ searchInput.addEventListener('keydown', (e)=>{
 const btnDraw=document.getElementById('btnDraw');
 const btnMeasure=document.getElementById('btnMeasure');
 
+/* map-corner dropdowns (Callouts, Flow Path Summary) */
+(function(){
+  function wireDD(btnId){
+    const btn=document.getElementById(btnId); if(!btn) return;
+    const dd=btn.closest('.dropdown'); if(!dd) return;
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const willOpen=!dd.classList.contains('open');
+      document.querySelectorAll('.dropdown.open').forEach(d=>d.classList.remove('open'));
+      if(willOpen) dd.classList.add('open');
+    });
+  }
+  wireDD('calloutDDBtn'); wireDD('flowDDBtn');
+  document.addEventListener('click', e=>{
+    if(!e.target.closest('.dropdown')) document.querySelectorAll('.dropdown.open').forEach(d=>d.classList.remove('open'));
+  });
+})();
+
 btnDraw.onclick   = ()=> setMode(mode==='draw'?'none':'draw');
 btnMeasure.onclick= ()=> setMode(mode==='measure'?'none':'measure');
-document.getElementById('btnUndo').onclick = doUndo;
-document.getElementById('btnRedo').onclick = doRedo;
 document.getElementById('btnNew').onclick    = newProject;
 document.getElementById('btnSave').onclick   = (e)=> save(e.currentTarget);
 document.getElementById('btnSaveAs').onclick = (e)=> saveAs(e.currentTarget);
@@ -3357,6 +3433,7 @@ map.on('zoomend', ()=>{ /* labels are latlng-anchored, nothing required */ });
 (function(){
   const panel = document.getElementById('tablePanel');
   const handle = document.getElementById('tableResizer');
+  if(!panel || !handle) return;   // schedule table removed
   let dragging=false, startY=0, startH=0;
 
   handle.addEventListener('mousedown', e=>{
