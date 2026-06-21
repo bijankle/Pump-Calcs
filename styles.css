@@ -56,35 +56,37 @@ button{font-family:inherit}
 .section-title{font-weight:700;color:var(--red);font-size:12px;text-transform:uppercase;
   letter-spacing:.5px;margin:14px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
 
-/* Input rows — fixed-width label keeps every field's left edge aligned,
-   field auto-sizes to its content leaving room on the right */
-.row{display:flex;align-items:center;gap:14px;padding:3px 0}
-.row > label{flex:0 0 210px;color:var(--grey);font-size:13px}
-.row .fieldwrap{display:flex;align-items:center;gap:8px;min-width:0}
-.row .unit{color:#999;font-size:12px}
+/* Input rows — aligned grid mirroring the outputs:
+   parameter (name + toggle/badge) | value | unit | info */
+.row{display:grid;grid-template-columns:224px 150px 48px 22px;align-items:center;column-gap:10px;
+  padding:4px 0;border-bottom:1px dashed #eee}
+.row .pcell{display:flex;align-items:center;gap:8px;min-width:0}
+.row .pname{color:var(--grey);font-size:13px}
+.row .vcell{min-width:0;display:flex;align-items:center}
+.row .ucell{color:#999;font-size:12px;white-space:nowrap}
+.row .icell{display:flex;justify-content:center}
 .row input,.row select{padding:6px 9px;border:1px solid #d4d4d4;border-radius:6px;
-  background:var(--yellow);font-family:inherit;font-size:13px;text-align:left}
+  background:var(--yellow);font-family:inherit;font-size:13px;text-align:left;max-width:100%}
 .row input[type=number]{text-align:left;-moz-appearance:textfield;appearance:textfield}
 .row input[type=number]::-webkit-outer-spin-button,
 .row input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.row select{background:var(--yellow);width:auto;max-width:240px}
+.row select{background:var(--yellow);width:100%;max-width:100%}
 .row input:focus,.row select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
 
 /* Process-variable (solver) fields */
-.proc{margin-bottom:6px}
-.proc-status{font-size:12px;font-weight:600;border-radius:6px;padding:6px 10px;margin:2px 0 8px}
-.proc-status.ok{background:#e7f5ec;color:var(--ok)}
-.proc-status.warn{background:#fdf0dd;color:var(--warn)}
-.proc-status.bad{background:#fbe3e6;color:var(--bad)}
+.proc{margin-bottom:2px}
+.proc-status{font-size:12px;font-weight:600;border-radius:6px;padding:7px 11px;margin:2px 0 8px;line-height:1.45}
+.proc-status.err{background:#fbe3e6;color:var(--bad);border:1px solid #f0b8bf}
+.proc-status.hidden{display:none}
 .proc-input.known{background:var(--yellow)}
 .proc-input.auto{background:#f3f4f6;color:var(--grey);font-style:italic}
 .proc-input.auto::placeholder{color:var(--grey);opacity:.9;font-style:normal}
-.autobadge{font-size:10px;font-weight:700;color:var(--grey-2);background:#eceef0;border-radius:9px;padding:1px 7px}
+.autobadge{font-size:9px;font-weight:700;color:var(--grey-2);background:#eceef0;border-radius:8px;padding:1px 6px;text-transform:uppercase;letter-spacing:.3px}
 .autobadge.hidden{display:none}
 
-/* Auto / Manual toggle on override rows */
-.autotoggle{display:inline-flex;border:1px solid #d4d4d4;border-radius:6px;overflow:hidden;flex:none}
-.autotoggle .at{border:none;background:#fff;color:var(--grey);font:inherit;font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer}
+/* Auto / Manual toggle on override rows — compact, sits after the name */
+.autotoggle{display:inline-flex;border:1px solid #d4d4d4;border-radius:5px;overflow:hidden;flex:none}
+.autotoggle .at{border:none;background:#fff;color:var(--grey);font:inherit;font-size:9.5px;font-weight:700;padding:2px 6px;cursor:pointer;text-transform:uppercase;letter-spacing:.3px}
 .autotoggle .at + .at{border-left:1px solid #d4d4d4}
 .autotoggle .at.on{background:var(--red);color:#fff}
 .row input.autoval{background:#f3f4f6;color:var(--grey);font-style:italic}

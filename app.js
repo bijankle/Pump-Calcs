@@ -244,8 +244,9 @@
 
   // -------- dynamic input sizing -------------------------------------------
   function sizeInput(inp) {
+    if (inp.tagName === 'SELECT') return; // selects size to the value column
     const txt = (inp.value !== '' ? inp.value : inp.placeholder) || '';
-    inp.style.width = Math.max(6, Math.min(24, txt.length + 3)) + 'ch';
+    inp.style.width = Math.max(5, Math.min(17, txt.length + 2.5)) + 'ch';
   }
 
   // -------- render: calculator ---------------------------------------------
@@ -298,75 +299,86 @@
   // process-variable block: each field can be entered (known) or solved (auto)
   function procBlock(p, o) {
     const wrap = el('div', { class: 'proc' });
-    slurryStatusEl = el('div', { class: 'proc-status' });
+    slurryStatusEl = el('div', { class: 'proc-status hidden' });
     wrap.appendChild(slurryStatusEl);
     PROC.forEach(f => {
       const row = el('div', { class: 'row' });
-      row.appendChild(el('label', {}, f.l));
-      const fieldwrap = el('div', { class: 'fieldwrap' });
+      const pcell = el('div', { class: 'pcell' });
+      pcell.appendChild(el('span', { class: 'pname' }, f.l));
       const raw = p.slurry.proc[f.k];
       const known = raw != null;
+      const badge = el('span', { class: 'autobadge' + (known ? ' hidden' : '') }, 'auto');
+      pcell.appendChild(badge);
+      row.appendChild(pcell);
+      const vcell = el('div', { class: 'vcell' });
       const disp = known ? (f.pct ? raw * 100 : raw) : '';
       const inp = el('input', { class: 'proc-input' + (known ? ' known' : ' auto'), type: 'number', step: 'any', value: disp });
-      inp.dataset.key = f.k; inp.dataset.pct = f.pct ? '1' : '';
+      inp.dataset.key = f.k;
       inp.addEventListener('input', () => {
         const v = num(inp.value);
         p.slurry.proc[f.k] = (v == null) ? null : (f.pct ? v / 100 : v);
         inp.classList.toggle('known', v != null); inp.classList.toggle('auto', v == null);
+        badge.classList.toggle('hidden', v != null);
         sizeInput(inp); commit(false);
       });
-      procInputs[f.k] = inp;
-      fieldwrap.appendChild(inp);
-      fieldwrap.appendChild(el('span', { class: 'unit' }, f.u));
-      const badge = el('span', { class: 'autobadge' + (known ? ' hidden' : '') }, 'auto');
-      fieldwrap.appendChild(badge);
-      row.appendChild(fieldwrap);
+      procInputs[f.k] = { inp, badge };
+      vcell.appendChild(inp);
+      row.appendChild(vcell);
+      row.appendChild(el('div', { class: 'ucell' }, f.u));
+      row.appendChild(el('div', { class: 'icell' }));
       wrap.appendChild(row);
     });
     updateProcPlaceholders(o);
     return wrap;
   }
   function updateProcPlaceholders(o) {
+    const show = (o.procStatus === 'solved' || o.procStatus === 'over');
     PROC.forEach(f => {
-      const inp = procInputs[f.k]; if (!inp) return;
+      const rec = procInputs[f.k]; if (!rec) return;
       const solved = o.proc ? o.proc[f.k] : null;
-      const showSolved = (o.procStatus === 'solved');
-      if (inp.value === '') {
-        inp.placeholder = (showSolved && solved != null) ? sig(f.pct ? solved * 100 : solved) : '?';
-        sizeInput(inp);
+      if (rec.inp.value === '') {
+        rec.inp.placeholder = (show && solved != null) ? sig(f.pct ? solved * 100 : solved) : '?';
+        sizeInput(rec.inp);
       }
     });
     if (slurryStatusEl) {
-      let msg = '', cls = 'ok';
-      if (o.procStatus === 'solved') { msg = '✓ Solved — auto fields filled from your inputs'; cls = 'ok'; }
-      else if (o.procStatus === 'under') { msg = `Enter ${o.procUnknown.length - 4} more value(s) — need 4 independent knowns`; cls = 'warn'; }
-      else if (o.procStatus === 'over') { msg = 'Over-specified — extra inputs ignored (lowest priority)'; cls = 'warn'; }
-      else if (o.procStatus === 'needflow') { msg = 'Enter at least one flow/mass value (Solids tph, Liquid tph or Flowrate)'; cls = 'warn'; }
-      else { msg = 'No consistent solution for this combination — check your inputs'; cls = 'bad'; }
-      slurryStatusEl.className = 'proc-status ' + cls; slurryStatusEl.textContent = msg;
+      const lbl = k => { const pf = PROC.find(x => x.k === k); return pf ? pf.l.toLowerCase() : k; };
+      if (show) { slurryStatusEl.className = 'proc-status hidden'; slurryStatusEl.textContent = ''; }
+      else if (o.procStatus === 'needflow') {
+        slurryStatusEl.className = 'proc-status err';
+        slurryStatusEl.innerHTML = '⚠ Process data incomplete — enter at least one flow or mass value: <b>Solids mass flow</b>, <b>Liquid mass flow</b> or <b>Flowrate</b>.';
+      } else if (o.procStatus === 'under') {
+        const need = o.procUnknown.length - 4;
+        slurryStatusEl.className = 'proc-status err';
+        slurryStatusEl.innerHTML = `⚠ Process data incomplete — enter <b>${need}</b> more value(s). You can provide any of: ${o.procUnknown.map(lbl).join(', ')} (at least one must be a flow/mass).`;
+      } else {
+        slurryStatusEl.className = 'proc-status err';
+        slurryStatusEl.textContent = '⚠ No consistent solution for these values — check your entries.';
+      }
     }
   }
 
   function inputRow(f, p) {
     const r = el('div', { class: 'row' });
-    const lab = el('label', {}, f.l);
-    r.appendChild(lab);
-    const fieldwrap = el('div', { class: 'fieldwrap' });
+    const pcell = el('div', { class: 'pcell' });
+    pcell.appendChild(el('span', { class: 'pname' }, f.l));
+    r.appendChild(pcell);
+    const vcell = el('div', { class: 'vcell' });
     let inp;
     if (f.t === 'text') {
       const identity = ['tag', 'name', 'stream'].includes(f.p);
       inp = el('input', { type: 'text', value: getPath(p, f.p) ?? '' });
       inp.addEventListener('input', () => { setPath(p, f.p, inp.value); sizeInput(inp); if (identity) { refreshPumpBar(); save(); } else commit(false); });
     } else if (f.t === 'auto') {
-      // Auto / Manual toggle replaces the "0 = auto" convention
+      // small Auto / Manual toggle, placed right after the parameter name
       const stored = getPath(p, f.p), manual = stored > 0;
       const toggle = el('div', { class: 'autotoggle' });
       const bAuto = el('button', { class: 'at' + (!manual ? ' on' : '') }, 'Auto');
-      const bMan = el('button', { class: 'at' + (manual ? ' on' : '') }, 'Manual');
+      const bMan = el('button', { class: 'at' + (manual ? ' on' : '') }, 'Man');
       toggle.appendChild(bAuto); toggle.appendChild(bMan);
       bAuto.addEventListener('click', () => { setPath(p, f.p, 0); commit(true); });
       bMan.addEventListener('click', () => { const cv = curN ? curN[f.autoKey] : 0; setPath(p, f.p, cv > 0 ? Number(sig(cv)) : 0.001); commit(true); });
-      fieldwrap.appendChild(toggle);
+      pcell.appendChild(toggle);
       inp = el('input', { type: 'number', step: 'any' });
       if (manual) { inp.value = stored; inp.classList.add('known'); }
       else { inp.value = ''; inp.readOnly = true; inp.classList.add('autoval'); inp.placeholder = curN ? sig(curN[f.autoKey]) : '?'; }
@@ -404,15 +416,17 @@
       inp = el('input', { type: 'number', step: f.step || 'any', value: getPath(p, f.p) });
       inp.addEventListener('input', () => { const v = parseFloat(inp.value); setPath(p, f.p, isNaN(v) ? 0 : v); sizeInput(inp); commit(false); });
     }
-    fieldwrap.appendChild(inp);
-    fieldwrap.appendChild(el('span', { class: 'unit' }, unitLabel(f.u)));
+    vcell.appendChild(inp);
+    r.appendChild(vcell);
+    r.appendChild(el('div', { class: 'ucell' }, unitLabel(f.u)));
+    const icell = el('div', { class: 'icell' });
     const info = INPUT_INFO[f.p];
     if (info) {
       const b = el('button', { class: 'info', title: info[0] }, 'i');
       b.addEventListener('click', (e) => openInfo(e.currentTarget, info[0], info[1], info[2]));
-      fieldwrap.appendChild(b);
+      icell.appendChild(b);
     }
-    r.appendChild(fieldwrap);
+    r.appendChild(icell);
     return r;
   }
   function unitLabel(u) { return u === 'frac' ? 'frac' : (u || ''); }

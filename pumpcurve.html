@@ -88,10 +88,15 @@
   .btn.blue{background:#2D7DD2;border-color:#2D7DD2;color:#fff;}.btn.blue:hover{background:#1B5E9B;border-color:#1B5E9B;}
   .btn.blue.active{background:#1B5E9B;border-color:#1B5E9B;}
   .btn.blue.ghostb{background:transparent;border-color:transparent;color:#1B5E9B;}.btn.blue.ghostb:hover{background:#E7F0FA;}
+  .btn.red{background:var(--accent);border-color:var(--accent);color:#fff;}.btn.red:hover{background:var(--accent-deep);border-color:var(--accent-deep);}
+  .btn.red.active{background:var(--accent-deep);border-color:var(--accent-deep);}
+  /* trace buttons only carry colour when enabled (clickable) */
+  .btn.red:disabled,.btn.green:disabled,.btn.blue:disabled,.btn.mode:disabled{background:var(--surface);color:var(--mid);border-color:var(--line);}
   .graphtools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 24px;border-bottom:1px solid var(--line);background:var(--panel);}
   .graphtools .tdiv{width:1px;height:22px;background:var(--line-strong);margin:0 2px;}
   .graphtools .btn{font-size:13px;padding:7px 11px;}
-  .fitbtns{display:flex;gap:7px;margin-top:8px;}.fitbtns .btn{flex:1;justify-content:center;}
+  .fitbtns{display:flex;gap:7px;margin-top:8px;}.fitbtns .btn{flex:1;justify-content:center;font-size:12px;padding:7px 6px;}
+  .tabpanel .pad .fieldrow{margin-bottom:10px;}
   .curvelist{margin-top:11px;display:flex;flex-direction:column;gap:6px;}
   .crow{display:flex;align-items:center;gap:8px;padding:6px 7px;border:1px solid var(--line);border-radius:9px;background:#fff;}
   .crow.sel{border-color:var(--accent);background:var(--accent-tint);}
@@ -243,7 +248,7 @@
     <div class="graphtools" id="graphtools">
       <button class="btn mode" id="calBtn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>Calibrate axes</button>
       <span class="tdiv"></span>
-      <button class="btn mode" id="rpmTrace" disabled>Trace new RPM curve</button>
+      <button class="btn red" id="rpmTrace" disabled>Trace new RPM curve</button>
       <button class="btn green" id="effTrace" disabled>Trace new efficiency curve</button>
       <button class="btn blue" id="npshrTrace" disabled>Trace new NPSHr curve</button>
       <span class="tdiv"></span>
