@@ -152,13 +152,13 @@
     const dh = legHydraulics(o.flowN, dg, di, true, o.SM, o.muM);
     Object.assign(o.dis, dh);
     o.dis.FL = o.FL;                                                                   // F80
+    // Settling-velocity methods (IDs-based so 'durand' equals the limiting velocity)
+    o.settle = settlingMethods(s, o, dg.IDs);
+    o.dis.settleMethod = di.settleMethod || 'durand';
     o.dis.Vlim = di.VlimOverride > 0 ? di.VlimOverride
-      : o.FL * Math.sqrt(2 * g * (dg.IDs / 1000) * (SS - SL) / SL); // F81
+      : (isFinite(o.settle[o.dis.settleMethod]) ? o.settle[o.dis.settleMethod] : o.settle.durand); // F81
     o.dis.ratio = dh.V / o.dis.Vlim;                                                  // F82
     o.dis.Hd = di.Hsd + dh.Hp + dh.Hf + (di.Pd / (g * o.SM));                          // F88
-
-    // Settling-velocity comparison methods (J/K block)
-    o.settle = settlingMethods(s, o, dg.ID);
 
     // Pump / duty points
     const Dimp = pu.impellerDia;                                                      // F97
@@ -197,10 +197,10 @@
     return o;
   }
 
-  function settlingMethods(s, o, ID) {
-    const SS = o.SS, SL = o.SL, d = o.d50 * 1e-6, IDm = o.dis.ID * 1e-3;
+  function settlingMethods(s, o, IDmm) {
+    const SS = o.SS, SL = o.SL, d = o.d50 * 1e-6, IDm = IDmm * 1e-3;
     const mu = o.muL; // cP
-    const durandV = durand(SL, SS, o.Cv, o.d50, o.dis.ID, o.FL);
+    const durandV = durand(SL, SS, o.Cv, o.d50, IDmm, o.FL);
     // Wilson & Judge (K85)
     const vt = 4 * g * d * (SS - 1) / (3 * Math.pow(((SS - 1) * g * d * d) /
       (18 * mu * 1e-6 + Math.sqrt(0.75 * 1 * (SS - 1) * g) * Math.pow(d, 1.5)), 2));

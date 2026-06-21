@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Nexmin · Slurry Pump Calc</title>
+<title>Slurry Pump Calc</title>
 <style>
 /* Nexmin theme — red / black / grey / white, Aptos */
 :root{
@@ -168,6 +168,13 @@ h1.page{font-size:20px;margin:18px 0 4px}
 .kpi .box .vsub.warn{color:var(--warn)}
 .kpi .box .vsub.bad{color:var(--bad)}
 
+/* Settling-method selector (in the outputs card) */
+.settle-note{font-size:11.5px;color:var(--grey);margin:2px 0 6px;line-height:1.45}
+.orow.settle-row .settle-label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.orow.settle-row .settle-label.sel{font-weight:700;color:var(--red)}
+.settle-radio{accent-color:var(--red);cursor:pointer;width:15px;height:15px;flex:none}
+.orow.settle-row .oval.settle-active{color:var(--red)}
+
 /* Frozen results band (pump chips + KPI summary) */
 .calc-sticky{position:sticky;top:calc(var(--topbar-h,56px) + var(--tabs-h,44px));z-index:30;
   background:var(--bg);padding-top:10px;margin-bottom:4px;
@@ -203,13 +210,8 @@ h1.page{font-size:20px;margin:18px 0 4px}
 <body>
   <div class="topbar">
     <div class="brand">
-      <svg class="nexlogo" viewBox="0 0 132 30" role="img" aria-label="Nexmin">
-        <polygon points="0,0 7,0 7,30 0,30" fill="#ffffff"/>
-        <polygon points="5,0 12,0 24,30 17,30" fill="#ffffff"/>
-        <polygon points="22,0 29,0 29,30 22,30" fill="#C8102E"/>
-        <text x="38" y="22" font-family="Aptos,Segoe UI,system-ui,sans-serif" font-size="22" font-weight="800" letter-spacing="1" fill="#ffffff">NEXMIN</text>
-      </svg>
-      <span class="sub">Slurry Pump Calc</span>
+      <span class="mark"></span>
+      <b style="font-size:16px;letter-spacing:.5px">SLURRY PUMP CALC</b>
     </div>
     <div class="spacer"></div>
     <input id="projName" class="tag-input" placeholder="Project" style="width:160px" />
@@ -227,9 +229,7 @@ h1.page{font-size:20px;margin:18px 0 4px}
     <div class="tabs">
       <div class="tab active" data-tab="calc">Calculator</div>
       <div class="tab" data-tab="summary">Summary</div>
-      <div class="tab" data-tab="docs">How it works</div>
       <div class="tab" data-tab="ref">Reference tables</div>
-      <div class="tab" data-tab="settle">Settling velocity</div>
     </div>
     <div id="view"></div>
   </div>
@@ -2212,13 +2212,13 @@ window.REFDATA = {
     const dh = legHydraulics(o.flowN, dg, di, true, o.SM, o.muM);
     Object.assign(o.dis, dh);
     o.dis.FL = o.FL;                                                                   // F80
+    // Settling-velocity methods (IDs-based so 'durand' equals the limiting velocity)
+    o.settle = settlingMethods(s, o, dg.IDs);
+    o.dis.settleMethod = di.settleMethod || 'durand';
     o.dis.Vlim = di.VlimOverride > 0 ? di.VlimOverride
-      : o.FL * Math.sqrt(2 * g * (dg.IDs / 1000) * (SS - SL) / SL); // F81
+      : (isFinite(o.settle[o.dis.settleMethod]) ? o.settle[o.dis.settleMethod] : o.settle.durand); // F81
     o.dis.ratio = dh.V / o.dis.Vlim;                                                  // F82
     o.dis.Hd = di.Hsd + dh.Hp + dh.Hf + (di.Pd / (g * o.SM));                          // F88
-
-    // Settling-velocity comparison methods (J/K block)
-    o.settle = settlingMethods(s, o, dg.ID);
 
     // Pump / duty points
     const Dimp = pu.impellerDia;                                                      // F97
@@ -2257,10 +2257,10 @@ window.REFDATA = {
     return o;
   }
 
-  function settlingMethods(s, o, ID) {
-    const SS = o.SS, SL = o.SL, d = o.d50 * 1e-6, IDm = o.dis.ID * 1e-3;
+  function settlingMethods(s, o, IDmm) {
+    const SS = o.SS, SL = o.SL, d = o.d50 * 1e-6, IDm = IDmm * 1e-3;
     const mu = o.muL; // cP
-    const durandV = durand(SL, SS, o.Cv, o.d50, o.dis.ID, o.FL);
+    const durandV = durand(SL, SS, o.Cv, o.d50, IDmm, o.FL);
     // Wilson & Judge (K85)
     const vt = 4 * g * d * (SS - 1) / (3 * Math.pow(((SS - 1) * g * d * d) /
       (18 * mu * 1e-6 + Math.sqrt(0.75 * 1 * (SS - 1) * g) * Math.pow(d, 1.5)), 2));
@@ -2383,9 +2383,10 @@ window.REFDATA = {
 (function () {
   'use strict';
 
-  // ---- shared styles -------------------------------------------------------
-  const RED = 'FFC8102E', BLACK = 'FF1A1A1A', GREY = 'FF4D4D4D',
-        LGREY = 'FFEDEDED', YELLOW = 'FFFFF6CC', WHITE = 'FFFFFFFF';
+  // ---- shared styles (matched to the original Calc_Template) ----------------
+  const RED = 'FF9C1519', BLACK = 'FF1A1A1A', GREY = 'FF4D4D4D',
+        SECTION = 'FFBFBFBF', LGREY = 'FFEDEDED', YELLOW = 'FFFFFFCC',
+        WHITE = 'FFFFFFFF', INPUTTXT = 'FFCC00CC';
   const thin = { style: 'thin', color: { argb: 'FFBFBFBF' } };
   const border = { top: thin, left: thin, bottom: thin, right: thin };
   const FONT = 'Aptos';
@@ -2393,18 +2394,38 @@ window.REFDATA = {
 
   function titleStyle(cell, text) {
     cell.value = text;
-    cell.font = { name: FONT, size: 14, bold: true, color: { argb: WHITE } };
+    cell.font = { name: FONT, size: 12, bold: true, color: { argb: WHITE } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: RED } };
-    cell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  }
+  // dark-red header cell (DESCRIPTION / SYMBOL / UNIT / Nominal / Design …)
+  function headStyle(cell, text) {
+    cell.value = text;
+    cell.font = { name: FONT, size: 10, bold: true, color: { argb: WHITE } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: RED } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
   }
   function sectionStyle(cell, text) {
     cell.value = text;
-    cell.font = { name: FONT, size: 10, bold: true, color: { argb: WHITE } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GREY } };
+    cell.font = { name: FONT, size: 10, bold: true, color: { argb: BLACK } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: SECTION } };
   }
   function label(cell, text, bold) {
     cell.value = text;
     cell.font = { name: FONT, size: 10, bold: !!bold, color: { argb: BLACK } };
+  }
+  // Nexmin logo drawn to a PNG (data URL base64) for the exported workbook
+  function logoBase64() {
+    try {
+      const c = document.createElement('canvas'); c.width = 300; c.height = 64;
+      const x = c.getContext('2d'); const s = 1.9, oy = 3;
+      const poly = pts => { x.beginPath(); pts.forEach((p, i) => { const X = p[0] * s, Y = oy + p[1] * s; i ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.closePath(); x.fill(); };
+      x.fillStyle = '#1A1A1A'; poly([[0, 0], [7, 0], [7, 30], [0, 30]]); poly([[5, 0], [12, 0], [24, 30], [17, 30]]);
+      x.fillStyle = '#C8102E'; poly([[22, 0], [29, 0], [29, 30], [22, 30]]);
+      x.fillStyle = '#1A1A1A'; x.font = '800 ' + (22 * s) + 'px Aptos, Segoe UI, Arial, sans-serif';
+      x.textBaseline = 'alphabetic'; x.fillText('NEXMIN', 38 * s, oy + 23 * s);
+      return c.toDataURL('image/png').split(',')[1];
+    } catch (e) { return null; }
   }
   const numFmt = { 0: '0', 1: '0.0', 2: '0.00', 3: '0.000', 4: '0.0000' };
   // round to 3 significant figures (process values may themselves be solved)
@@ -2529,22 +2550,22 @@ window.REFDATA = {
     ws.eachRow && null;
     const F = (c, formula) => { ws.getCell(c).value = { formula }; };
     const V = (c, val) => { ws.getCell(c).value = (val === undefined || val === null || val === '') ? null : val; };
-    const yel = (c) => { ws.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: YELLOW } }; ws.getCell(c).border = border; };
+    const yel = (c) => { ws.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: YELLOW } }; ws.getCell(c).border = border; ws.getCell(c).alignment = { horizontal: 'center' }; };
     const s = pump.slurry, su = pump.suction, di = pump.discharge, pu = pump.pump, np = pump.npsh, pw = pump.power;
     const o = ENGINE.compute(pump); // engine results -> cached into formula cells so values show instantly
 
-    // Header
+    // Header (red title + dark-red field headers, like the original)
     ws.mergeCells('A1:D1'); titleStyle(ws.getCell('A1'), 'SLURRY PUMP CALCULATION');
+    if (logoId != null) ws.addImage(logoId, { tl: { col: 4.15, row: 0.15 }, ext: { width: 150, height: 32 } });
     label(ws.getCell('A2'), 'Project:'); V('B2', pump.project || '');
     label(ws.getCell('A3'), 'Client:'); V('B3', pump.client || '');
     label(ws.getCell('A4'), 'Revision:'); V('B4', pump.rev || 'A');
     label(ws.getCell('A5'), 'Prepared:'); label(ws.getCell('C5'), 'Date:');
     label(ws.getCell('A6'), 'Checked:'); label(ws.getCell('C6'), 'Date:');
-    label(ws.getCell('B7'), 'DESCRIPTION', true); label(ws.getCell('C7'), 'Pump Name:');
+    headStyle(ws.getCell('B7'), 'DESCRIPTION'); label(ws.getCell('C7'), 'Pump Name:');
     V('E7', pump.name || ''); label(ws.getCell('C8'), 'Pump Tag:'); V('E8', pump.tag || '');
     label(ws.getCell('C9'), 'Stream No:'); V('E9', pump.stream || '');
-    label(ws.getCell('C10'), 'SYMBOL', true); label(ws.getCell('D10'), 'UNIT', true);
-    label(ws.getCell('E10'), 'No.', true); label(ws.getCell('F10'), 'Nominal', true); label(ws.getCell('G10'), 'Design', true); label(ws.getCell('H10'), 'Rev', true);
+    ['C10:SYMBOL', 'D10:UNIT', 'E10:No.', 'F10:Nominal', 'G10:Design', 'H10:Rev'].forEach(h => { const [c, t] = h.split(':'); headStyle(ws.getCell(c), t); });
 
     // helper for a labelled row
     const row = (r, b, c, d) => { if (b) label(ws.getCell('B' + r), b); if (c) label(ws.getCell('C' + r), c); if (d) label(ws.getCell('D' + r), d); };
@@ -2652,15 +2673,17 @@ window.REFDATA = {
 
     applyResults(ws, o, pump); // cache computed values onto the live formulas
 
-    // number formats for the F/G data columns
+    // number formats + centre alignment for the F/G/E data columns
     for (let r = 11; r <= 136; r++) {
-      ['F', 'G', 'K'].forEach(cl => { const c = ws.getCell(cl + r); if (c.type === ExcelJS.ValueType.Formula || typeof c.value === 'number') c.numFmt = '0.00'; });
+      ['F', 'G', 'K'].forEach(cl => { const c = ws.getCell(cl + r); if (c.type === ExcelJS.ValueType.Formula || typeof c.value === 'number') { c.numFmt = '0.00'; c.alignment = { horizontal: 'center' }; } });
+      const e = ws.getCell('E' + r); if (typeof e.value === 'number') e.alignment = { horizontal: 'center' };
     }
     ['F30', 'F60', 'F13', 'F14', 'F24'].forEach(c => ws.getCell(c).numFmt = '0.0');
+    // ensure Aptos 10 on every populated cell (matches the original)
+    ws.eachRow(row => row.eachCell(c => { if (!c.font) c.font = baseFont; else if (!c.font.name) c.font = Object.assign({ name: FONT, size: 10 }, c.font); }));
 
     addValidationsAndCF(ws);
-    // light styling: borders on label columns
-    ws.views = [{ showGridLines: false }];
+    ws.views = [{ showGridLines: true }];
     return ws;
   }
 
@@ -2766,6 +2789,7 @@ window.REFDATA = {
     const ws = wb.addWorksheet('Summary', { properties: { tabColor: { argb: RED } } });
     ws.views = [{ showGridLines: false, state: 'frozen', ySplit: 7 }];
     ws.mergeCells('A1:M1'); titleStyle(ws.getCell('A1'), 'SLURRY PUMP SIZING — SUMMARY');
+    if (logoId != null) ws.addImage(logoId, { tl: { col: 13.1, row: 0.15 }, ext: { width: 150, height: 32 } });
     label(ws.getCell('A2'), 'Project:'); ws.getCell('B2').value = project.name || '';
     label(ws.getCell('A4'), 'Client:'); ws.getCell('B4').value = project.client || '';
     label(ws.getCell('A3'), 'Document No:'); ws.getCell('B3').value = project.docNo || '';
@@ -2799,10 +2823,12 @@ window.REFDATA = {
     return n || 'PUMP';
   }
 
+  let logoId = null;
   async function exportWorkbook(project) {
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Nexmin Pump Calc'; wb.created = new Date();
     wb.calcProperties.fullCalcOnLoad = true;
+    const lb = logoBase64(); logoId = lb ? wb.addImage({ base64: lb, extension: 'png' }) : null;
     buildSummary(wb, project);
     project.pumps.forEach(p => buildPumpSheet(wb, Object.assign({
       project: project.name, client: project.client, rev: project.rev
@@ -2865,7 +2891,7 @@ window.PUMP_CURVE_SRCDOC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta c
         designFactor: 0.20, viscOverride: 30, d50: 55.2, frothFactor: 1
       },
       suction: { material: 'Steel', spec: 'Std_Wt_6mm_RL', dn: 250, scale: 0, length: 2, k1: 1.5, k2: 0.3, k3: 0.1, q90: 1, q45: 0, qRun: 0, qBranch: 0, k8: 0, Hss: 0.5, Ps: 0 },
-      discharge: { material: 'Poly', spec: 'PE100_PN10', dn: 280, scale: 0, length: 120, k1: 0.5, k2: 1, k3: 0.3, q90: 2, q45: 0, qRun: 0, qBranch: 0, k8: 0, Pd: 0, Hsd: 25 },
+      discharge: { material: 'Poly', spec: 'PE100_PN10', dn: 280, scale: 0, length: 120, k1: 0.5, k2: 1, k3: 0.3, q90: 2, q45: 0, qRun: 0, qBranch: 0, k8: 0, Pd: 0, Hsd: 25, settleMethod: 'durand' },
       pump: { make: '', model: '', frame: '', drive: '', seal: '', impellerType: '', impellerDia: 365, headRatioOverride: 0, effRatioOverride: 0, nSeries: 1, nParallel: 1, effWater: 0.70, speed: 1450 },
       npsh: { altitude: 100, temp: 20, npshr: 0 },
       power: { driveEff: 0.95, margin: 0.20, motorSize: 200 }
@@ -2876,6 +2902,7 @@ window.PUMP_CURVE_SRCDOC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta c
     if (p.slurry && !p.slurry.proc) {
       p.slurry.proc = { ms: num(p.slurry.solidsTPH), mL: num(p.slurry.liquidTPH), Ss: num(p.slurry.solidsSG), SL: num(p.slurry.liquorSG), Sm: null, Q: null, Cw: null, Cv: null };
     }
+    if (p.discharge && !p.discharge.settleMethod) p.discharge.settleMethod = 'durand';
     return p;
   }
 
@@ -3036,6 +3063,40 @@ window.PUMP_CURVE_SRCDOC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta c
   function pillFL(f) { if (!isFinite(f)) return null; return f * 100 <= 100 ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'over' }; }
   function pillNPSH(o) { if (o.npshOK == null) return { cls: 'warn', t: 'enter NPSHr' }; return o.npshOK ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'cavitation' }; }
 
+  // settling-velocity methods shown in the calc; the ticked one sets Vlim
+  const SETTLE_METHODS = [
+    ['durand', 'Durand & Condolios (1952)', 'durand', 'Standard method (Warman handbook). Best for closely-graded particles (d80/d20 &lt; 2) and 2% &lt; Cv &lt; 15%. Conservative for slurries with a wide spread of particle sizes — this is the default, and the value built into the Excel calc.'],
+    ['wilson', 'Wilson', 'wilson', 'For large pipes and particles near the “Murphian” size (the size giving the largest settling velocity). Returns the maximum (worst-case) limiting velocity, so it is conservative.'],
+    ['thomas', 'Thomas', 'thomas', 'For fine particles (&lt; 0.15 mm). Assumes turbulent flow and gives the minimum settling velocity — indicates the behaviour of fines that ride within the carrier fluid.'],
+    ['wasp', 'Wasp', 'wasp', 'An improved Durand for more dilute slurries; accounts for fines flowing over a moving bed of coarse solids (asymmetric-suspension to moving-bed transition).'],
+    ['sinclair', 'Sinclair', 'sinclair', 'For d85/ID &lt; 0.001, or particle diameter roughly 30–2000 µm.']
+  ];
+  function settlingBlock(o, p) {
+    const frag = document.createDocumentFragment();
+    frag.appendChild(el('div', { class: 'section-title' }, 'Settling velocity — tick the method that applies'));
+    frag.appendChild(el('div', { class: 'settle-note' }, 'The ticked method sets the limiting velocity (Vlim) used for the V/Vlim ratio and the settling check above. Durand is conservative — switch to another where it is too conservative (e.g. when fines dominate).'));
+    SETTLE_METHODS.forEach(m => {
+      const [key, label, refKey, info] = m;
+      const sel = (p.discharge.settleMethod || 'durand') === key;
+      const row = el('div', { class: 'orow settle-row' });
+      const lab = el('label', { class: 'olabel settle-label' + (sel ? ' sel' : '') });
+      const radio = el('input', { type: 'radio', name: 'settleMethod', class: 'settle-radio' }); radio.checked = sel;
+      radio.addEventListener('change', () => { p.discharge.settleMethod = key; commit(true); });
+      lab.appendChild(radio); lab.appendChild(el('span', {}, label));
+      row.appendChild(lab);
+      row.appendChild(el('div', { class: 'oval' + (sel ? ' settle-active' : '') }, sig(o.settle[key])));
+      row.appendChild(el('div', { class: 'oval design' }, ''));
+      row.appendChild(el('div', { class: 'ounit' }, 'm/s'));
+      const R = META.REFERENCES[refKey];
+      const html = info + (R ? `<div style="margin-top:8px;color:var(--grey);font-size:11px"><b>Source:</b> ${R.cite}</div>` : '');
+      const ib = el('button', { class: 'info', title: 'When to use ' + label }, 'i');
+      ib.addEventListener('click', (e) => openInfo(e.currentTarget, label + ' — settling velocity', html));
+      row.appendChild(ib);
+      frag.appendChild(row);
+    });
+    return frag;
+  }
+
   // -------- dynamic input sizing -------------------------------------------
   function sizeInput(inp) {
     const txt = (inp.value !== '' ? inp.value : inp.placeholder) || '';
@@ -3076,6 +3137,7 @@ window.PUMP_CURVE_SRCDOC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta c
     OUTPUTS.forEach(sec => {
       outBody.appendChild(el('div', { class: 'section-title' }, sec.title));
       sec.rows.forEach(r => outBody.appendChild(outputRow(r, both.n, both.d)));
+      if (sec.title === 'Discharge Pipe Output') outBody.appendChild(settlingBlock(both.n, p));
     });
     outCard.appendChild(outBody);
 
@@ -3439,33 +3501,6 @@ window.PUMP_CURVE_SRCDOC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta c
     root.appendChild(el('p', { class: 'hint' }, 'Tip: click a pump column header to open it in the Calculator. Edit the parameter list in SUMMARY_PARAMS to tweak what appears here.'));
   }
 
-  // -------- render: how it works -------------------------------------------
-  function renderDocs() {
-    const root = $('#view'); root.innerHTML = '';
-    root.appendChild(el('h1', { class: 'page' }, 'How it works — the guts'));
-    root.appendChild(el('p', { class: 'sub' }, 'Every calculated row, the exact formula behind it, and where it comes from. Mirrors the engine in the original Calc_Template sheet (custom Excel functions re-expressed in plain maths).'));
-    root.appendChild(el('div', { class: 'note' }, 'Velocity guidance: slurry pipelines are typically run at 1.5–2.0 m/s and at least 15% above the limiting (settling) velocity. The Durand method built into the discharge calc is conservative; see the Settling Velocity tab for alternatives when fines dominate.'));
-    Object.keys(META.DOC).forEach(key => {
-      const d = META.DOC[key];
-      const c = el('div', { class: 'doc-card' });
-      c.appendChild(el('h3', {}, d.title));
-      c.appendChild(el('div', { class: 'meta' }, d.unit ? ('Units: ' + d.unit) : ''));
-      c.appendChild(el('p', {}, d.what));
-      c.appendChild(el('div', { class: 'formula' }, d.formula));
-      if (d.refs && d.refs.length) {
-        const refs = el('div', { class: 'refs' });
-        d.refs.forEach(id => { const R = META.REFERENCES[id]; if (R) refs.appendChild(el('div', { class: 'ref' }, `<span class="reftag">${R.tag}</span>${R.cite}`)); });
-        c.appendChild(refs);
-      }
-      root.appendChild(c);
-    });
-    const bib = el('div', { class: 'doc-card' });
-    bib.appendChild(el('h3', {}, 'Bibliography'));
-    const ul = el('ul', { class: 'bib' });
-    Object.values(META.REFERENCES).forEach(R => ul.appendChild(el('li', {}, `<span class="reftag">${R.tag}</span>${R.cite}`)));
-    bib.appendChild(ul); root.appendChild(bib);
-  }
-
   // -------- render: reference tables ---------------------------------------
   function renderRef() {
     const root = $('#view'); root.innerHTML = '';
@@ -3510,38 +3545,6 @@ window.PUMP_CURVE_SRCDOC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta c
     function addRow(t, cells) { const tr = el('tr'); cells.forEach(c => tr.appendChild(el('td', {}, c == null ? '—' : String(c)))); t.querySelector('tbody').appendChild(tr); }
   }
 
-  // -------- render: settling velocity --------------------------------------
-  function renderSettle() {
-    const root = $('#view'); root.innerHTML = '';
-    const p = activePump(); const o = ENGINE.compute(p); const s = o.settle;
-    root.appendChild(el('h1', { class: 'page' }, 'Settling Velocity Comparison'));
-    root.appendChild(el('p', { class: 'sub' }, `For the active pump <b>${p.tag}</b> (discharge DN ${p.discharge.dn}, d50 ${p.slurry.d50} µm, Cv ${sig(o.Cv * 100)} %). The Durand method is built into the duty calc; the others are for comparison where it is too conservative (e.g. fines present).`));
-    const designV = o.dis.V;
-    const methods = [
-      ['Durand & Condolios (1952)', s.durand, 'Standard method (Warman). Closely-graded particles, 2% < Cv < 15%. Conservative for mixed sizes.'],
-      ['Wilson', s.wilson, 'Large pipes/particles near “Murphian” size. Gives the maximum limiting velocity (worst case). Conservative.'],
-      ['Thomas', s.thomas, 'For particles < 0.15 mm. Turbulent flow, minimum settling velocity — indicates behaviour of fines.'],
-      ['Wasp', s.wasp, 'Improved Durand for dilute concentrations; accounts for fines flowing over a moving bed of coarse solids.'],
-      ['Sinclair', s.sinclair, 'For d85/ID < 0.001 or particle diameter 30–2000 µm.']
-    ];
-    const wrap = el('div', { class: 'tablewrap' });
-    const t = el('table', { class: 'ref zebra' });
-    const th = el('thead'); const htr = el('tr'); ['Method', 'Settling velocity (m/s)', 'Design V (m/s)', 'Status', ''].forEach(h => htr.appendChild(el('th', {}, h))); th.appendChild(htr); t.appendChild(th);
-    const tb = el('tbody');
-    methods.forEach(m => {
-      const tr = el('tr');
-      tr.appendChild(el('td', {}, m[0]));
-      tr.appendChild(el('td', {}, sig(m[1])));
-      tr.appendChild(el('td', {}, sig(designV)));
-      const ok = designV >= m[1];
-      const td = el('td', {}); td.innerHTML = `<span class="pill ${ok ? 'ok' : 'bad'}">${ok ? 'above settling' : 'below settling'}</span>`; tr.appendChild(td);
-      tr.appendChild(el('td', { style: 'text-align:left;white-space:normal;max-width:380px;color:#555' }, m[2]));
-      tb.appendChild(tr);
-    });
-    t.appendChild(tb); wrap.appendChild(t); root.appendChild(wrap);
-    root.appendChild(el('div', { class: 'note' }, 'Why Durand is conservative: its correlation was developed on a narrow band of particle sizes. Real slurries contain a range — fines are incorporated into the carrier fluid, raising its viscosity and buoyancy so coarse particles are transported more readily. Thomas, Wasp and Sinclair account for this and give lower settling velocities.'));
-  }
-
   // -------- sticky header offsets ------------------------------------------
   function updateSticky() {
     const tb = document.querySelector('.topbar'), tabs = document.querySelector('.tabs');
@@ -3552,7 +3555,7 @@ window.PUMP_CURVE_SRCDOC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta c
   window.addEventListener('resize', () => { updateSticky(); closeCallout(); });
 
   // -------- tabs ------------------------------------------------------------
-  const TABS = { calc: renderCalc, summary: renderSummary, docs: renderDocs, ref: renderRef, settle: renderSettle };
+  const TABS = { calc: renderCalc, summary: renderSummary, ref: renderRef };
   let current = 'calc';
   function switchTab(t) { current = t; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t)); TABS[t](); }
   function commit(rerender) { save(); if (rerender) TABS[current](); else refreshOutputs(); }
@@ -3567,7 +3570,8 @@ window.PUMP_CURVE_SRCDOC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta c
     if (cards[1]) {
       const outBody = cards[1].querySelector('.body'); outBody.innerHTML = '';
       outBody.appendChild(outHeader());
-      OUTPUTS.forEach(sec => { outBody.appendChild(el('div', { class: 'section-title' }, sec.title)); sec.rows.forEach(r => outBody.appendChild(outputRow(r, both.n, both.d))); });
+      const ap = activePump();
+      OUTPUTS.forEach(sec => { outBody.appendChild(el('div', { class: 'section-title' }, sec.title)); sec.rows.forEach(r => outBody.appendChild(outputRow(r, both.n, both.d))); if (sec.title === 'Discharge Pipe Output') outBody.appendChild(settlingBlock(both.n, ap)); });
     }
   }
 

@@ -36,7 +36,7 @@
         designFactor: 0.20, viscOverride: 30, d50: 55.2, frothFactor: 1
       },
       suction: { material: 'Steel', spec: 'Std_Wt_6mm_RL', dn: 250, scale: 0, length: 2, k1: 1.5, k2: 0.3, k3: 0.1, q90: 1, q45: 0, qRun: 0, qBranch: 0, k8: 0, Hss: 0.5, Ps: 0 },
-      discharge: { material: 'Poly', spec: 'PE100_PN10', dn: 280, scale: 0, length: 120, k1: 0.5, k2: 1, k3: 0.3, q90: 2, q45: 0, qRun: 0, qBranch: 0, k8: 0, Pd: 0, Hsd: 25 },
+      discharge: { material: 'Poly', spec: 'PE100_PN10', dn: 280, scale: 0, length: 120, k1: 0.5, k2: 1, k3: 0.3, q90: 2, q45: 0, qRun: 0, qBranch: 0, k8: 0, Pd: 0, Hsd: 25, settleMethod: 'durand' },
       pump: { make: '', model: '', frame: '', drive: '', seal: '', impellerType: '', impellerDia: 365, headRatioOverride: 0, effRatioOverride: 0, nSeries: 1, nParallel: 1, effWater: 0.70, speed: 1450 },
       npsh: { altitude: 100, temp: 20, npshr: 0 },
       power: { driveEff: 0.95, margin: 0.20, motorSize: 200 }
@@ -47,6 +47,7 @@
     if (p.slurry && !p.slurry.proc) {
       p.slurry.proc = { ms: num(p.slurry.solidsTPH), mL: num(p.slurry.liquidTPH), Ss: num(p.slurry.solidsSG), SL: num(p.slurry.liquorSG), Sm: null, Q: null, Cw: null, Cv: null };
     }
+    if (p.discharge && !p.discharge.settleMethod) p.discharge.settleMethod = 'durand';
     return p;
   }
 
@@ -207,6 +208,40 @@
   function pillFL(f) { if (!isFinite(f)) return null; return f * 100 <= 100 ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'over' }; }
   function pillNPSH(o) { if (o.npshOK == null) return { cls: 'warn', t: 'enter NPSHr' }; return o.npshOK ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'cavitation' }; }
 
+  // settling-velocity methods shown in the calc; the ticked one sets Vlim
+  const SETTLE_METHODS = [
+    ['durand', 'Durand & Condolios (1952)', 'durand', 'Standard method (Warman handbook). Best for closely-graded particles (d80/d20 &lt; 2) and 2% &lt; Cv &lt; 15%. Conservative for slurries with a wide spread of particle sizes — this is the default, and the value built into the Excel calc.'],
+    ['wilson', 'Wilson', 'wilson', 'For large pipes and particles near the “Murphian” size (the size giving the largest settling velocity). Returns the maximum (worst-case) limiting velocity, so it is conservative.'],
+    ['thomas', 'Thomas', 'thomas', 'For fine particles (&lt; 0.15 mm). Assumes turbulent flow and gives the minimum settling velocity — indicates the behaviour of fines that ride within the carrier fluid.'],
+    ['wasp', 'Wasp', 'wasp', 'An improved Durand for more dilute slurries; accounts for fines flowing over a moving bed of coarse solids (asymmetric-suspension to moving-bed transition).'],
+    ['sinclair', 'Sinclair', 'sinclair', 'For d85/ID &lt; 0.001, or particle diameter roughly 30–2000 µm.']
+  ];
+  function settlingBlock(o, p) {
+    const frag = document.createDocumentFragment();
+    frag.appendChild(el('div', { class: 'section-title' }, 'Settling velocity — tick the method that applies'));
+    frag.appendChild(el('div', { class: 'settle-note' }, 'The ticked method sets the limiting velocity (Vlim) used for the V/Vlim ratio and the settling check above. Durand is conservative — switch to another where it is too conservative (e.g. when fines dominate).'));
+    SETTLE_METHODS.forEach(m => {
+      const [key, label, refKey, info] = m;
+      const sel = (p.discharge.settleMethod || 'durand') === key;
+      const row = el('div', { class: 'orow settle-row' });
+      const lab = el('label', { class: 'olabel settle-label' + (sel ? ' sel' : '') });
+      const radio = el('input', { type: 'radio', name: 'settleMethod', class: 'settle-radio' }); radio.checked = sel;
+      radio.addEventListener('change', () => { p.discharge.settleMethod = key; commit(true); });
+      lab.appendChild(radio); lab.appendChild(el('span', {}, label));
+      row.appendChild(lab);
+      row.appendChild(el('div', { class: 'oval' + (sel ? ' settle-active' : '') }, sig(o.settle[key])));
+      row.appendChild(el('div', { class: 'oval design' }, ''));
+      row.appendChild(el('div', { class: 'ounit' }, 'm/s'));
+      const R = META.REFERENCES[refKey];
+      const html = info + (R ? `<div style="margin-top:8px;color:var(--grey);font-size:11px"><b>Source:</b> ${R.cite}</div>` : '');
+      const ib = el('button', { class: 'info', title: 'When to use ' + label }, 'i');
+      ib.addEventListener('click', (e) => openInfo(e.currentTarget, label + ' — settling velocity', html));
+      row.appendChild(ib);
+      frag.appendChild(row);
+    });
+    return frag;
+  }
+
   // -------- dynamic input sizing -------------------------------------------
   function sizeInput(inp) {
     const txt = (inp.value !== '' ? inp.value : inp.placeholder) || '';
@@ -247,6 +282,7 @@
     OUTPUTS.forEach(sec => {
       outBody.appendChild(el('div', { class: 'section-title' }, sec.title));
       sec.rows.forEach(r => outBody.appendChild(outputRow(r, both.n, both.d)));
+      if (sec.title === 'Discharge Pipe Output') outBody.appendChild(settlingBlock(both.n, p));
     });
     outCard.appendChild(outBody);
 
@@ -610,33 +646,6 @@
     root.appendChild(el('p', { class: 'hint' }, 'Tip: click a pump column header to open it in the Calculator. Edit the parameter list in SUMMARY_PARAMS to tweak what appears here.'));
   }
 
-  // -------- render: how it works -------------------------------------------
-  function renderDocs() {
-    const root = $('#view'); root.innerHTML = '';
-    root.appendChild(el('h1', { class: 'page' }, 'How it works — the guts'));
-    root.appendChild(el('p', { class: 'sub' }, 'Every calculated row, the exact formula behind it, and where it comes from. Mirrors the engine in the original Calc_Template sheet (custom Excel functions re-expressed in plain maths).'));
-    root.appendChild(el('div', { class: 'note' }, 'Velocity guidance: slurry pipelines are typically run at 1.5–2.0 m/s and at least 15% above the limiting (settling) velocity. The Durand method built into the discharge calc is conservative; see the Settling Velocity tab for alternatives when fines dominate.'));
-    Object.keys(META.DOC).forEach(key => {
-      const d = META.DOC[key];
-      const c = el('div', { class: 'doc-card' });
-      c.appendChild(el('h3', {}, d.title));
-      c.appendChild(el('div', { class: 'meta' }, d.unit ? ('Units: ' + d.unit) : ''));
-      c.appendChild(el('p', {}, d.what));
-      c.appendChild(el('div', { class: 'formula' }, d.formula));
-      if (d.refs && d.refs.length) {
-        const refs = el('div', { class: 'refs' });
-        d.refs.forEach(id => { const R = META.REFERENCES[id]; if (R) refs.appendChild(el('div', { class: 'ref' }, `<span class="reftag">${R.tag}</span>${R.cite}`)); });
-        c.appendChild(refs);
-      }
-      root.appendChild(c);
-    });
-    const bib = el('div', { class: 'doc-card' });
-    bib.appendChild(el('h3', {}, 'Bibliography'));
-    const ul = el('ul', { class: 'bib' });
-    Object.values(META.REFERENCES).forEach(R => ul.appendChild(el('li', {}, `<span class="reftag">${R.tag}</span>${R.cite}`)));
-    bib.appendChild(ul); root.appendChild(bib);
-  }
-
   // -------- render: reference tables ---------------------------------------
   function renderRef() {
     const root = $('#view'); root.innerHTML = '';
@@ -681,38 +690,6 @@
     function addRow(t, cells) { const tr = el('tr'); cells.forEach(c => tr.appendChild(el('td', {}, c == null ? '—' : String(c)))); t.querySelector('tbody').appendChild(tr); }
   }
 
-  // -------- render: settling velocity --------------------------------------
-  function renderSettle() {
-    const root = $('#view'); root.innerHTML = '';
-    const p = activePump(); const o = ENGINE.compute(p); const s = o.settle;
-    root.appendChild(el('h1', { class: 'page' }, 'Settling Velocity Comparison'));
-    root.appendChild(el('p', { class: 'sub' }, `For the active pump <b>${p.tag}</b> (discharge DN ${p.discharge.dn}, d50 ${p.slurry.d50} µm, Cv ${sig(o.Cv * 100)} %). The Durand method is built into the duty calc; the others are for comparison where it is too conservative (e.g. fines present).`));
-    const designV = o.dis.V;
-    const methods = [
-      ['Durand & Condolios (1952)', s.durand, 'Standard method (Warman). Closely-graded particles, 2% < Cv < 15%. Conservative for mixed sizes.'],
-      ['Wilson', s.wilson, 'Large pipes/particles near “Murphian” size. Gives the maximum limiting velocity (worst case). Conservative.'],
-      ['Thomas', s.thomas, 'For particles < 0.15 mm. Turbulent flow, minimum settling velocity — indicates behaviour of fines.'],
-      ['Wasp', s.wasp, 'Improved Durand for dilute concentrations; accounts for fines flowing over a moving bed of coarse solids.'],
-      ['Sinclair', s.sinclair, 'For d85/ID < 0.001 or particle diameter 30–2000 µm.']
-    ];
-    const wrap = el('div', { class: 'tablewrap' });
-    const t = el('table', { class: 'ref zebra' });
-    const th = el('thead'); const htr = el('tr'); ['Method', 'Settling velocity (m/s)', 'Design V (m/s)', 'Status', ''].forEach(h => htr.appendChild(el('th', {}, h))); th.appendChild(htr); t.appendChild(th);
-    const tb = el('tbody');
-    methods.forEach(m => {
-      const tr = el('tr');
-      tr.appendChild(el('td', {}, m[0]));
-      tr.appendChild(el('td', {}, sig(m[1])));
-      tr.appendChild(el('td', {}, sig(designV)));
-      const ok = designV >= m[1];
-      const td = el('td', {}); td.innerHTML = `<span class="pill ${ok ? 'ok' : 'bad'}">${ok ? 'above settling' : 'below settling'}</span>`; tr.appendChild(td);
-      tr.appendChild(el('td', { style: 'text-align:left;white-space:normal;max-width:380px;color:#555' }, m[2]));
-      tb.appendChild(tr);
-    });
-    t.appendChild(tb); wrap.appendChild(t); root.appendChild(wrap);
-    root.appendChild(el('div', { class: 'note' }, 'Why Durand is conservative: its correlation was developed on a narrow band of particle sizes. Real slurries contain a range — fines are incorporated into the carrier fluid, raising its viscosity and buoyancy so coarse particles are transported more readily. Thomas, Wasp and Sinclair account for this and give lower settling velocities.'));
-  }
-
   // -------- sticky header offsets ------------------------------------------
   function updateSticky() {
     const tb = document.querySelector('.topbar'), tabs = document.querySelector('.tabs');
@@ -723,7 +700,7 @@
   window.addEventListener('resize', () => { updateSticky(); closeCallout(); });
 
   // -------- tabs ------------------------------------------------------------
-  const TABS = { calc: renderCalc, summary: renderSummary, docs: renderDocs, ref: renderRef, settle: renderSettle };
+  const TABS = { calc: renderCalc, summary: renderSummary, ref: renderRef };
   let current = 'calc';
   function switchTab(t) { current = t; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t)); TABS[t](); }
   function commit(rerender) { save(); if (rerender) TABS[current](); else refreshOutputs(); }
@@ -738,7 +715,8 @@
     if (cards[1]) {
       const outBody = cards[1].querySelector('.body'); outBody.innerHTML = '';
       outBody.appendChild(outHeader());
-      OUTPUTS.forEach(sec => { outBody.appendChild(el('div', { class: 'section-title' }, sec.title)); sec.rows.forEach(r => outBody.appendChild(outputRow(r, both.n, both.d))); });
+      const ap = activePump();
+      OUTPUTS.forEach(sec => { outBody.appendChild(el('div', { class: 'section-title' }, sec.title)); sec.rows.forEach(r => outBody.appendChild(outputRow(r, both.n, both.d))); if (sec.title === 'Discharge Pipe Output') outBody.appendChild(settlingBlock(both.n, ap)); });
     }
   }
 

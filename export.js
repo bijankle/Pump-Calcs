@@ -10,9 +10,10 @@
 (function () {
   'use strict';
 
-  // ---- shared styles -------------------------------------------------------
-  const RED = 'FFC8102E', BLACK = 'FF1A1A1A', GREY = 'FF4D4D4D',
-        LGREY = 'FFEDEDED', YELLOW = 'FFFFF6CC', WHITE = 'FFFFFFFF';
+  // ---- shared styles (matched to the original Calc_Template) ----------------
+  const RED = 'FF9C1519', BLACK = 'FF1A1A1A', GREY = 'FF4D4D4D',
+        SECTION = 'FFBFBFBF', LGREY = 'FFEDEDED', YELLOW = 'FFFFFFCC',
+        WHITE = 'FFFFFFFF', INPUTTXT = 'FFCC00CC';
   const thin = { style: 'thin', color: { argb: 'FFBFBFBF' } };
   const border = { top: thin, left: thin, bottom: thin, right: thin };
   const FONT = 'Aptos';
@@ -20,18 +21,38 @@
 
   function titleStyle(cell, text) {
     cell.value = text;
-    cell.font = { name: FONT, size: 14, bold: true, color: { argb: WHITE } };
+    cell.font = { name: FONT, size: 12, bold: true, color: { argb: WHITE } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: RED } };
-    cell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  }
+  // dark-red header cell (DESCRIPTION / SYMBOL / UNIT / Nominal / Design …)
+  function headStyle(cell, text) {
+    cell.value = text;
+    cell.font = { name: FONT, size: 10, bold: true, color: { argb: WHITE } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: RED } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
   }
   function sectionStyle(cell, text) {
     cell.value = text;
-    cell.font = { name: FONT, size: 10, bold: true, color: { argb: WHITE } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GREY } };
+    cell.font = { name: FONT, size: 10, bold: true, color: { argb: BLACK } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: SECTION } };
   }
   function label(cell, text, bold) {
     cell.value = text;
     cell.font = { name: FONT, size: 10, bold: !!bold, color: { argb: BLACK } };
+  }
+  // Nexmin logo drawn to a PNG (data URL base64) for the exported workbook
+  function logoBase64() {
+    try {
+      const c = document.createElement('canvas'); c.width = 300; c.height = 64;
+      const x = c.getContext('2d'); const s = 1.9, oy = 3;
+      const poly = pts => { x.beginPath(); pts.forEach((p, i) => { const X = p[0] * s, Y = oy + p[1] * s; i ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.closePath(); x.fill(); };
+      x.fillStyle = '#1A1A1A'; poly([[0, 0], [7, 0], [7, 30], [0, 30]]); poly([[5, 0], [12, 0], [24, 30], [17, 30]]);
+      x.fillStyle = '#C8102E'; poly([[22, 0], [29, 0], [29, 30], [22, 30]]);
+      x.fillStyle = '#1A1A1A'; x.font = '800 ' + (22 * s) + 'px Aptos, Segoe UI, Arial, sans-serif';
+      x.textBaseline = 'alphabetic'; x.fillText('NEXMIN', 38 * s, oy + 23 * s);
+      return c.toDataURL('image/png').split(',')[1];
+    } catch (e) { return null; }
   }
   const numFmt = { 0: '0', 1: '0.0', 2: '0.00', 3: '0.000', 4: '0.0000' };
   // round to 3 significant figures (process values may themselves be solved)
@@ -156,22 +177,22 @@
     ws.eachRow && null;
     const F = (c, formula) => { ws.getCell(c).value = { formula }; };
     const V = (c, val) => { ws.getCell(c).value = (val === undefined || val === null || val === '') ? null : val; };
-    const yel = (c) => { ws.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: YELLOW } }; ws.getCell(c).border = border; };
+    const yel = (c) => { ws.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: YELLOW } }; ws.getCell(c).border = border; ws.getCell(c).alignment = { horizontal: 'center' }; };
     const s = pump.slurry, su = pump.suction, di = pump.discharge, pu = pump.pump, np = pump.npsh, pw = pump.power;
     const o = ENGINE.compute(pump); // engine results -> cached into formula cells so values show instantly
 
-    // Header
+    // Header (red title + dark-red field headers, like the original)
     ws.mergeCells('A1:D1'); titleStyle(ws.getCell('A1'), 'SLURRY PUMP CALCULATION');
+    if (logoId != null) ws.addImage(logoId, { tl: { col: 4.15, row: 0.15 }, ext: { width: 150, height: 32 } });
     label(ws.getCell('A2'), 'Project:'); V('B2', pump.project || '');
     label(ws.getCell('A3'), 'Client:'); V('B3', pump.client || '');
     label(ws.getCell('A4'), 'Revision:'); V('B4', pump.rev || 'A');
     label(ws.getCell('A5'), 'Prepared:'); label(ws.getCell('C5'), 'Date:');
     label(ws.getCell('A6'), 'Checked:'); label(ws.getCell('C6'), 'Date:');
-    label(ws.getCell('B7'), 'DESCRIPTION', true); label(ws.getCell('C7'), 'Pump Name:');
+    headStyle(ws.getCell('B7'), 'DESCRIPTION'); label(ws.getCell('C7'), 'Pump Name:');
     V('E7', pump.name || ''); label(ws.getCell('C8'), 'Pump Tag:'); V('E8', pump.tag || '');
     label(ws.getCell('C9'), 'Stream No:'); V('E9', pump.stream || '');
-    label(ws.getCell('C10'), 'SYMBOL', true); label(ws.getCell('D10'), 'UNIT', true);
-    label(ws.getCell('E10'), 'No.', true); label(ws.getCell('F10'), 'Nominal', true); label(ws.getCell('G10'), 'Design', true); label(ws.getCell('H10'), 'Rev', true);
+    ['C10:SYMBOL', 'D10:UNIT', 'E10:No.', 'F10:Nominal', 'G10:Design', 'H10:Rev'].forEach(h => { const [c, t] = h.split(':'); headStyle(ws.getCell(c), t); });
 
     // helper for a labelled row
     const row = (r, b, c, d) => { if (b) label(ws.getCell('B' + r), b); if (c) label(ws.getCell('C' + r), c); if (d) label(ws.getCell('D' + r), d); };
@@ -279,15 +300,17 @@
 
     applyResults(ws, o, pump); // cache computed values onto the live formulas
 
-    // number formats for the F/G data columns
+    // number formats + centre alignment for the F/G/E data columns
     for (let r = 11; r <= 136; r++) {
-      ['F', 'G', 'K'].forEach(cl => { const c = ws.getCell(cl + r); if (c.type === ExcelJS.ValueType.Formula || typeof c.value === 'number') c.numFmt = '0.00'; });
+      ['F', 'G', 'K'].forEach(cl => { const c = ws.getCell(cl + r); if (c.type === ExcelJS.ValueType.Formula || typeof c.value === 'number') { c.numFmt = '0.00'; c.alignment = { horizontal: 'center' }; } });
+      const e = ws.getCell('E' + r); if (typeof e.value === 'number') e.alignment = { horizontal: 'center' };
     }
     ['F30', 'F60', 'F13', 'F14', 'F24'].forEach(c => ws.getCell(c).numFmt = '0.0');
+    // ensure Aptos 10 on every populated cell (matches the original)
+    ws.eachRow(row => row.eachCell(c => { if (!c.font) c.font = baseFont; else if (!c.font.name) c.font = Object.assign({ name: FONT, size: 10 }, c.font); }));
 
     addValidationsAndCF(ws);
-    // light styling: borders on label columns
-    ws.views = [{ showGridLines: false }];
+    ws.views = [{ showGridLines: true }];
     return ws;
   }
 
@@ -393,6 +416,7 @@
     const ws = wb.addWorksheet('Summary', { properties: { tabColor: { argb: RED } } });
     ws.views = [{ showGridLines: false, state: 'frozen', ySplit: 7 }];
     ws.mergeCells('A1:M1'); titleStyle(ws.getCell('A1'), 'SLURRY PUMP SIZING — SUMMARY');
+    if (logoId != null) ws.addImage(logoId, { tl: { col: 13.1, row: 0.15 }, ext: { width: 150, height: 32 } });
     label(ws.getCell('A2'), 'Project:'); ws.getCell('B2').value = project.name || '';
     label(ws.getCell('A4'), 'Client:'); ws.getCell('B4').value = project.client || '';
     label(ws.getCell('A3'), 'Document No:'); ws.getCell('B3').value = project.docNo || '';
@@ -426,10 +450,12 @@
     return n || 'PUMP';
   }
 
+  let logoId = null;
   async function exportWorkbook(project) {
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Nexmin Pump Calc'; wb.created = new Date();
     wb.calcProperties.fullCalcOnLoad = true;
+    const lb = logoBase64(); logoId = lb ? wb.addImage({ base64: lb, extension: 'png' }) : null;
     buildSummary(wb, project);
     project.pumps.forEach(p => buildPumpSheet(wb, Object.assign({
       project: project.name, client: project.client, rev: project.rev

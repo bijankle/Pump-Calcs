@@ -161,6 +161,13 @@ h1.page{font-size:20px;margin:18px 0 4px}
 .kpi .box .vsub.warn{color:var(--warn)}
 .kpi .box .vsub.bad{color:var(--bad)}
 
+/* Settling-method selector (in the outputs card) */
+.settle-note{font-size:11.5px;color:var(--grey);margin:2px 0 6px;line-height:1.45}
+.orow.settle-row .settle-label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.orow.settle-row .settle-label.sel{font-weight:700;color:var(--red)}
+.settle-radio{accent-color:var(--red);cursor:pointer;width:15px;height:15px;flex:none}
+.orow.settle-row .oval.settle-active{color:var(--red)}
+
 /* Frozen results band (pump chips + KPI summary) */
 .calc-sticky{position:sticky;top:calc(var(--topbar-h,56px) + var(--tabs-h,44px));z-index:30;
   background:var(--bg);padding-top:10px;margin-bottom:4px;
