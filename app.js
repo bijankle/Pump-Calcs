@@ -463,6 +463,37 @@
       btn.textContent = old; btn.disabled = false;
     });
     $('#resetBtn').addEventListener('click', () => { if (confirm('Reset to a fresh project? This clears saved data.')) { localStorage.removeItem('nexmin_pumpcalc'); location.reload(); } });
+
+    // Save current project to a .json file
+    $('#saveBtn').addEventListener('click', () => {
+      const data = JSON.stringify(STATE, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = (STATE.docNo || 'pump_calc') + '.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    });
+    // Load a project from a .json file
+    $('#loadBtn').addEventListener('click', () => $('#loadFile').click());
+    $('#loadFile').addEventListener('change', (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const obj = JSON.parse(reader.result);
+          if (!obj || !Array.isArray(obj.pumps) || !obj.pumps.length) throw new Error('Not a valid pump-calc file (no pumps).');
+          STATE = obj; if (STATE.active == null || STATE.active >= STATE.pumps.length) STATE.active = 0;
+          pumpSeq = STATE.pumps.length + 1;
+          save();
+          $('#projName').value = STATE.name || ''; $('#projClient').value = STATE.client || '';
+          $('#projDoc').value = STATE.docNo || ''; $('#projRev').value = STATE.rev || '';
+          switchTab('calc');
+        } catch (err) { alert('Could not load file: ' + err.message); }
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    });
   }
 
   document.addEventListener('DOMContentLoaded', () => { initHeader(); switchTab('calc'); });

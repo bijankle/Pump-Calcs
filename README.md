@@ -12,14 +12,35 @@ company **Slurry Pump Calculation** workbook (`Calc_Template`) and lets you:
   *row-for-row* like the original `Calc_Template`, with **live native formulas**,
   **data-validation dropdowns** and **conditional formatting** preserved.
 
-## Run / deploy
+## Run it
 
-It is a static site — no build step.
+**Easiest — the single file.** Open **`Slurry-Pump-Calc.html`** directly
+(double-click it, or drag it into Chrome/Edge). It is fully self-contained —
+all code, data and the Excel library are inlined, nothing else is needed. You
+can copy or email just this one file.
 
-- **Locally:** serve the folder, e.g. `python3 -m http.server` then open
+Other options (using the modular source):
+
+- **Local server:** `python3 -m http.server` then open
   <http://localhost:8000>. (Opening `index.html` via `file://` also works.)
 - **GitHub Pages:** enable Pages on this repo (branch → root). `.nojekyll` is
   included so the asset folders are served as-is.
+
+### Saving & sharing a calc
+
+- **Save .json** downloads the whole project (all pumps + inputs) as a `.json`
+  file you can store or send to a colleague.
+- **Open .json** loads one back in.
+- Inputs also autosave to your browser between sessions; **Reset** clears them.
+
+### Rebuilding the single file
+
+The single file is generated from the modular source. After editing any source
+file, run:
+
+```bash
+python3 build.py      # regenerates Slurry-Pump-Calc.html
+```
 
 ## How it maps to the original workbook
 
@@ -45,13 +66,15 @@ output workbook needs no macros:
 ## Files
 
 ```
+Slurry-Pump-Calc.html   ← the bundled single file to open (generated)
+build.py                bundles the source below into the single file
 index.html     app shell + tab markup
 styles.css     Nexmin theme (red / black / grey / white, Aptos)
 data.js        reference tables, auto-extracted from the workbook
 meta.js        formula documentation + bibliography (drives ⓘ call-outs)
 engine.js      pure calc engine (mirrors Calc_Template)
 export.js      ExcelJS workbook builder (faithful, macro-free)
-app.js         UI controller / state (autosaves to localStorage)
+app.js         UI controller / state (save/load .json, autosave)
 vendor/        ExcelJS (MIT) — the only third-party dependency
 ```
 
