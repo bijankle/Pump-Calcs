@@ -40,7 +40,7 @@
       pump: { make: '', model: '', frame: '', drive: '', seal: '', impellerType: '', impellerDia: 365, headRatioOverride: 0, effRatioOverride: 0, nSeries: 1, nParallel: 1, effWater: 0.70, speed: 1450 },
       npsh: { altitude: 100, temp: 20, npshr: 0 },
       power: { driveEff: 0.95, margin: 0.20, motorSize: 200 },
-      map: null
+      map: null, curve: null
     };
   }
   // migrate older saved pumps (flat slurry -> proc model)
@@ -50,6 +50,7 @@
     }
     if (p.discharge && !p.discharge.settleMethod) p.discharge.settleMethod = 'durand';
     if (p.map === undefined) p.map = null;
+    if (p.curve === undefined) p.curve = null;
     return p;
   }
 
@@ -283,7 +284,7 @@
     const sub = el('div', { id: 'subview' });
     root.appendChild(sub);
     if (subtab === 'map') renderMap(sub, p);
-    else if (subtab === 'curve') sub.appendChild(pumpCurveBlock());
+    else if (subtab === 'curve') sub.appendChild(pumpCurveBlock(p));
     else renderCalcSub(sub, p, both);
   }
   function subTabNav() {
@@ -521,11 +522,13 @@
   }
 
   // -------- pump curve block ------------------------------------------------
-  function pumpCurveBlock() {
+  let curveFrame = null, curvePumpRef = null;
+  function pumpCurveBlock(p) {
     const card = el('div', { class: 'card', style: 'margin-top:18px' });
     card.appendChild(el('h2', {}, 'Pump Curve'));
     const body = el('div', { class: 'curvebody' });
-    const frame = el('iframe', { class: 'curveframe', title: 'Pump Curve', loading: 'lazy' });
+    const frame = el('iframe', { class: 'curveframe', title: 'Pump Curve' });
+    curveFrame = frame; curvePumpRef = p;
     // PUMP_CURVE_SRCDOC is injected by the single-file build; otherwise load the file
     if (window.PUMP_CURVE_SRCDOC) frame.srcdoc = window.PUMP_CURVE_SRCDOC;
     else frame.src = 'pumpcurve.html';
@@ -549,14 +552,16 @@
     card.appendChild(body);
     root.appendChild(card);
   }
-  // bridge: load each pump's map on ready, save it back on change
+  // bridge: load each pump's map / curve on ready, save it back on change
+  // (the embedded tools' own save/open are hidden — one global Save covers all)
   window.addEventListener('message', (e) => {
-    if (!mapFrame || e.source !== mapFrame.contentWindow) return;
     const m = e.data; if (!m || typeof m !== 'object') return;
-    if (m.type === 'mapReady') {
-      try { mapFrame.contentWindow.postMessage({ type: 'loadMap', state: (mapPumpRef && mapPumpRef.map) || null }, '*'); } catch (_) {}
-    } else if (m.type === 'mapChange') {
-      if (mapPumpRef) { mapPumpRef.map = m.state; save(); }
+    if (mapFrame && e.source === mapFrame.contentWindow) {
+      if (m.type === 'mapReady') { try { mapFrame.contentWindow.postMessage({ type: 'loadMap', state: (mapPumpRef && mapPumpRef.map) || null }, '*'); } catch (_) {} }
+      else if (m.type === 'mapChange') { if (mapPumpRef) { mapPumpRef.map = m.state; save(); } }
+    } else if (curveFrame && e.source === curveFrame.contentWindow) {
+      if (m.type === 'curveReady') { try { curveFrame.contentWindow.postMessage({ type: 'loadCurve', state: (curvePumpRef && curvePumpRef.curve) || null }, '*'); } catch (_) {} }
+      else if (m.type === 'curveChange') { if (curvePumpRef) { curvePumpRef.curve = m.state; save(); } }
     }
   });
 

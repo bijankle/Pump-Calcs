@@ -96,6 +96,8 @@
   .graphtools .tdiv{width:1px;height:22px;background:var(--line-strong);margin:0 2px;}
   .graphtools .btn{font-size:13px;padding:7px 11px;}
   .fitbtns{display:flex;gap:7px;margin-top:8px;}.fitbtns .btn{flex:1;justify-content:center;font-size:12px;padding:7px 6px;}
+  /* file save/open governed by the host app's single global save */
+  #openBtn,#saveBtn,#saveAsBtn{display:none !important;}
   .tabpanel .pad .fieldrow{margin-bottom:10px;}
   .curvelist{margin-top:11px;display:flex;flex-direction:column;gap:6px;}
   .crow{display:flex;align-items:center;gap:8px;padding:6px 7px;border:1px solid var(--line);border-radius:9px;background:#fff;}
@@ -635,7 +637,7 @@
     calBtn.disabled=!state.imgEl;calBtn.classList.toggle('active',state.mode==='calibrate');
     FAMS.forEach(fam=>{const b=$('#'+fam+'Trace');if(b)b.disabled=!cal;});const pb=$('#probeBtn');if(pb)pb.disabled=!cal;}
   function reflectTitle(){const mk=$('#pumpMake'),md=$('#pumpModel');if(mk&&document.activeElement!==mk&&mk.value!==(state.make||''))mk.value=state.make||'';if(md&&document.activeElement!==md&&md.value!==(state.model||''))md.value=state.model||'';}
-  function renderAll(){renderOverlay();updateCurvePanels();syncStatus();reflectTitle();}
+  function renderAll(){renderOverlay();updateCurvePanels();syncStatus();reflectTitle();notifyBridge();}
   function rr(ctx,x,y,w,h,r){if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,w,h,r);return;}ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
   function composeBase(){
     const S=6,W=420*S,H=297*S;const cv=document.createElement('canvas');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
@@ -767,6 +769,18 @@
     if(!typing&&(e.key==='Delete'||e.key==='Backspace')){e.preventDefault();deleteSelected();}});
 
   setTab('curve',true);recomputeModels();syncInputs();renderAll();
+
+  /* Persistence bridge: host app loads/saves this pump's curve per pump,
+     covered by the app's single global Save .json. */
+  var _bArmed=false,_bSup=false,_bT=null;
+  function bpost(m){try{if(window.parent&&window.parent!==window)window.parent.postMessage(m,'*');}catch(_){ }}
+  function notifyBridge(){ if(!_bArmed||_bSup)return; clearTimeout(_bT); _bT=setTimeout(function(){ try{ bpost({type:'curveChange',state:pumpData()}); }catch(_){ } },450); }
+  window.addEventListener('message',function(e){
+    var m=e.data; if(!m||typeof m!=='object')return;
+    if(m.type==='loadCurve'){ try{ _bSup=true; var st=m.state; if(typeof st==='string')st=JSON.parse(st); if(st&&st.image){ applyPumpData(st); } }catch(_){ } _bSup=false; _bArmed=true; }
+    else if(m.type==='requestState'){ try{ bpost({type:'curveChange',state:pumpData()}); }catch(_){ } }
+  });
+  bpost({type:'curveReady'});
 })();
 </script>
 </body>
