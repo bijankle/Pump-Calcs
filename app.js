@@ -39,7 +39,8 @@
       discharge: { material: 'Poly', spec: 'PE100_PN10', dn: 280, scale: 0, length: 120, k1: 0.5, k2: 1, k3: 0.3, q90: 2, q45: 0, qRun: 0, qBranch: 0, k8: 0, Pd: 0, Hsd: 25, settleMethod: 'durand' },
       pump: { make: '', model: '', frame: '', drive: '', seal: '', impellerType: '', impellerDia: 365, headRatioOverride: 0, effRatioOverride: 0, nSeries: 1, nParallel: 1, effWater: 0.70, speed: 1450 },
       npsh: { altitude: 100, temp: 20, npshr: 0 },
-      power: { driveEff: 0.95, margin: 0.20, motorSize: 200 }
+      power: { driveEff: 0.95, margin: 0.20, motorSize: 200 },
+      map: null
     };
   }
   // migrate older saved pumps (flat slurry -> proc model)
@@ -48,6 +49,7 @@
       p.slurry.proc = { ms: num(p.slurry.solidsTPH), mL: num(p.slurry.liquidTPH), Ss: num(p.slurry.solidsSG), SL: num(p.slurry.liquorSG), Sm: null, Q: null, Cw: null, Cv: null };
     }
     if (p.discharge && !p.discharge.settleMethod) p.discharge.settleMethod = 'durand';
+    if (p.map === undefined) p.map = null;
     return p;
   }
 
@@ -532,18 +534,31 @@
     return card;
   }
 
-  // Map sub-tab: embeds the (restyled) pipe-route planner
+  // Map sub-tab: embeds the (restyled) pipe-route planner. The drawn route is
+  // saved per pump in the project (covered by the app's global Save .json).
+  let mapFrame = null, mapPumpRef = null;
   function renderMap(root, p) {
     const card = el('div', { class: 'card', style: 'margin-top:8px' });
     card.appendChild(el('h2', {}, 'Pipe Route Map'));
     const body = el('div', { class: 'mapbody' });
     const frame = el('iframe', { class: 'mapframe', title: 'Pipe Route Map' });
+    mapFrame = frame; mapPumpRef = p;
     if (window.PIPE_ROUTER_SRCDOC) frame.srcdoc = window.PIPE_ROUTER_SRCDOC;
     else frame.src = 'piperouter.html';
     body.appendChild(frame);
     card.appendChild(body);
     root.appendChild(card);
   }
+  // bridge: load each pump's map on ready, save it back on change
+  window.addEventListener('message', (e) => {
+    if (!mapFrame || e.source !== mapFrame.contentWindow) return;
+    const m = e.data; if (!m || typeof m !== 'object') return;
+    if (m.type === 'mapReady') {
+      try { mapFrame.contentWindow.postMessage({ type: 'loadMap', state: (mapPumpRef && mapPumpRef.map) || null }, '*'); } catch (_) {}
+    } else if (m.type === 'mapChange') {
+      if (mapPumpRef) { mapPumpRef.map = m.state; save(); }
+    }
+  });
 
   function pumpBar() {
     const bar = el('div', { class: 'pumpbar' });

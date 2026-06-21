@@ -57,11 +57,15 @@
     height:100vh;
   }
 
+  /* one-row elevation field inside node popups */
+  .popup-node .pn-row{ display:flex; align-items:center; gap:8px; margin:2px 0; }
+  .popup-node .pn-row label{ margin:0; white-space:nowrap; flex:0 0 auto; }
+  .popup-node .pn-row input{ flex:1; min-width:0; }
   header.topbar{
     display:flex;
     align-items:center;
-    gap:18px;
-    padding:10px 18px;
+    gap:12px;
+    padding:7px 12px;
     background:var(--panel);
     border-bottom:1px solid var(--line);
     z-index:1200;
@@ -111,9 +115,14 @@
   /* ---------- Body layout ---------- */
   .body{
     display:grid;
-    grid-template-columns:300px 1fr;
+    grid-template-columns:1fr;
     min-height:0;
   }
+  #fileGroup{ display:none; }
+  .spec-group{ display:flex; align-items:center; gap:6px; }
+  .spec-group select{ height:30px; font-size:12px; padding:0 6px; border:1px solid var(--line-strong);
+    border-radius:7px; background:var(--panel); color:var(--ink); max-width:150px; }
+  .spec-group .swatch{ width:14px; height:14px; border-radius:4px; flex:0 0 auto; }
 
   aside.sidebar{
     background:var(--panel);
@@ -307,7 +316,7 @@
 
   /* floating Copy Map Image button over the map */
   .map-btn{
-    position:absolute; top:14px; left:12px; z-index:1000;
+    position:absolute; top:52px; left:12px; z-index:1000;
     font-family:var(--ui); font-size:12px; font-weight:600; letter-spacing:.3px;
     color:var(--ink); background:rgba(255,255,255,.92); backdrop-filter:blur(4px);
     border:1px solid var(--line); border-radius:6px; padding:8px 12px;
@@ -318,7 +327,7 @@
 
   /* callout visibility panel, top left under the Copy Map button */
   .callout-tools{
-    position:absolute; top:56px; left:12px; z-index:1000;
+    position:absolute; top:94px; left:12px; z-index:1000;
     background:rgba(255,255,255,.92); backdrop-filter:blur(4px);
     border:1px solid var(--line); border-radius:8px; padding:9px 11px;
     display:flex; flex-direction:column; gap:6px; box-shadow:0 6px 20px -10px rgba(30,31,34,.4);
@@ -344,19 +353,23 @@
   .help-steps li, .help-notes li{ font-size:12.5px; line-height:1.6; color:var(--ink-dim); margin:0 0 9px; }
   .help-steps li::marker{ color:var(--accent); font-weight:700; }
 
-  /* place search box, top right of the map, just left of the layer control */
+  /* collapsible search: a magnifier that expands on click/hover */
   .map-search{
-    position:absolute; top:12px; right:54px; z-index:1000;
+    position:absolute; top:12px; left:12px; z-index:1000;
     display:flex; align-items:center; gap:6px;
     background:rgba(255,255,255,.94); backdrop-filter:blur(4px);
-    border:1px solid var(--line); border-radius:8px; padding:5px 6px 5px 10px;
+    border:1px solid var(--line); border-radius:8px; padding:5px 6px 5px 9px;
     box-shadow:0 6px 20px -8px #000;
   }
-  .map-search .ic{ font-family:var(--mono); color:var(--ink-faint); font-size:13px; }
+  .map-search .ic{ font-family:var(--mono); color:var(--ink-faint); font-size:14px; cursor:pointer; }
   .map-search input{
-    width:210px; background:transparent; border:none; outline:none;
-    color:var(--ink); font-family:var(--ui); font-size:13px; padding:3px 2px;
+    width:0; opacity:0; background:transparent; border:none; outline:none;
+    color:var(--ink); font-family:var(--ui); font-size:13px; padding:3px 0;
+    transition:width .18s ease, opacity .18s ease;
   }
+  .map-search:hover input, .map-search:focus-within input{ width:200px; opacity:1; padding:3px 2px; }
+  .map-search button{ display:none; }
+  .map-search:hover button, .map-search:focus-within button{ display:inline-block; }
   .map-search input::placeholder{ color:var(--ink-faint); }
   .map-search button{
     font-family:var(--ui); font-size:12px; font-weight:600; color:#ffffff;
@@ -365,8 +378,9 @@
   .map-search button:hover{ filter:brightness(1.08); }
   .map-search button:disabled{ opacity:.6; cursor:default; }
 
-  /* editable, autoscaling project title, top center of the map */
-  .proj-title{
+  /* project title removed from the map */
+  .proj-title{ display:none; }
+  .proj-title-unused{
     position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:1001;
     max-width:460px; text-align:center;
   }
@@ -400,14 +414,15 @@
     color:var(--ink-faint); margin-bottom:4px;
   }
 
-  /* live material take off, bottom left of the map */
+  /* Flow Path Summary docked down the right side of the map */
   .corner-bl{
-    position:absolute; left:12px; bottom:12px; z-index:900;
-    display:flex; flex-direction:column; gap:10px; align-items:flex-start;
+    position:absolute; right:12px; top:12px; bottom:12px; z-index:900;
+    display:flex; flex-direction:column; gap:10px; align-items:stretch;
+    width:236px; pointer-events:none;
   }
   .mto{
-    min-width:200px; max-width:320px;
-    background:rgba(255,255,255,.88); backdrop-filter:blur(5px);
+    width:236px; max-height:100%; overflow:auto; pointer-events:auto;
+    background:rgba(255,255,255,.92); backdrop-filter:blur(5px);
     border:1px solid var(--line-soft); border-radius:8px; padding:10px 12px;
   }
   .mto-title{
@@ -493,9 +508,9 @@
   .flow-arrow{ background:transparent; border:none; }
   .flow-arrow span{ display:block; transform-origin:50% 50%; }
 
-  /* simple material legend, bottom right of the live map */
+  /* material legend, bottom-left of the live map */
   .map-legend{
-    position:absolute; right:12px; bottom:44px; z-index:900;
+    position:absolute; left:12px; bottom:12px; z-index:900;
     background:rgba(255,255,255,.86); backdrop-filter:blur(4px);
     border:1px solid var(--line-soft); border-radius:7px; padding:9px 11px;
     font-family:var(--mono); font-size:11px; color:var(--ink);
@@ -646,64 +661,37 @@
 
   <!-- ============ TOP BAR ============ -->
   <header class="topbar">
-    <div class="brand">
-      <div class="logo"></div>
-      <div>
-        <h1>Pipeline Routing</h1>
-        <small>SITE PLANNING . WGS84</small>
-      </div>
-    </div>
-
     <div class="toolbar">
       <div class="tool-group">
-        <button class="btn" id="btnDraw"><span class="ic">/</span> Draw Pipe <span class="hotkey">P</span></button>
+        <button class="btn" id="btnDraw"><span class="ic">/</span> Draw <span class="hotkey">P</span></button>
         <button class="btn" id="btnMeasure"><span class="ic">&#8596;</span> Measure <span class="hotkey">M</span></button>
         <button class="btn" id="btnFit" onclick="try{fitToData()}catch(e){}" title="Zoom to the extent of the pipes drawn"><span class="ic">&#9974;</span> Zoom to pipes</button>
       </div>
       <div class="tool-group">
-        <button class="btn" id="btnUndo"><span class="ic">&#8630;</span> Undo</button>
-        <button class="btn" id="btnRedo"><span class="ic">&#8631;</span> Redo</button>
+        <button class="btn" id="btnUndo" title="Undo"><span class="ic">&#8630;</span></button>
+        <button class="btn" id="btnRedo" title="Redo"><span class="ic">&#8631;</span></button>
       </div>
-      <div class="tool-group">
-        <button class="btn" id="btnNew"><span class="ic">&#9633;</span> New</button>
-        <button class="btn" id="btnSave"><span class="ic">&#8595;</span> Save</button>
-        <button class="btn" id="btnSaveAs"><span class="ic">&#8615;</span> Save As</button>
-        <button class="btn" id="btnLoad"><span class="ic">&#8593;</span> Open</button>
+      <div class="tool-group spec-group" title="Active pipe specification">
+        <span class="swatch" id="specSwatch" title="Active drawing colour"></span>
+        <select id="selMaterial" aria-label="Pipe material"></select>
+        <select id="selRating" aria-label="Pressure rating"></select>
+        <select id="selSize" aria-label="Nominal diameter"></select>
+      </div>
+      <div class="tool-group" id="fileGroup">
+        <button class="btn" id="btnNew">New</button>
+        <button class="btn" id="btnSave">Save</button>
+        <button class="btn" id="btnSaveAs">Save As</button>
+        <button class="btn" id="btnLoad">Open</button>
         <span class="filechip" id="fileChip">Untitled</span>
       </div>
-      <div class="tool-group">
-        <button class="btn" id="btnHelp"><span class="ic">&#9432;</span> Help</button>
+      <div class="tool-group" style="margin-left:auto">
+        <button class="btn" id="btnHelp" title="Help"><span class="ic">&#9432;</span></button>
       </div>
     </div>
   </header>
 
   <!-- ============ BODY ============ -->
   <div class="body">
-
-    <!-- ---- SIDEBAR ---- -->
-    <aside class="sidebar">
-      <div class="section">
-        <h2>Pipe Specification</h2>
-        <div class="field">
-          <label for="selMaterial">Material</label>
-          <select id="selMaterial"></select>
-        </div>
-        <div class="field">
-          <label for="selRating">Rating</label>
-          <select id="selRating"></select>
-        </div>
-        <div class="field">
-          <label for="selSize">Nominal Diameter</label>
-          <select id="selSize"></select>
-        </div>
-        <div class="swatch-row">
-          <div class="swatch" id="specSwatch"></div>
-          <span>Active drawing colour</span>
-        </div>
-      </div>
-
-    </aside>
-
     <!-- ---- MAP + TABLE ---- -->
     <div class="main">
       <div class="mapwrap">
@@ -715,7 +703,7 @@
         <div class="proj-title" id="projTitle"></div>
 
         <div class="map-search">
-          <span class="ic">&#9906;</span>
+          <span class="ic" title="Search a place or address" onclick="var i=document.getElementById('searchInput');i.focus();">&#9906;</span>
           <input id="searchInput" type="text" placeholder="Search a place or address..." autocomplete="off" />
           <button id="searchBtn">Go</button>
         </div>
@@ -2378,9 +2366,9 @@ function openNodePopup(id, latlng){
   const letter = buildLetters()[id] || id;
   let html = '<div class="popup-node"><h3>Node '+letter+(poi&&!end?' . Point of Interest':'')+'</h3>';
   // elevation applies to end nodes and points of interest
-  html += '<label>Elevation (m AHD)</label>'+
-          '<input id="elevIn" type="number" step="0.01" placeholder="enter elevation" '+
-          'value="'+(n.elevation!=null?sig3(n.elevation):'')+'" />';
+  html += '<div class="pn-row"><label>Elevation (m AHD)</label>'+
+          '<input id="elevIn" type="number" step="0.01" placeholder="enter" '+
+          'value="'+(n.elevation!=null?sig3(n.elevation):'')+'" /></div>';
   if(end){
     const roleWord = effFlow(id)==='in' ? 'in' : 'out';
     const inf = inferredRate(id);
@@ -3437,6 +3425,23 @@ window.addEventListener('beforeunload', (e)=>{
 // keep the title fitted when the window or panels resize
 window.addEventListener('resize', ()=>{ fitTitle(); updateOverlayLayout(); });
 map.on('resize', fitTitle);
+</script>
+<script>
+/* Persistence bridge: the host app loads/saves this map per pump and can fit-to-data.
+   No live calc values are pushed in — routes are read manually by the engineer. */
+(function(){
+  function post(msg){ try{ if(window.parent&&window.parent!==window) window.parent.postMessage(msg,'*'); }catch(_){} }
+  var EMPTY = JSON.stringify({nodes:[],pipes:[],nNode:0,nPipe:0});
+  var _md = window.markDirty, t=null;
+  window.markDirty = function(){ if(_md) _md.apply(this,arguments); clearTimeout(t); t=setTimeout(function(){ try{ post({type:'mapChange', state: serialize()}); }catch(_){} }, 350); };
+  window.addEventListener('message', function(e){
+    var m=e.data; if(!m||typeof m!=='object') return;
+    if(m.type==='loadMap'){ try{ restore(m.state ? (typeof m.state==='string'?m.state:JSON.stringify(m.state)) : EMPTY); if(m.state){ try{ fitToData(); }catch(_){ } } }catch(_){} }
+    else if(m.type==='fitToData'){ try{ fitToData(); }catch(_){} }
+    else if(m.type==='requestState'){ try{ post({type:'mapChange', state: serialize()}); }catch(_){} }
+  });
+  post({type:'mapReady'});
+})();
 </script>
 </body>
 </html>
