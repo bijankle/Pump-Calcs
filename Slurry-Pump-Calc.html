@@ -100,7 +100,11 @@ button{font-family:inherit}
 /* Transposed summary */
 table.ref.summary td.pname{text-align:left;font-weight:600;background:#f7f7f7}
 table.ref.summary td.punit{text-align:left;color:var(--grey);font-size:11px;background:#fff}
-table.ref.summary th.pumpcol{text-align:center;min-width:80px}
+/* pump value cells (3rd column onward) — centred, wrap long values */
+table.ref.summary tbody td:nth-child(n+3){text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+/* pump column headers — wrap text so the tag doesn't dictate column width */
+table.ref.summary thead th.pumpcol{text-align:center;min-width:80px;max-width:160px;
+  white-space:normal;overflow-wrap:anywhere;word-break:break-word;vertical-align:middle}
 
 /* Output rows — Parameter | Nominal | Design | Unit | info */
 .orow{display:grid;grid-template-columns:1fr 96px 96px 52px 22px;align-items:center;gap:8px;
