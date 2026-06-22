@@ -201,19 +201,20 @@
     position:absolute; top:12px; left:12px; z-index:1000;
     display:flex; flex-direction:column; align-items:flex-start; gap:8px;
   }
-  .dropdown{ position:relative; }
+  .dropdown{ position:relative; width:188px; }
   .dd-btn{
-    font-family:var(--ui); font-size:13px; font-weight:600; letter-spacing:.3px; color:var(--ink);
-    background:#fff; border:1px solid var(--line); border-radius:7px; padding:7px 11px; cursor:pointer;
-    display:inline-flex; align-items:center; gap:7px; box-shadow:0 4px 14px -8px rgba(0,0,0,.5);
+    width:100%; font-family:var(--ui); font-size:13px; font-weight:600; letter-spacing:.3px; color:var(--ink);
+    background:#fff; border:1px solid var(--line); border-radius:7px; padding:7px 12px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:space-between; gap:7px; box-shadow:0 4px 14px -8px rgba(0,0,0,.5);
   }
   .dd-btn:hover{ border-color:#b8bcc4; }
   .dd-btn:disabled{ opacity:.5; cursor:default; }
   .dd-caret{ font-size:9px; opacity:.7; }
   .dropdown.open .dd-caret{ transform:rotate(180deg); }
+  /* menu pops to the right of the full-width buttons so it never covers another button */
   .dd-menu{
-    display:none; position:absolute; left:calc(100% + 8px); top:0; min-width:170px;
-    background:#ffffff; border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+    display:none; position:absolute; left:calc(100% + 8px); top:0; min-width:178px;
+    background:#ffffff; border:1px solid var(--line); border-radius:8px; padding:13px 16px;
     box-shadow:0 12px 30px -12px rgba(0,0,0,.45);
   }
   .dropdown.open .dd-menu{ display:block; }
@@ -572,14 +573,14 @@
     padding:2px 7px; border-radius:1px 0 6px 0; white-space:nowrap;
   }
   .scale-bar{
-    position:absolute; right:12px; bottom:12px; z-index:901; pointer-events:none;
-    height:7px; border:2px solid #1E1F22; border-top:0;
-    box-shadow:0 0 0 1px rgba(0,0,0,.55); min-width:30px;
+    position:absolute; right:8px; bottom:8px; z-index:901; pointer-events:none;
+    height:7px; border:2px solid #fff; border-top:0; min-width:30px;
+    box-shadow:0 0 0 1.5px rgba(0,0,0,.8);
   }
   .scale-bar .sb-label{
     position:absolute; right:0; bottom:9px;
-    font-family:var(--mono); font-size:11px; font-weight:700; color:#fff;
-    text-shadow:0 0 3px #000,0 0 3px #000,0 0 3px #000; white-space:nowrap;
+    font-family:var(--ui); font-size:11px; font-weight:700; color:#fff;
+    text-shadow:0 0 2px #000,0 0 3px #000,0 1px 2px #000,0 -1px 2px #000; white-space:nowrap;
   }
   .map-legend .ml-title{ font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:#5C5E66; margin-bottom:6px; }
   .map-legend .ml-row{ display:flex; align-items:center; gap:9px; margin:5px 0; }

@@ -29,7 +29,7 @@ button{font-family:inherit}
 .btn-grey{background:#ececec;color:var(--black)}.btn-grey:hover{background:#dedede}
 
 /* Tabs */
-.tabs{display:flex;gap:2px;background:var(--grey);border-radius:0 0 8px 8px;overflow:hidden;flex-wrap:wrap;
+.tabs{display:flex;gap:2px;background:var(--grey);overflow:hidden;flex-wrap:wrap;
   position:sticky;top:var(--topbar-h,56px);z-index:45}
 .tab{padding:11px 18px;color:#e7e7e7;cursor:pointer;font-weight:600;font-size:13px;border-bottom:3px solid transparent}
 .tab:hover{background:#5c5c5c;color:#fff}
