@@ -367,6 +367,7 @@
 
   /* callout visibility toggles, inside the Callouts dropdown */
   /* NB: no display rule here — must not override .dd-menu{display:none} (ID beats class) */
+  #calloutTools{ background:#e7eaed; }   /* slightly grey padding so the white tick boxes stand out */
   #calloutTools .ct-check{ display:flex; align-items:center; gap:9px; font-size:13px; color:var(--ink); cursor:pointer; white-space:nowrap; margin:8px 0; }
   #calloutTools .ct-check:first-child{ margin-top:0; }
   #calloutTools .ct-check:last-child{ margin-bottom:0; }
@@ -2506,7 +2507,9 @@ function openPipePopup(id, latlng){
   const spec = SPECS[p.material] || { ratings:[p.rating], sizes:[p.size] };
   const len = pipeLength(p);
   const manual = (p.manualLength!=null);
-  const fallback = (state.nodes[p.a] && state.nodes[p.b])
+  // anchor at the segment midpoint so the popup is in the same place for this pipe
+  // no matter where along the line the user clicks
+  const anchor = (state.nodes[p.a] && state.nodes[p.b])
     ? [(state.nodes[p.a].lat+state.nodes[p.b].lat)/2, (state.nodes[p.a].lng+state.nodes[p.b].lng)/2]
     : map.getCenter();
   const html = '<div class="popup-node popup-pipe">'+
@@ -2516,7 +2519,7 @@ function openPipePopup(id, latlng){
     '<div class="pn-row"><input id="ppLen" type="number" step="1" min="0" placeholder="length" value="'+Math.round(len)+'" /><span class="unit">m</span>'+
       (manual?'<button id="ppRevert" class="pp-revert" title="Revert to calculated length">&#8635;</button>':'')+'</div>'+
     '</div>';
-  const popup = L.popup({closeButton:true, autoClose:true}).setLatLng(latlng||fallback).setContent(html).openOn(map);
+  const popup = L.popup({closeButton:true, autoClose:true}).setLatLng(anchor).setContent(html).openOn(map);
   const root = popup.getElement(); if(!root) return;
   const matSel=root.querySelector('#ppMat'), ratingSel=root.querySelector('#ppRating'),
         sizeSel=root.querySelector('#ppSize'), lenInp=root.querySelector('#ppLen');
