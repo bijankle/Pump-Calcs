@@ -55,7 +55,11 @@
   }
 
   // -------- state -----------------------------------------------------------
-  let STATE = load() || { name: 'New Project', client: '', docNo: 'Slurry_Pump_Calcs', rev: 'A', pumps: [defaultPump()], active: 0 };
+  const FRESH = () => ({ name: 'New Project', client: '', docNo: 'Slurry_Pump_Calcs', rev: 'A', pumps: [defaultPump()], active: 0 });
+  // opened from the "New" button: start blank rather than reloading the saved project
+  const _isNew = (location.hash === '#new');
+  if (_isNew) history.replaceState(null, '', location.pathname + location.search);
+  let STATE = _isNew ? FRESH() : (load() || FRESH());
   STATE.pumps.forEach(normalizePump);
   if (STATE.pumps.length) pumpSeq = STATE.pumps.length + 1;
   function save() { try { localStorage.setItem('nexmin_pumpcalc', JSON.stringify(STATE)); } catch (e) {} }
@@ -209,7 +213,7 @@
   ];
   function pillRatio(r) { if (!isFinite(r)) return null; return r >= 1.15 ? { cls: 'ok', t: 'OK' } : r >= 1 ? { cls: 'warn', t: 'low' } : { cls: 'bad', t: 'settling' }; }
   function pillFL(f) { if (!isFinite(f)) return null; return f * 100 <= 100 ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'over' }; }
-  function pillNPSH(o) { if (o.npshOK == null) return { cls: 'warn', t: 'enter NPSHr' }; return o.npshOK ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'cavitation' }; }
+  function pillNPSH(o) { if (o.npshOK == null) return { cls: 'warn', t: 'TBC' }; return o.npshOK ? { cls: 'ok', t: 'OK' } : { cls: 'bad', t: 'cavitation' }; }
 
   // settling-velocity methods shown in the calc; the ticked one sets Vlim
   // [key, label, refKey, when-to-use, formula]   (g = 9.81 m/s²)
@@ -516,7 +520,7 @@
     wrap.appendChild(box('Motor selected', `${sig(o.motorSel)} <small>kW</small>`, fbTxt, fbCls));
     // NPSH check
     wrap.appendChild(box('NPSHa', `${sig(o.NPSHa_water)} <small>m</small>`,
-      o.npshOK == null ? 'enter NPSHr' : (o.npshOK ? `✓ OK (NPSHr ${sig(o.NPSHr)})` : `✗ NPSHa < NPSHr (${sig(o.NPSHr)})`),
+      o.npshOK == null ? 'TBC' : (o.npshOK ? `✓ OK (NPSHr ${sig(o.NPSHr)})` : `✗ NPSHa < NPSHr (${sig(o.NPSHr)})`),
       o.npshOK == null ? 'warn' : (o.npshOK ? 'ok' : 'bad')));
     return wrap;
   }
@@ -724,6 +728,7 @@
     const root = $('#view'); root.innerHTML = '';
     root.appendChild(el('h1', { class: 'page' }, 'Reference Tables'));
     root.appendChild(el('p', { class: 'sub' }, 'The validation lists and lookup tables used throughout the calc — exactly as embedded in the workbook.'));
+    const grid = el('div', { class: 'ref-grid' }); root.appendChild(grid);
     section('Pipe Roughness (mm)', () => {
       const t = tbl(['Material / lining', 'Absolute roughness e (mm)']);
       REFDATA.roughnessNamed.forEach(p => addRow(t, [p[0], p[1]]));
@@ -756,11 +761,15 @@
       return t;
     });
     function section(title, build) {
-      root.appendChild(el('div', { class: 'section-title', style: 'margin-top:22px' }, title));
-      const wrap = el('div', { class: 'tablewrap' }); wrap.appendChild(build()); root.appendChild(wrap);
+      const card = el('div', { class: 'ref-card' });
+      card.appendChild(el('div', { class: 'section-title', style: 'margin:0 0 8px' }, title));
+      const wrap = el('div', { class: 'tablewrap' }); wrap.appendChild(build()); card.appendChild(wrap);
+      grid.appendChild(card);
     }
     function tbl(headers) { const t = el('table', { class: 'ref' }); const tr = el('tr'); headers.forEach(h => tr.appendChild(el('th', {}, String(h)))); const th = el('thead'); th.appendChild(tr); t.appendChild(th); t.appendChild(el('tbody')); return t; }
-    function addRow(t, cells) { const tr = el('tr'); cells.forEach(c => tr.appendChild(el('td', {}, c == null ? '—' : String(c)))); t.querySelector('tbody').appendChild(tr); }
+    // 3 sig figs for numbers, trailing zeros trimmed (no 1.66666667)
+    function fmtCell(c) { if (c == null) return '—'; if (typeof c === 'number' && isFinite(c)) { const s = sig(c, 3); return s.indexOf('.') >= 0 ? s.replace(/\.?0+$/, '') : s; } return String(c); }
+    function addRow(t, cells) { const tr = el('tr'); cells.forEach(c => tr.appendChild(el('td', {}, fmtCell(c)))); t.querySelector('tbody').appendChild(tr); }
   }
 
   // -------- sticky header offsets ------------------------------------------
@@ -807,12 +816,18 @@
       try { await EXPORTER.exportWorkbook(STATE); } catch (e) { console.error(e); alert('Export failed: ' + e.message); }
       btn.textContent = old; btn.disabled = false;
     });
-    $('#resetBtn').addEventListener('click', () => { if (confirm('Reset to a fresh project? This clears saved data.')) { localStorage.removeItem('nexmin_pumpcalc'); location.reload(); } });
-    $('#saveBtn').addEventListener('click', () => {
+    function downloadProject() {
       const blob = new Blob([JSON.stringify(STATE, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = (STATE.docNo || 'pump_calc') + '.json';
       document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+    $('#saveBtn').addEventListener('click', downloadProject);
+    // New: never wipe the current work — save it to disk, then open a fresh project in a new tab
+    $('#newBtn').addEventListener('click', () => {
+      downloadProject();
+      const u = new URL(location.href); u.hash = 'new';
+      window.open(u.href, '_blank');
     });
     $('#loadBtn').addEventListener('click', () => $('#loadFile').click());
     $('#loadFile').addEventListener('change', (e) => {
