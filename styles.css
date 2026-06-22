@@ -136,8 +136,13 @@ table.ref.summary thead th.pumpcol{text-align:center;min-width:80px;max-width:16
 
 /* Tables (reference tabs) */
 /* reference tables flow side-by-side to fill the width instead of stacking */
-.ref-grid{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
-.ref-card{flex:0 1 auto;max-width:100%}
+/* reference page: vertical tabs down the left, selected table shown on the right */
+.ref-layout{display:flex;gap:18px;align-items:flex-start}
+.ref-tabs{display:flex;flex-direction:column;gap:5px;flex:0 0 196px;position:sticky;top:calc(var(--topbar-h,56px) + var(--tabs-h,44px) + 8px)}
+.ref-tab{text-align:left;padding:9px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--black);font-weight:600;font-size:13px;cursor:pointer;box-shadow:var(--shadow)}
+.ref-tab:hover{border-color:#b8bcc4}
+.ref-tab.active{background:var(--red);color:#fff;border-color:var(--red)}
+.ref-pane{flex:1;min-width:0}
 /* overflow:visible so page scroll (not the wrapper) drives the sticky headers */
 .tablewrap{overflow:visible;border:1px solid var(--line);border-radius:8px;background:#fff}
 table.ref{border-collapse:collapse;font-size:12.5px}

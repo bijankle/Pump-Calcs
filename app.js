@@ -723,51 +723,69 @@
     root.appendChild(el('p', { class: 'hint' }, 'Tip: click a pump column header to open it in the Calculator. Edit the parameter list in SUMMARY_PARAMS to tweak what appears here.'));
   }
 
-  // -------- render: reference tables ---------------------------------------
+  // -------- render: reference tables (vertical tabs, one table at a time) ---
+  let refActive = 0;
   function renderRef() {
     const root = $('#view'); root.innerHTML = '';
     root.appendChild(el('h1', { class: 'page' }, 'Reference Tables'));
-    root.appendChild(el('p', { class: 'sub' }, 'The validation lists and lookup tables used throughout the calc — exactly as embedded in the workbook.'));
-    const grid = el('div', { class: 'ref-grid' }); root.appendChild(grid);
-    section('Pipe Roughness (mm)', () => {
-      const t = tbl(['Material / lining', 'Absolute roughness e (mm)']);
-      REFDATA.roughnessNamed.forEach(p => addRow(t, [p[0], p[1]]));
-      return t;
-    });
-    section('Steel Pipe Bore — internal diameter (mm)', () => {
-      const t = tbl(['Nom DN'].concat(REFDATA.steelHeader));
-      REFDATA.steelSizes.forEach((sz, i) => addRow(t, [sz].concat(REFDATA.steelHeader.map(h => REFDATA.steelBore[h][i] || '—'))));
-      return t;
-    });
-    section('Poly (HDPE) Pipe Bore — internal diameter (mm)', () => {
-      const specs = REFDATA.polySpecs.map(s => s.spec);
-      const t = tbl(['Nom DN'].concat(specs));
-      REFDATA.polySizes.forEach((sz, i) => addRow(t, [sz].concat(specs.map(sp => (REFDATA.polyBore[sp] && REFDATA.polyBore[sp][i]) || '—'))));
-      return t;
-    });
-    section('Fitting K-factors (by nominal size)', () => {
-      // transposed: nominal size down the side, one column per fitting (was very wide)
-      const fits = [['90', '90° bend'], ['45', '45° bend'], ['Run', 'Run tee'], ['Branch', 'Branch tee']];
-      const t = tbl(['Nom DN'].concat(fits.map(f => f[1])));
-      REFDATA.kSizes.forEach((sz, i) => addRow(t, [sz].concat(fits.map(f => REFDATA.kBends[f[0]][i]))));
-      return t;
-    });
-    section('Physical Properties of Water — Streeter & Wylie (1983)', () => {
-      const t = tbl(['Temp °C', 'Density kg/m³', 'Dynamic visc. cP', 'Vapour pressure kPa']);
-      REFDATA.water.forEach(w => addRow(t, [w.T, w.rho, w.mu, w.pv]));
-      return t;
-    });
-    section('Absolute Vapour Pressure of Water', () => {
-      const t = tbl(['Temp °C', 'Vapour press. kPa', 'm water']);
-      REFDATA.vapour.forEach(v => addRow(t, [v.T, sig(v.kPa, 3), sig(v.m, 3)]));
-      return t;
-    });
-    function section(title, build) {
-      const card = el('div', { class: 'ref-card' });
-      card.appendChild(el('div', { class: 'section-title', style: 'margin:0 0 8px' }, title));
-      const wrap = el('div', { class: 'tablewrap' }); wrap.appendChild(build()); card.appendChild(wrap);
-      grid.appendChild(card);
+    root.appendChild(el('p', { class: 'sub' }, 'The validation lists and lookup tables used throughout the calc — exactly as embedded in the workbook. Pick a table on the left.'));
+
+    const sections = [
+      ['Pipe Roughness', () => {
+        const t = tbl(['Material / lining', 'Absolute roughness e (mm)']);
+        REFDATA.roughnessNamed.forEach(p => addRow(t, [p[0], p[1]]));
+        return t;
+      }],
+      ['Steel Pipe Bore', () => {
+        const t = tbl(['Nom DN'].concat(REFDATA.steelHeader));
+        REFDATA.steelSizes.forEach((sz, i) => addRow(t, [sz].concat(REFDATA.steelHeader.map(h => REFDATA.steelBore[h][i] || '—'))));
+        return t;
+      }],
+      ['Poly (HDPE) Pipe Bore', () => {
+        const specs = REFDATA.polySpecs.map(s => s.spec);
+        // "PE80B_PN4" -> "PE80B PN4" so the material/rating wrap onto two lines
+        const t = tbl(['Nom DN'].concat(specs.map(s => s.replace(/_/g, ' '))));
+        REFDATA.polySizes.forEach((sz, i) => addRow(t, [sz].concat(specs.map(sp => (REFDATA.polyBore[sp] && REFDATA.polyBore[sp][i]) || '—'))));
+        return t;
+      }],
+      ['Fitting K-factors', () => {
+        // transposed: nominal size down the side, one column per fitting
+        const fits = [['90', '90° bend'], ['45', '45° bend'], ['Run', 'Run tee'], ['Branch', 'Branch tee']];
+        const t = tbl(['Nom DN'].concat(fits.map(f => f[1])));
+        REFDATA.kSizes.forEach((sz, i) => addRow(t, [sz].concat(fits.map(f => REFDATA.kBends[f[0]][i]))));
+        return t;
+      }],
+      ['Water Properties', () => {
+        const t = tbl(['Temp °C', 'Density kg/m³', 'Dynamic visc. cP', 'Vapour pressure kPa']);
+        REFDATA.water.forEach(w => addRow(t, [w.T, w.rho, w.mu, w.pv]));
+        return t;
+      }],
+      ['Vapour Pressure of Water', () => {
+        const t = tbl(['Temp °C', 'Vapour press. kPa', 'm water']);
+        REFDATA.vapour.forEach(v => addRow(t, [v.T, sig(v.kPa, 3), sig(v.m, 3)]));
+        return t;
+      }],
+    ];
+
+    const layout = el('div', { class: 'ref-layout' });
+    const tabsCol = el('div', { class: 'ref-tabs' });
+    const pane = el('div', { class: 'ref-pane' });
+    layout.appendChild(tabsCol); layout.appendChild(pane); root.appendChild(layout);
+    if (refActive >= sections.length) refActive = 0;
+    function show(i) {
+      refActive = i;
+      tabsCol.querySelectorAll('.ref-tab').forEach((b, j) => b.classList.toggle('active', j === i));
+      pane.innerHTML = '';
+      pane.appendChild(el('div', { class: 'section-title', style: 'margin:0 0 8px' }, sections[i][0]));
+      const wrap = el('div', { class: 'tablewrap' }); wrap.appendChild(sections[i][1]()); pane.appendChild(wrap);
     }
+    sections.forEach(([title], i) => {
+      const b = el('button', { class: 'ref-tab' }, title);
+      b.addEventListener('click', () => show(i));
+      tabsCol.appendChild(b);
+    });
+    show(refActive);
+
     function tbl(headers) { const t = el('table', { class: 'ref' }); const tr = el('tr'); headers.forEach(h => tr.appendChild(el('th', {}, String(h)))); const th = el('thead'); th.appendChild(tr); t.appendChild(th); t.appendChild(el('tbody')); return t; }
     // 3 sig figs for numbers, trailing zeros trimmed (no 1.66666667)
     function fmtCell(c) { if (c == null) return '—'; if (typeof c === 'number' && isFinite(c)) { const s = sig(c, 3); return s.indexOf('.') >= 0 ? s.replace(/\.?0+$/, '') : s; } return String(c); }
