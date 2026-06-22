@@ -8,7 +8,9 @@
 @font-face{font-family:'Aptos';src:local('Aptos'),local('Aptos Display');}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-html{overflow-y:scroll}   /* always reserve the scrollbar so tabs don't shift */
+/* Map/Curve sub-tabs fit the viewport exactly — no page scroll, no scrollbar */
+body.fit-embed{overflow:hidden}
+body.fit-embed .app{padding-bottom:0}
 body{
   font-family:'Aptos','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
   color:var(--black);background:var(--bg);font-size:14px;line-height:1.45;
@@ -211,8 +213,8 @@ h1.page{font-size:20px;margin:18px 0 4px}
 
 /* Pump curve + map blocks */
 .curvebody,.mapbody{padding:0}
-/* fit the viewport so the map/curve don't scroll the page under the frozen header band */
-.curveframe,.mapframe{width:100%;height:calc(100vh - 318px);min-height:360px;border:0;display:block;background:#fff}
+/* fit the viewport so the map/curve don't scroll the page (JS sets exact height) */
+.curveframe,.mapframe{width:100%;height:calc(100vh - 318px);border:0;display:block;background:#fff}
 
 /* Brand logo (SVG) */
 .brand .nexlogo{height:26px;display:block}

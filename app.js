@@ -283,7 +283,7 @@
     sticky.appendChild(subTabNav());
     sticky.appendChild(kpis(both.n, both.d));
     root.appendChild(sticky);
-    requestAnimationFrame(updateSticky);
+    requestAnimationFrame(() => { updateSticky(); fitEmbeds(); });
 
     const sub = el('div', { id: 'subview' });
     root.appendChild(sub);
@@ -779,12 +779,21 @@
     if (tb) root.style.setProperty('--topbar-h', tb.offsetHeight + 'px');
     if (tabs) root.style.setProperty('--tabs-h', tabs.offsetHeight + 'px');
   }
-  window.addEventListener('resize', () => { updateSticky(); closeCallout(); });
+  // size the embedded Map/Curve iframe to exactly fill the viewport so the page can't scroll
+  function fitEmbeds() {
+    const f = document.querySelector('#view .mapframe, #view .curveframe');
+    if (!f) { document.body.classList.remove('fit-embed'); return; }
+    document.body.classList.add('fit-embed');
+    window.scrollTo(0, 0);
+    const rectTop = f.getBoundingClientRect().top;
+    f.style.height = Math.max(320, Math.floor(window.innerHeight - rectTop - 10)) + 'px';
+  }
+  window.addEventListener('resize', () => { updateSticky(); fitEmbeds(); closeCallout(); });
 
   // -------- tabs ------------------------------------------------------------
   const TABS = { calc: renderCalc, summary: renderSummary, ref: renderRef };
   let current = 'calc';
-  function switchTab(t) { current = t; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t)); TABS[t](); }
+  function switchTab(t) { current = t; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t)); TABS[t](); requestAnimationFrame(fitEmbeds); }
   function commit(rerender) { save(); if (rerender) TABS[current](); else refreshOutputs(); }
   function refreshOutputs() {
     if (current !== 'calc') { TABS[current](); return; }
