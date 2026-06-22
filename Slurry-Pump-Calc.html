@@ -145,7 +145,8 @@ table.ref.summary thead th.pumpcol{text-align:center;min-width:80px;max-width:16
 /* reference tables flow side-by-side to fill the width instead of stacking */
 .ref-grid{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
 .ref-card{flex:0 1 auto;max-width:100%}
-.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
+/* overflow:visible so page scroll (not the wrapper) drives the sticky headers */
+.tablewrap{overflow:visible;border:1px solid var(--line);border-radius:8px;background:#fff}
 table.ref{border-collapse:collapse;font-size:12.5px}
 table.ref.summary{width:100%}
 table.ref th,table.ref td{border:1px solid var(--line);padding:5px 9px;text-align:center;white-space:nowrap}
@@ -153,7 +154,8 @@ table.ref th,table.ref td{border:1px solid var(--line);padding:5px 9px;text-alig
 table.ref:not(.summary){width:min-content}
 table.ref:not(.summary) th{white-space:normal}              /* headers wrap at spaces to stay narrow */
 table.ref:not(.summary) td:first-child{white-space:normal}  /* long material/label names wrap */
-table.ref th{background:var(--grey);color:#fff;position:sticky;top:0}
+/* freeze headers just below the topbar+tabs; sticky releases at the table's bottom */
+table.ref th{background:var(--grey);color:#fff;position:sticky;top:calc(var(--topbar-h,56px) + var(--tabs-h,44px));z-index:2}
 table.ref td:first-child,table.ref th:first-child{text-align:left;background:#f7f7f7;font-weight:600}
 table.ref thead th:first-child{background:var(--red);color:#fff}   /* visible corner cell */
 table.ref tr:nth-child(even) td{background:#fafafa}
