@@ -588,10 +588,10 @@
   }
   function refreshPumpBar() { const old = $('#view .pumpbar'); if (old) old.replaceWith(pumpBar()); }
   function addPump() {
-    const tag = prompt('New pump tag:', 'PP' + String(pumpSeq).padStart(3, '0'));
-    if (tag == null) return;
-    if (STATE.pumps.some(p => p.tag === tag)) { alert('A pump with that tag already exists.'); return; }
-    pumpSeq++;
+    // no dialog — just spin up a new pump with default values and switch to it
+    let tag;
+    do { tag = 'PP' + String(pumpSeq).padStart(3, '0'); pumpSeq++; }
+    while (STATE.pumps.some(p => p.tag === tag));
     const np = defaultPump(tag); np.name = 'Slurry Pump';
     STATE.pumps.push(np); STATE.active = STATE.pumps.length - 1; commit(true);
   }
