@@ -36,11 +36,11 @@
         designFactor: 0.20, viscOverride: 30, d50: 55.2, frothFactor: 1
       },
       suction: { material: 'Steel', spec: 'Std_Wt_6mm_RL', dn: 250, scale: 0, length: 2, k1: 1.5, k2: 0.3, k3: 0.1, q90: 1, q45: 0, qRun: 0, qBranch: 0, k8: 0, Hss: 0.5, Ps: 0 },
-      discharge: { material: 'Poly', spec: 'PE100_PN10', dn: 280, scale: 0, length: 120, k1: 0.5, k2: 1, k3: 0.3, q90: 2, q45: 0, qRun: 0, qBranch: 0, k8: 0, Pd: 0, Hsd: 25, settleMethod: 'durand' },
+      discharge: { material: 'Poly', spec: 'PE100_PN10', dn: 280, scale: 0, length: 120, k1: 0.5, k2: 1, k3: 0.3, q90: 2, q45: 0, qRun: 0, qBranch: 0, k8: 0, Pd: 0, Hsd: 25, settleMethod: 'durand', HfManual: null },
       pump: { make: '', model: '', frame: '', drive: '', seal: '', impellerType: '', impellerDia: 365, headRatioOverride: 0, effRatioOverride: 0, nSeries: 1, nParallel: 1, effWater: 0.70, speed: 1450 },
       npsh: { altitude: 100, temp: 20, npshr: 0 },
       power: { driveEff: 0.95, margin: 0.20, motorSize: 200 },
-      map: null, curve: null
+      map: null, curve: null, routes: null
     };
   }
   // migrate older saved pumps (flat slurry -> proc model)
@@ -51,6 +51,8 @@
     if (p.discharge && !p.discharge.settleMethod) p.discharge.settleMethod = 'durand';
     if (p.map === undefined) p.map = null;
     if (p.curve === undefined) p.curve = null;
+    if (p.routes === undefined) p.routes = null;
+    if (p.discharge && p.discharge.HfManual === undefined) p.discharge.HfManual = null;
     return p;
   }
 
@@ -326,7 +328,85 @@
 
     grid.appendChild(inCard); grid.appendChild(outCard);
     root.appendChild(grid);
+    root.appendChild(dischargeBreakdown(p, both.n));
     document.querySelectorAll('#view .row input, #view .proc-input').forEach(sizeInput);
+  }
+
+  // Discharge Loss Breakdown — transparent per-leg friction of the worst map route.
+  // The total feeds the discharge head (auto), with a manual override.
+  function dischargeBreakdown(p, o) {
+    const card = el('div', { class: 'card', style: 'margin-top:18px' });
+    card.appendChild(el('h2', {}, 'Discharge Loss Breakdown'));
+    const body = el('div', { class: 'body' });
+    const r = o.route;
+    if (!r || !r.legs || !r.legs.length) {
+      body.appendChild(el('p', { class: 'hint' },
+        'Draw a route on the <b>Map</b> tab and set end-node flows (and elevations) to auto-calculate the discharge line losses for the most hydraulically disadvantaged path. Until then the single discharge leg entered above is used.'));
+      card.appendChild(body); return card;
+    }
+    body.appendChild(el('p', { class: 'sub' },
+      'Most hydraulically disadvantaged route from the map: <b>' + (r.name || '') + '</b> — straight-pipe friction (Chen) per segment at its map flow. Click a leg for full parameters.'));
+
+    const wrap = el('div', { class: 'tablewrap' });
+    const t = el('table', { class: 'ref' });
+    const thead = el('thead'), htr = el('tr');
+    ['Leg', 'Material', 'DN', 'Length (m)', 'Flow (m³/h)', 'Velocity (m/s)', 'Hf (m)', ''].forEach(h => htr.appendChild(el('th', {}, h)));
+    thead.appendChild(htr); t.appendChild(thead);
+    const tb = el('tbody');
+    const S = (v, n) => (v == null || isNaN(v)) ? '—' : sig(v, n || 3);
+    r.legs.forEach(lg => {
+      const tr = el('tr');
+      [lg.code || '', lg.material || '', String(lg.dn || ''), S(lg.length), S(lg.flow), S(lg.V), S(lg.Hf)]
+        .forEach(v => tr.appendChild(el('td', {}, v)));
+      const ic = el('td', {});
+      const b = el('span', { class: 'info', title: 'Full friction parameters' }, 'i');
+      b.addEventListener('click', () => showCallout(b, 'Leg ' + (lg.code || '') + ' — friction', bb => {
+        const tt = el('table', { class: 'ref' }), tbb = el('tbody');
+        const addr = (k, v) => { const r2 = el('tr'); r2.appendChild(el('td', {}, k)); r2.appendChild(el('td', {}, v)); tbb.appendChild(r2); };
+        addr('Material / spec', (lg.material || '') + ' ' + String(lg.spec || '').replace(/_/g, ' '));
+        addr('Nominal DN', String(lg.dn || ''));
+        addr('Internal Ø (mm)', S(lg.ID));
+        addr('Roughness e (mm)', lg.e != null ? String(lg.e) : '—');
+        addr('Length (m)', S(lg.length));
+        addr('Flow (m³/h)', S(lg.flow));
+        addr('Velocity (m/s)', S(lg.V));
+        addr('Reynolds', S(lg.Re));
+        addr('Friction factor f', S(lg.f, 4));
+        addr('Head loss Hf (m)', S(lg.Hf));
+        tt.appendChild(tbb); bb.appendChild(el('div', { class: 'callout-table' })).appendChild(tt);
+      }));
+      ic.appendChild(b); tr.appendChild(ic);
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    const tf = el('tfoot'), fr = el('tr');
+    fr.appendChild(el('td', { colspan: '6' }, 'Total line friction Hf'));
+    fr.appendChild(el('td', {}, S(r.HfSum))); fr.appendChild(el('td', {}, ''));
+    tf.appendChild(fr); t.appendChild(tf);
+    wrap.appendChild(t); body.appendChild(wrap);
+
+    // summary + override
+    const sumLine = el('div', { class: 'breakdown-foot' });
+    const statTxt = (r.elevIn != null && r.elevOut != null)
+      ? `${S(r.static)} m  (elev ${S(r.elevIn)} → ${S(r.elevOut)} m)` : 'n/a (set node elevations)';
+    const src = o.dis.HfSource;
+    const usedFlag = src === 'manual' ? '<span class="src-manual">manual override</span>'
+      : src === 'map' ? '<span class="auto-val">auto from map</span>' : '<span class="src-leg">single leg</span>';
+    sumLine.innerHTML =
+      `<div><span class="bf-k">Static lift (route)</span> ${statTxt}</div>` +
+      `<div><span class="bf-k">Discharge friction used</span> <b>${S(o.dis.HfUsed)} m</b> ${usedFlag}</div>`;
+    body.appendChild(sumLine);
+
+    const ovr = el('div', { class: 'breakdown-ovr' });
+    ovr.appendChild(el('label', {}, 'Override Hf (m)'));
+    const inp = el('input', { type: 'number', step: '0.01', placeholder: S(r.HfSum) + ' (auto)' });
+    if (p.discharge.HfManual != null) inp.value = p.discharge.HfManual;
+    inp.addEventListener('change', () => { p.discharge.HfManual = num(inp.value); commit(true); });
+    ovr.appendChild(inp);
+    ovr.appendChild(el('span', { class: 'hint' }, 'Leave blank to use the map total.'));
+    body.appendChild(ovr);
+
+    card.appendChild(body); return card;
   }
 
   // process-variable block: each field can be entered (known) or solved (auto)
@@ -562,7 +642,7 @@
     const m = e.data; if (!m || typeof m !== 'object') return;
     if (mapFrame && e.source === mapFrame.contentWindow) {
       if (m.type === 'mapReady') { try { mapFrame.contentWindow.postMessage({ type: 'loadMap', state: (mapPumpRef && mapPumpRef.map) || null }, '*'); } catch (_) {} }
-      else if (m.type === 'mapChange') { if (mapPumpRef) { mapPumpRef.map = m.state; save(); } }
+      else if (m.type === 'mapChange') { if (mapPumpRef) { mapPumpRef.map = m.state; if (m.routes) mapPumpRef.routes = m.routes; save(); } }
     } else if (curveFrame && e.source === curveFrame.contentWindow) {
       if (m.type === 'curveReady') { try { curveFrame.contentWindow.postMessage({ type: 'loadCurve', state: (curvePumpRef && curvePumpRef.curve) || null }, '*'); } catch (_) {} }
       else if (m.type === 'curveChange') { if (curvePumpRef) { curvePumpRef.curve = m.state; save(); } }

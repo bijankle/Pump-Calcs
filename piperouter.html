@@ -1211,6 +1211,24 @@ function flowPaths(){
   const unassigned=[]; for(const pid in state.pipes) if(!used.has(pid)) unassigned.push(pid);
   return { paths, unassigned, letters };
 }
+// route geometry handed to the pump calc: each flow path as a list of legs with
+// internal diameter, length and per-segment flow, plus endpoint elevations.
+// (the calc supplies slurry SG/viscosity + roughness and does the friction.)
+function computeRoutes(){
+  try{
+    const fp=flowPaths(), flows=computeFlows();
+    return fp.paths.map(path=>({
+      id:path.id, name:path.name, inId:path.inId, outId:path.outId,
+      elevIn:(state.nodes[path.inId] && state.nodes[path.inId].elevation!=null) ? state.nodes[path.inId].elevation : null,
+      elevOut:(state.nodes[path.outId] && state.nodes[path.outId].elevation!=null) ? state.nodes[path.outId].elevation : null,
+      legs:path.segments.map(s=>{
+        const p=state.pipes[s.pipeId];
+        return { code:s.code, material:p.material, spec:p.rating, dn:p.size,
+          id_mm:innerDiameter(p.material,p.size,p.rating), length:pipeLength(p), flow:flows[s.pipeId] };
+      })
+    }));
+  }catch(e){ return []; }
+}
 // orient each pipe away from the nearest flow-in source (multi source BFS)
 function flowDirections(){
   const adj=adjacency(); const ins=[];
@@ -3529,12 +3547,14 @@ map.on('resize', fitTitle);
   function post(msg){ try{ if(window.parent&&window.parent!==window) window.parent.postMessage(msg,'*'); }catch(_){} }
   var EMPTY = JSON.stringify({nodes:[],pipes:[],nNode:0,nPipe:0});
   var _md = window.markDirty, t=null;
-  window.markDirty = function(){ if(_md) _md.apply(this,arguments); clearTimeout(t); t=setTimeout(function(){ try{ post({type:'mapChange', state: serialize()}); }catch(_){} }, 350); };
+  function routesNow(){ try{ return (typeof computeRoutes==='function') ? computeRoutes() : []; }catch(_){ return []; } }
+  function pushState(){ try{ post({type:'mapChange', state: serialize(), routes: routesNow()}); }catch(_){ } }
+  window.markDirty = function(){ if(_md) _md.apply(this,arguments); clearTimeout(t); t=setTimeout(pushState, 350); };
   window.addEventListener('message', function(e){
     var m=e.data; if(!m||typeof m!=='object') return;
     if(m.type==='loadMap'){ try{ restore(m.state ? (typeof m.state==='string'?m.state:JSON.stringify(m.state)) : EMPTY); if(m.state){ try{ fitToData(); }catch(_){ } } }catch(_){} }
     else if(m.type==='fitToData'){ try{ fitToData(); }catch(_){} }
-    else if(m.type==='requestState'){ try{ post({type:'mapChange', state: serialize()}); }catch(_){} }
+    else if(m.type==='requestState'){ pushState(); }
   });
   post({type:'mapReady'});
 })();

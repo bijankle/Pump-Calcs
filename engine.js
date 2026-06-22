@@ -110,6 +110,41 @@
     return { V, Re, f, Hf, K, Hp, k90, k45, kRun, kBranch: kBr };
   }
 
+  /* ---- Route losses from the map (line loss only + static, per-segment flow) -- */
+  // roughness e (mm) by map material category — straight-pipe friction, no fittings
+  const ROUTE_ROUGHNESS = { 'PE100': 0.007, 'Carbon Steel': 0.05 };
+  function routeFriction(legs, SM, muM) {
+    let HfSum = 0; const out = [];
+    (legs || []).forEach(lg => {
+      const ID = lg.id_mm, L = lg.length, Q = lg.flow;
+      const e = (ROUTE_ROUGHNESS[lg.material] != null) ? ROUTE_ROUGHNESS[lg.material] : 0.05;
+      if (!(ID > 0) || L == null || Q == null || isNaN(Q)) {
+        out.push(Object.assign({}, lg, { e, ID, V: null, Re: null, f: null, Hf: null, ok: false }));
+        return;
+      }
+      const D = ID / 1000;
+      const V = 4 * Math.abs(Q) / (3600 * Math.PI * D * D);
+      const Re = (SM * 1000) * V * D / (muM * 1e-3);
+      const f = chen(e / ID, Re);                       // relative roughness e/ID (both mm)
+      const Hf = f * L * V * V / (2 * g * D);
+      HfSum += Hf;
+      out.push(Object.assign({}, lg, { e, ID, V, Re, f, Hf, ok: true }));
+    });
+    return { legs: out, HfSum };
+  }
+  // most hydraulically disadvantaged route = max (line friction + static lift)
+  function pickWorstRoute(routes, SM, muM) {
+    let worst = null;
+    (routes || []).forEach(r => {
+      const rf = routeFriction(r.legs, SM, muM);
+      const stat = (r.elevIn != null && r.elevOut != null) ? (r.elevOut - r.elevIn) : 0;
+      const cand = { id: r.id, name: r.name, elevIn: r.elevIn, elevOut: r.elevOut,
+        legs: rf.legs, HfSum: rf.HfSum, static: stat, total: rf.HfSum + stat };
+      if (!worst || cand.total > worst.total) worst = cand;
+    });
+    return worst;
+  }
+
   /* ---- Main calculation (returns every Calc_Template row value) -------- */
   function compute(inp) {
     const o = {};
@@ -158,7 +193,14 @@
     o.dis.Vlim = di.VlimOverride > 0 ? di.VlimOverride
       : (isFinite(o.settle[o.dis.settleMethod]) ? o.settle[o.dis.settleMethod] : o.settle.durand); // F81
     o.dis.ratio = dh.V / o.dis.Vlim;                                                  // F82
-    o.dis.Hd = di.Hsd + dh.Hp + dh.Hf + (di.Pd / (g * o.SM));                          // F88
+    // most hydraulically disadvantaged route from the map (line loss + static)
+    o.route = (inp.routes && inp.routes.length) ? pickWorstRoute(inp.routes, o.SM, o.muM) : null;
+    // discharge pipe friction: manual override wins, else the map route sum, else the single leg
+    o.dis.HfMap = o.route ? o.route.HfSum : null;
+    o.dis.HfLeg = dh.Hf;
+    o.dis.HfUsed = (di.HfManual != null) ? di.HfManual : (o.dis.HfMap != null ? o.dis.HfMap : dh.Hf);
+    o.dis.HfSource = (di.HfManual != null) ? 'manual' : (o.dis.HfMap != null ? 'map' : 'leg');
+    o.dis.Hd = di.Hsd + dh.Hp + o.dis.HfUsed + (di.Pd / (g * o.SM));                    // F88
 
     // Pump / duty points
     const Dimp = pu.impellerDia;                                                      // F97

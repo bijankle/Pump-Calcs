@@ -116,7 +116,17 @@ table.ref.summary thead th.pumpcol{text-align:center;min-width:80px;max-width:16
 .orow .sym{color:var(--grey);font-size:11px}
 .info{width:18px;height:18px;border-radius:50%;border:1px solid var(--line);background:#fafafa;
   color:var(--grey);font-size:11px;font-weight:700;cursor:pointer;line-height:1;padding:0}
+.info{display:inline-flex;align-items:center;justify-content:center}
 .info:hover{background:var(--red);color:#fff;border-color:var(--red)}
+/* Discharge Loss Breakdown */
+.auto-val{color:var(--warn);font-style:italic;font-weight:700}
+.src-manual{color:var(--ok);font-style:italic;font-weight:700}
+.src-leg{color:var(--grey);font-style:italic}
+.breakdown-foot{display:flex;flex-wrap:wrap;gap:6px 28px;margin:12px 2px 6px;font-size:13px}
+.breakdown-foot .bf-k{color:var(--grey);font-weight:600;margin-right:6px}
+.breakdown-ovr{display:flex;align-items:center;gap:10px;margin:6px 2px}
+.breakdown-ovr label{color:var(--grey);font-size:13px;font-weight:600}
+.breakdown-ovr input{width:130px;padding:6px 9px;border:1px solid #d4d4d4;border-radius:6px;background:var(--yellow);font-family:inherit;font-size:13px}
 .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
 .pill.ok{background:#e7f5ec;color:var(--ok)}.pill.warn{background:#fdf0dd;color:var(--warn)}
 .pill.bad{background:#fbe3e6;color:var(--bad)}
