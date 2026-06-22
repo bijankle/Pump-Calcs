@@ -148,13 +148,13 @@ table.ref.summary thead th.pumpcol{text-align:center;min-width:80px;max-width:16
 .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
 table.ref{border-collapse:collapse;font-size:12.5px}
 table.ref.summary{width:100%}
-table.ref th,table.ref td{border:1px solid var(--line);padding:5px 10px;text-align:center;white-space:nowrap}
-/* equal-width data columns on the reference tables (fixed layout, headers may wrap) */
-table.ref:not(.summary){table-layout:fixed}
-table.ref:not(.summary) th,table.ref:not(.summary) td{width:88px;white-space:normal;overflow-wrap:anywhere}
+table.ref th,table.ref td{border:1px solid var(--line);padding:5px 9px;text-align:center;white-space:nowrap}
+/* reference tables size snugly to their content so more pack side-by-side */
+table.ref:not(.summary){width:min-content}
+table.ref:not(.summary) th{white-space:normal}              /* headers wrap at spaces to stay narrow */
+table.ref:not(.summary) td:first-child{white-space:normal}  /* long material/label names wrap */
 table.ref th{background:var(--grey);color:#fff;position:sticky;top:0}
 table.ref td:first-child,table.ref th:first-child{text-align:left;background:#f7f7f7;font-weight:600}
-table.ref:not(.summary) td:first-child,table.ref:not(.summary) th:first-child{width:150px}
 table.ref thead th:first-child{background:var(--red);color:#fff}   /* visible corner cell */
 table.ref tr:nth-child(even) td{background:#fafafa}
 .zebra tbody tr:nth-child(even){background:#fafafa}
