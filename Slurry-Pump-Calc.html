@@ -3625,8 +3625,10 @@ window.PIPE_ROUTER_SRCDOC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta 
       return t;
     });
     section('Fitting K-factors (by nominal size)', () => {
-      const t = tbl(['Fitting'].concat(REFDATA.kSizes));
-      ['90', '45', 'Run', 'Branch'].forEach(nm => addRow(t, [nm + (nm === 'Run' || nm === 'Branch' ? ' tee' : '° bend')].concat(REFDATA.kBends[nm])));
+      // transposed: nominal size down the side, one column per fitting (was very wide)
+      const fits = [['90', '90° bend'], ['45', '45° bend'], ['Run', 'Run tee'], ['Branch', 'Branch tee']];
+      const t = tbl(['Nom DN'].concat(fits.map(f => f[1])));
+      REFDATA.kSizes.forEach((sz, i) => addRow(t, [sz].concat(fits.map(f => REFDATA.kBends[f[0]][i]))));
       return t;
     });
     section('Physical Properties of Water — Streeter & Wylie (1983)', () => {
