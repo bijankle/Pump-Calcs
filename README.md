@@ -1,4 +1,4 @@
-# Nexmin Slurry Pump Calc
+# Slurry Pump Calc
 
 A self-contained, buildless web app that reproduces the engineering logic of the
 company **Slurry Pump Calculation** workbook (`Calc_Template`) and lets you:
@@ -68,14 +68,14 @@ output workbook needs no macros:
 ```
 Slurry-Pump-Calc.html   ← the bundled single file to open (generated)
 build.py                bundles the source below into the single file
-index.html     app shell + tab markup + Nexmin SVG logo
-styles.css     Nexmin theme (red / black / grey / white, Aptos)
+index.html     app shell + tab markup
+styles.css     Blurprint theme (white / blurple, outline-over-fill, Aptos)
 data.js        reference tables, auto-extracted from the workbook
 meta.js        formula documentation + bibliography (drives ⓘ call-outs)
 engine.js      calc engine + process-variable solver (mirrors Calc_Template)
 export.js      ExcelJS workbook builder (faithful, macro-free)
 app.js         UI controller / state (save/load .json, autosave)
-pumpcurve.html embedded Pump Curve tool (restyled to Nexmin)
+pumpcurve.html embedded Pump Curve tool (restyled to Blurprint)
 vendor/        ExcelJS (MIT) — the only third-party dependency
 ```
 

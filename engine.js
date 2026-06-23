@@ -1,6 +1,6 @@
 /* ============================================================================
  * Slurry Pump Calc Engine  —  faithful re-implementation of "Calc_Template"
- * from the Nexmin Slurry Pump Calculation workbook.
+ * from the Slurry Pump Calculation workbook.
  *
  * Custom Excel UDFs re-expressed as plain JS:
  *   chen()    – Chen (1979) explicit Colebrook friction factor

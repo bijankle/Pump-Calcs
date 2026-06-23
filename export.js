@@ -11,10 +11,10 @@
   'use strict';
 
   // ---- shared styles (matched to the original Calc_Template) ----------------
-  const RED = 'FF9C1519', BLACK = 'FF1A1A1A', GREY = 'FF4D4D4D',
-        SECTION = 'FFBFBFBF', LGREY = 'FFEDEDED', YELLOW = 'FFFFFFCC',
-        WHITE = 'FFFFFFFF', INPUTTXT = 'FFCC00CC';
-  const thin = { style: 'thin', color: { argb: 'FFBFBFBF' } };
+  const RED = 'FF5865F2', BLACK = 'FF1E1F22', GREY = 'FF4E5058',
+        SECTION = 'FFE3E5E8', LGREY = 'FFF2F3F5', YELLOW = 'FFEEF0FE',
+        WHITE = 'FFFFFFFF', INPUTTXT = 'FF4752C4';
+  const thin = { style: 'thin', color: { argb: 'FFC7CAD1' } };
   const border = { top: thin, left: thin, bottom: thin, right: thin };
   const FONT = 'Aptos';
   const baseFont = { name: FONT, size: 10, color: { argb: BLACK } };
@@ -41,19 +41,8 @@
     cell.value = text;
     cell.font = { name: FONT, size: 10, bold: !!bold, color: { argb: BLACK } };
   }
-  // Nexmin logo drawn to a PNG (data URL base64) for the exported workbook
-  function logoBase64() {
-    try {
-      const c = document.createElement('canvas'); c.width = 300; c.height = 64;
-      const x = c.getContext('2d'); const s = 1.9, oy = 3;
-      const poly = pts => { x.beginPath(); pts.forEach((p, i) => { const X = p[0] * s, Y = oy + p[1] * s; i ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.closePath(); x.fill(); };
-      x.fillStyle = '#1A1A1A'; poly([[0, 0], [7, 0], [7, 30], [0, 30]]); poly([[5, 0], [12, 0], [24, 30], [17, 30]]);
-      x.fillStyle = '#C8102E'; poly([[22, 0], [29, 0], [29, 30], [22, 30]]);
-      x.fillStyle = '#1A1A1A'; x.font = '800 ' + (22 * s) + 'px Aptos, Segoe UI, Arial, sans-serif';
-      x.textBaseline = 'alphabetic'; x.fillText('NEXMIN', 38 * s, oy + 23 * s);
-      return c.toDataURL('image/png').split(',')[1];
-    } catch (e) { return null; }
-  }
+  // No brand logo in the exported workbook (the sheet title carries the heading).
+  function logoBase64() { return null; }
   const numFmt = { 0: '0', 1: '0.0', 2: '0.00', 3: '0.000', 4: '0.0000' };
   // round to 3 significant figures (process values may themselves be solved)
   function round3(v) {
@@ -453,7 +442,7 @@
   let logoId = null;
   async function exportWorkbook(project) {
     const wb = new ExcelJS.Workbook();
-    wb.creator = 'Nexmin Pump Calc'; wb.created = new Date();
+    wb.creator = 'Slurry Pump Calc'; wb.created = new Date();
     wb.calcProperties.fullCalcOnLoad = true;
     const lb = logoBase64(); logoId = lb ? wb.addImage({ base64: lb, extension: 'png' }) : null;
     buildSummary(wb, project);

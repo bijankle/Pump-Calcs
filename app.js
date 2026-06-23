@@ -1,5 +1,5 @@
 /* ============================================================================
- * app.js — UI controller for the Nexmin Slurry Pump Calc.
+ * app.js — UI controller for the Slurry Pump Calc.
  * Tabs: Calculator · Summary · How it works · Reference tables · Settling velocity
  * ==========================================================================*/
 (function () {
